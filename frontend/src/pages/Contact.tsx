@@ -6,7 +6,7 @@ const ContactUs = () => {
       <h1>Contact Us</h1>
       <div className='container'>
         <h2>Contact Details</h2>
-        <p>georgiatechcollabnext@gmail.com</p>
+        <p>collabnext.okn@gmail.com</p>
         <p>+1(215)653-6743</p>
         <p className='city'>Atlanta</p>
         <p>225 North Avenue, Northwest, Atlanta, GA</p>
