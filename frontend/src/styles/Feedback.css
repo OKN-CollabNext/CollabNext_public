@@ -1,0 +1,52 @@
+.container {
+    align-items: center;
+    padding-top: 20px;
+
+  }
+  
+  .container button {
+    font-size: 18px;
+    border-radius: 6px;
+    color: #ffffff;
+    cursor: pointer;
+    padding: 0.5% 4%;
+    text-align: center;
+    margin: 1rem auto;
+    display: block;
+    border: 2px solid white;
+  }
+
+  .container p{
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .heading h1{
+    padding: 10px;
+    padding-bottom: 30px;
+    font-weight: bold;
+  }
+  
+  /* Mobile Styles */
+  @media (max-width: 450px) {
+    .container {
+      padding: 0.5rem;
+      align-items: center;
+    }
+  
+    .container button {
+      font-size: 16px; /* Slightly smaller font size for mobile */
+      padding: 0.5rem 2rem; /* Adjust padding for better fit */
+      border-radius: 4px; /* Smaller border radius */
+    }
+  
+    .heading h1 {
+      font-size: 1em;
+      padding: 10px 0;
+    }
+  
+    .container p {
+      font-size: 0.7em; /* Smaller text size for mobile readability */
+    }
+  }
+  
