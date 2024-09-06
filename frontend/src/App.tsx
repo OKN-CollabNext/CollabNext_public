@@ -9,6 +9,7 @@ import About from './pages/About';
 import ContactUs from './pages/Contact';
 import Home from './pages/Home';
 import Search from './pages/Search';
+import Feedback from './pages/Feedback';
 
 function App() {
   return (
@@ -32,6 +33,9 @@ function App() {
           </Routes>
           <Routes>
             <Route path='/contact' element={<ContactUs />}></Route>
+          </Routes>
+          <Routes>
+            <Route path='/feedback' element={<Feedback/>}></Route>
           </Routes>
         </Box>
         <Footer />

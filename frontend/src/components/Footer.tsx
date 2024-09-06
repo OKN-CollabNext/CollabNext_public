@@ -11,7 +11,7 @@ const Footer = () => {
           {text: 'Contact Us', href: '/contact'},
           {text: 'Help', href: '/'},
           {text: 'Terms and Conditions', href: '/'},
-          {text: 'Provide Feedback', href: '/'},
+          {text: 'Provide Feedback', href: '/feedback'},
         ].map(({text, href}) => (
           <Text
             key={text}
