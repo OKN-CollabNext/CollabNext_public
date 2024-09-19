@@ -18,7 +18,8 @@ jobs:
 
     steps:
       # Checkout the repository
-      - uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
       # Set up Node.js for frontend
       - name: Setup Node.js
@@ -27,17 +28,35 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       # Install and build frontend
-      - name: Install and Build Frontend
+      - name: Install Frontend Dependencies
         working-directory: frontend
         run: |
           npm install
+      - name: Build Frontend
+        working-directory: frontend
+        run: |
           npm run build
+
+      # Debug: List frontend build directory
+      - name: List Frontend Build Directory
+        run: |
+          ls -la frontend/build
 
       # Set up Python for backend
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+
+      # Debug: List root directory
+      - name: List Root Directory
+        run: |
+          ls -la
+
+      # Debug: List backend directory before installation
+      - name: List Backend Directory Before Installation
+        run: |
+          ls -la backend
 
       # Install backend dependencies
       - name: Install Backend Dependencies
@@ -48,8 +67,16 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
+      # Debug: Verify installation and list backend directory after installation
+      - name: Verify Installation
+        working-directory: backend
+        run: |
+          source venv/bin/activate
+          pip list
+          ls -la
+
       # Copy frontend build to backend
-      - name: Copy Frontend Build
+      - name: Copy Frontend Build to Backend
         run: |
           cp -r frontend/build backend/collabnextapp/build
 
