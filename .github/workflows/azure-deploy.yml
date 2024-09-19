@@ -1,0 +1,71 @@
+name: Build and Deploy to Azure
+
+on:
+  push:
+    branches:
+      - prod  # Trigger on pushes to the prod branch
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: collabnext
+  AZURE_RG: collabnext_alpha
+  NODE_VERSION: '20.x'
+  PYTHON_VERSION: '3.10'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - uses: actions/checkout@v3
+
+      # Set up Node.js for frontend
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # Install and build frontend
+      - name: Install and Build Frontend
+        working-directory: frontend
+        run: |
+          npm install
+          npm run build
+
+      # Set up Python for backend
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      # Install backend dependencies
+      - name: Install Backend Dependencies
+        working-directory: backend
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Copy frontend build to backend
+      - name: Copy Frontend Build
+        run: |
+          cp -r frontend/build backend/collabnextapp/build
+
+      # Azure Login
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Deploy to Azure Web App
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          package: ./backend
+
+      # Azure Logout
+      - name: Azure Logout
+        run: az logout
