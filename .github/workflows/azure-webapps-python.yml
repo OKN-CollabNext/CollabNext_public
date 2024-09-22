@@ -61,7 +61,7 @@ jobs:
           python -m venv .venv
           source .venv/bin/activate
           pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r ${env.BACKEND_DIR}/requirements.txt
 
       # 8. Verify backend setup
       - name: Verify Backend Setup
