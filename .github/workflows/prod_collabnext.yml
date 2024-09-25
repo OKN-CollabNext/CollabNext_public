@@ -64,7 +64,7 @@ jobs:
       - name: Build Frontend
         working-directory: ${{ env.FRONTEND_DIR }}
         run: |
-          npm run build
+          npm start
 
       # 8. Verify frontend build
       - name: Verify Frontend Build
