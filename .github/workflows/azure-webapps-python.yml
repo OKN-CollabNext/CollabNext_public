@@ -1,58 +1,98 @@
-name: Deploy to Azure
+name: Build and Deploy to Azure
 
 on:
   push:
     branches:
-      - prod
+      - prod  # Trigger on pushes to the prod branch
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: collabnext
+  AZURE_RG: collabnext_alpha
+  NODE_VERSION: '20.x'
+  PYTHON_VERSION: '3.10'
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      # Checkout the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.x'
+      # Set up Python for backend
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: '14'
+      # Debug: List root directory
+      - name: List Root Directory
+        run: |
+          ls -la
 
-    - name: Install backend dependencies
-      run: |
-        cd backend
-        python -m venv .venv
-        source .venv/bin/activate
-        pip install -r backend/requirements.txt
+      # Debug: List backend directory before installation
+      - name: List Backend Directory Before Installation
+        run: |
+          ls -la backend
 
-    - name: Install frontend dependencies
-      run: |
-        cd frontend
-        npm install --legacy-peer-deps
-        npm install @memgraph/orb
+      # Install backend dependencies
+      - name: Install Backend Dependencies
+        working-directory: backend
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
 
-    - name: Build frontend
-      run: |
-        cd frontend
-        npm run build
+      # Debug: Verify installation and list backend directory after installation
+      - name: Verify Installation
+        working-directory: backend
+        run: |
+          source venv/bin/activate
+          pip list
+          ls -la
 
-    - name: Deploy to Azure Web App
-      uses: azure/webapps-deploy@v2
-      with:
-        app-name: 'your-app-name' # Replace with your Azure Web App name
-        slot-name: 'production'
-        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: './frontend/build'
+      # Set up Node.js for frontend
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
-    - name: Deploy backend to Azure
-      uses: azure/webapps-deploy@v2
-      with:
-        app-name: 'your-backend-app-name' # Replace with your Azure Web App name for backend
-        slot-name: 'production'
-        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        package: './backend'
+      # Install and build frontend
+      - name: Install Frontend Dependencies
+        working-directory: frontend
+        run: |
+          npm install
+      - name: Build Frontend
+        working-directory: frontend
+        run: |
+          npm run build
+
+      # Debug: List frontend build directory
+      - name: List Frontend Build Directory
+        run: |
+          ls -la frontend/build
+
+      # Copy frontend build to backend
+      - name: Copy Frontend Build to Backend
+        run: |
+          cp -r frontend/build backend/collabnextapp/build
+
+      # Azure Login
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Deploy to Azure Web App
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          package: ./backend
+
+      # Azure Logout
+      - name: Azure Logout
+        run: az logout
