@@ -3,7 +3,7 @@ name: Build and Deploy to Azure
 on:
   push:
     branches:
-      - main  # Trigger on pushes to the main branch
+      - prod  # Trigger on pushes to the main branch
   workflow_dispatch:
 
 env:
