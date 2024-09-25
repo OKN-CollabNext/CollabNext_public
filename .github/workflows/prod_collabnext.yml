@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 name: Build and Deploy to Azure
 
 on:
@@ -93,7 +92,6 @@ jobs:
 
       # 12. Azure Logout
       - name: Azure Logout
-=======
 name: Build and Deploy to Azure
 
 on:
@@ -188,5 +186,4 @@ jobs:
 
       # 12. Azure Logout
       - name: Azure Logout
->>>>>>> Stashed changes
         run: az logout
