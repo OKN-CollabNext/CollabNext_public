@@ -15,7 +15,7 @@ const TopicSearch = () => {
 
   useEffect(() => {
     handleSearch();
-  }, []);
+  }, [handleSearch]);
 
   const handleSearch = (topic?: string) => {
     if (topicType) {
