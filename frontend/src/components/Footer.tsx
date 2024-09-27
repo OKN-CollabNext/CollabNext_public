@@ -5,7 +5,7 @@ import { Flex, Text } from '@chakra-ui/react';
 
 const Footer = () => {
   return (
-    <Flex alignItems={'center'} mt={{base: '2.5rem', lg: '4rem'}}>
+    <Flex alignItems={'center'} my={{base: '2.5rem', lg: '4rem'}}>
       <Flex mx='auto'>
         {[
           {text: 'Contact Us', href: '/contact'},

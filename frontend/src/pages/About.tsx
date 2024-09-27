@@ -97,8 +97,8 @@ const About = () => {
             research collaborations with HBCUs and illuminate the broader
             research landscape. We utilize open science data sources, follow
             human - centered design principles, and leverage state - of - the -
-            art algor it hms to build a platform that will help identify
-            existing and potentially new research partnerships.
+            art algorithms to build a platform that will help identify existing
+            and potentially new research partnerships.
           </Text>
         </Box>
         <Box mt='1.7rem'>
@@ -126,14 +126,14 @@ const About = () => {
             </a>{' '}
             is a very rough proof-of-concept. We are developing future versions,
             moving from alpha to beta to production over the next three years
-            thanks to funding from the NSF. We are part of the Prototype{' '}
+            thanks to funding from the NSF. We are part of the{' '}
             <a
               href='https://www.proto-okn.net/'
               target='_blank'
               rel='noreferrer'
               style={{color: 'cornsilk', textDecoration: 'underline'}}
             >
-              Open Knowledge Network
+              Prototype Open Knowledge Network
             </a>{' '}
             (aka ProtoOKN).
           </Text>
@@ -152,7 +152,7 @@ const About = () => {
             color='#FFFFFF'
             fontSize={{base: '12px', lg: '16px'}}
           >
-            We are current ly using data from{' '}
+            We are currently using data from{' '}
             <a
               href='https://explore.openalex.org/'
               target='_blank'

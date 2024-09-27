@@ -6,10 +6,10 @@ import Footer from './components/Footer';
 import Navbar from './components/Navbar';
 import NavbarMobile from './components/NavbarMobile';
 import About from './pages/About';
+import Acknowledgment from './pages/Acknowledgment';
 import ContactUs from './pages/Contact';
 import Home from './pages/Home';
 import Search from './pages/Search';
-import Feedback from './pages/Feedback';
 
 function App() {
   return (
@@ -23,16 +23,13 @@ function App() {
         </Box>
         <Box>
           <Routes>
-            <Route path='/' element={<Home />}></Route>
-          </Routes>
-          <Routes>
-            <Route path='/about' element={<About />}></Route>
-          </Routes>
-          <Routes>
-            <Route path='/search' element={<Search />}></Route>
-          </Routes>
-          <Routes>
-            <Route path='/contact' element={<ContactUs />}></Route>
+            <Route path='/' element={<Home />} />
+            <Route path='/about' element={<About />} />
+            <Route path='/search' element={<Search />} />
+            <Route path='/topic-search' element={<TopicSearch />} />
+            <Route path='/contact' element={<ContactUs />} />
+            <Route path='/team' element={<Acknowledgment />} />
+            <Route path='/feedback' element={<Feedback />}/>
           </Routes>
           <Routes>
             <Route path='/feedback' element={<Feedback/>}></Route>

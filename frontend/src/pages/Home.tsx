@@ -1,21 +1,24 @@
-import { Field, Form, Formik } from 'formik';
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import {Field, Form, Formik} from 'formik';
+import React, {useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 import * as Yup from 'yup';
 
 import {
-	Box,
-	Button,
-	Flex,
-	FormControl,
-	FormErrorMessage,
-	Input,
-	SimpleGrid,
-	Text,
+  Box,
+  Button,
+  Flex,
+  FormControl,
+  FormErrorMessage,
+  Input,
+  Select,
+  SimpleGrid,
+  Text,
 } from '@chakra-ui/react';
 
+import {baseUrl} from '../utils/constants';
+
 const validateSchema = Yup.object().shape({
-  institution: Yup.string().required('This field is required'),
+  institution: Yup.string().notRequired(),
   type: Yup.string().notRequired(),
   topic: Yup.string().notRequired(),
   researcher: Yup.string().notRequired(),
@@ -23,13 +26,59 @@ const validateSchema = Yup.object().shape({
 
 const initialValues = {
   institution: '',
-  type: '',
+  type: 'Education',
   topic: '',
   researcher: '',
 };
 
 const Home = () => {
   const navigate = useNavigate();
+  const [suggestedInstitutions, setSuggestedInstitutions] = useState([]);
+  const [suggestedTopics, setSuggestedTopics] = useState([]);
+  // const toast = useToast();
+
+  const handleChange = (text: string, topic: boolean) => {
+    fetch(
+      !topic
+        ? `${baseUrl}/autofill-institutions`
+        : `${baseUrl}/autofill-topics`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(
+          topic
+            ? {
+                topic: text,
+              }
+            : {
+                institution: text,
+              },
+        ),
+      },
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        console.log(data);
+        if (topic) {
+          setSuggestedTopics(data?.possible_searches);
+        } else {
+          setSuggestedInstitutions(data?.possible_searches);
+        }
+        // setIsLoading(false);
+      })
+      .catch((error) => {
+        // setIsLoading(false);
+        if (topic) {
+          setSuggestedTopics([]);
+        } else {
+          setSuggestedInstitutions([]);
+        }
+        console.log(error);
+      });
+  };
+  console.log(suggestedTopics);
   return (
     <Box w={{lg: '700px'}} mx='auto' mt='1.5rem'>
       <Text
@@ -56,8 +105,19 @@ const Home = () => {
             console.log(`type: ${type}`);
             console.log(`topic: ${topic}`);
             console.log(`researcher: ${researcher}`);
+            // if (!institution && !topic && !researcher) {
+            //   toast({
+            //     title: 'Error',
+            //     description: 'All 3 fields cannot be empty',
+            //     status: 'error',
+            //     duration: 8000,
+            //     isClosable: true,
+            //     position: 'top-right',
+            //   });
+            //   return;
+            // }
             navigate(
-              `?institution=${institution}&type=${type}&topic=${topic}&researcher=${researcher}`,
+              `search?institution=${institution}&type=${type}&topic=${topic}&researcher=${researcher}`,
             );
           }}
         >
@@ -69,7 +129,7 @@ const Home = () => {
               >
                 {[
                   {text: 'Organization', key: 'institution'},
-                  {text: 'Institution Type', key: 'type'},
+                  {text: 'Type', key: 'type'},
                 ].map(({text, key}) => (
                   <Box key={text}>
                     <Field name={key}>
@@ -77,15 +137,49 @@ const Home = () => {
                         <FormControl
                           isInvalid={form.errors[key] && form.touched[key]}
                         >
-                          <Input
-                            variant={'flushed'}
-                            focusBorderColor='white'
-                            borderBottomWidth={'2px'}
-                            color='white'
-                            fontSize={{lg: '20px'}}
-                            textAlign={'center'}
-                            {...field}
-                          />
+                          {text === 'Organization' ? (
+                            <>
+                              <Input
+                                variant={'flushed'}
+                                focusBorderColor='white'
+                                borderBottomWidth={'2px'}
+                                color='white'
+                                fontSize={{lg: '20px'}}
+                                textAlign={'center'}
+                                list='institutions'
+                                {...field}
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  handleChange(field.value, false);
+                                }}
+                              />
+                              <datalist id='institutions'>
+                                {suggestedInstitutions?.map(
+                                  (institution: string) => (
+                                    <option
+                                      key={institution}
+                                      value={institution}
+                                    >
+                                      {institution}
+                                    </option>
+                                  ),
+                                )}
+                              </datalist>
+                            </>
+                          ) : (
+                            <Select
+                              variant={'flushed'}
+                              focusBorderColor='white'
+                              borderBottomWidth={'2px'}
+                              color='white'
+                              fontSize={{lg: '20px'}}
+                              textAlign={'center'}
+                              {...field}
+                              // placeholder='Select option'
+                            >
+                              <option value='Education'>HBCU</option>
+                            </Select>
+                          )}
                           <FormErrorMessage>
                             {form.errors[key]}
                           </FormErrorMessage>
@@ -109,7 +203,7 @@ const Home = () => {
                 spacing={{base: 7, lg: '90px'}}
               >
                 {[
-                  {text: 'Topic(s)', key: 'topic'},
+                  {text: 'Topic Keyword', key: 'topic'},
                   {text: 'Researcher Name', key: 'researcher'},
                 ].map(({text, key}) => (
                   <Box key={text}>
@@ -125,8 +219,24 @@ const Home = () => {
                             color='white'
                             fontSize={{lg: '20px'}}
                             textAlign={'center'}
+                            list={key === 'topic' && 'topics'}
                             {...field}
+                            onChange={
+                              key === 'topic'
+                                ? (e) => {
+                                    field.onChange(e);
+                                    handleChange(field.value, true);
+                                  }
+                                : field.onChange
+                            }
                           />
+                          <datalist id='topics'>
+                            {suggestedTopics?.map((topic: string) => (
+                              <option key={topic} value={topic}>
+                                {topic}
+                              </option>
+                            ))}
+                          </datalist>
                           <FormErrorMessage>
                             {form.errors[key]}
                           </FormErrorMessage>
@@ -162,6 +272,22 @@ const Home = () => {
           )}
         </Formik>
       </Box>
+      <Flex justifyContent={'center'} mt='1.5rem'>
+        <Button
+          width={{base: '165px', lg: '205px'}}
+          height='41px'
+          background='linear-gradient(180deg, #003057 0%, rgba(0, 0, 0, 0.5) 100%)'
+          borderRadius={{base: '4px', lg: '6px'}}
+          fontSize={{base: '13px', lg: '18px'}}
+          color='#FFFFFF'
+          fontWeight={'500'}
+          onClick={() => {
+            navigate(`topic-search`);
+          }}
+        >
+          Explore Topics
+        </Button>
+      </Flex>
     </Box>
   );
 };

@@ -1,40 +1,46 @@
 .container {
-    background: linear-gradient(#053257, #7e7e7e);
-    padding: 1rem;
-    border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    width: 90%;
-    max-width: 800px;
-    margin: auto;
-    color: white;
-    height: fit-content;
-    border: none;
-    line-height: 2;
+  background: linear-gradient(#053257, #7e7e7e);
+  padding: 1rem;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 800px;
+  margin: auto;
+  color: white;
+  height: fit-content;
+  border: none;
+  line-height: 2;
 }
 
 .heading h1 {
-    text-align: center;
-    padding: 20px 0;
-    font-size: 1.3em;
+  text-align: center;
+  padding: 20px 0;
+  font-size: 1.3em;
 }
 
 .city {
-    font-weight: bold;
+  font-weight: bold;
 }
 
 /* Media query for screens smaller than 600px */
-@media (max-width: 600px) {
-    .container {
-        width: 100%;
-        padding: 0.5rem;
-    }
+@media (max-width: 450px) {
+  .container {
+    width: 100%;
+    padding: 0.5rem;
+    border-radius: 0;
+  }
 
-    .heading h1 {
-        font-size: 1.1em;
-        padding: 10px 0;
-    }
+  .heading h1 {
+    font-size: 1em;
+    padding: 10px 0;
+  }
 
-    .container p {
-        font-size: 0.9em;
-    }
+  .container h2 {
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .container p {
+    font-size: 0.7em;
+  }
 }
