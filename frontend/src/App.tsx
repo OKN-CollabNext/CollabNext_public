@@ -10,6 +10,10 @@ import Acknowledgment from './pages/Acknowledgment';
 import ContactUs from './pages/Contact';
 import Home from './pages/Home';
 import Search from './pages/Search';
+import TopicSearch from './pages/TopicSearch';
+import Feedback from './pages/Feedback';
+import Technology from './pages/Technology';
+import DataSources from './pages/DataSources';
 
 function App() {
   return (
@@ -30,9 +34,8 @@ function App() {
             <Route path='/contact' element={<ContactUs />} />
             <Route path='/team' element={<Acknowledgment />} />
             <Route path='/feedback' element={<Feedback />}/>
-          </Routes>
-          <Routes>
-            <Route path='/feedback' element={<Feedback/>}></Route>
+            <Route path='/technology' element={<Technology />}/>
+            <Route path='/data-sources' element={<DataSources />}/>
           </Routes>
         </Box>
         <Footer />
