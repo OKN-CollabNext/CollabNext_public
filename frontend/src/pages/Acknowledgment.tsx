@@ -34,7 +34,7 @@ const AcknowledgementsPage: React.FC = () => {
         {[
           {
             name: 'Leadership Team',
-            desc: 'The Leadership Team consists of all researchers supported by this project including the PI, Co-PIs, and Senior Personnel. Order by role.',
+            desc: 'The Leadership Team consists of all researchers supported by this project including the PI, Co-PIs, and Senior Personnel.',
             data: leadershipData,
           },
           {
@@ -44,7 +44,7 @@ const AcknowledgementsPage: React.FC = () => {
           },
           {
             name: 'Students',
-            desc: 'We are fortunate to have a strong and diverse group of people working on this Alpha_Deliverables_20240820.docx project and contributing to software development, data analytics, project management, and more.',
+            desc: 'We are fortunate to have a strong and diverse group of people working on this project and contributing to software development, data analytics, project management, and more.',
             data: studentsData,
           },
 
@@ -87,58 +87,51 @@ const AcknowledgementsPage: React.FC = () => {
             </div>
           </Box>
         ))}
-
-
-       
-
-      {/* Partner Section */}
-<div>
-  <h1 style={{ fontWeight: 'bold', fontSize: '20px', marginTop: 30 }}>Partnership Team</h1>
-  <h1 style={{ fontSize: '17px', marginBottom: 20 }}>
-    Our Partnership Team is committed to fostering innovative, strategic collaborations that drive mutual growth, leveraging expertise and tailored solutions for long-term success.
-  </h1>
-
-  <div 
-    style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(3, 1fr)', // 3 columns
-      gap: '20px' // space between the cards
-    }}
-  >
-    {partner_Data.map((partner, index) => (
-      <div key={index} style={{ fontSize: '16px', marginBottom: '20px' }}>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-         
-          <img 
-              src={partner.ppp} 
-              alt={`${partner.name} logo`} 
-              style={{ 
-                width: partner.width || 'auto',  
-                height: partner.height || 'auto', 
-                marginTop: '10px' 
-              }} 
-            />
-        
-          {/* Website Link (Earth Icon) */}
-          <div style={{ fontWeight: 'bold', marginTop: 1 }}>{partner.name}</div>
-          <a href={partner.website} target="_blank" rel="noopener noreferrer" style={{ marginTop: '10px' }}>
-            <img 
-              src="/assets/ppp/icons8-earth-24.png" 
-              alt="Visit website" 
-              style={{ width: '24px', height: '24px' }}
-            />
-          </a>
+        {/* patnar sction */}
+        <div>
+          <h1 style={{ fontWeight: 'bold', fontSize: '20px', marginTop: 30 }}>Partnership Team</h1>
+          <h1 style={{ fontSize: '15px', marginBottom: 12 }}>
+            Our external partners meet with the Leadership Team quarterly to identify collaboration opportunities within their networks, share resources (e.g., data, code, and expertise) and actively support the goals of the OKN project. They also provide advice regarding data sources and project sustainability.
+          </h1>
+          <div 
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: '20px'
+            }}
+          >
+            {partner_Data.map((partner, index) => (
+              <div 
+                key={index} 
+                style={{
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  backgroundColor: 'white',
+                  boxShadow: '0px 0px 12px #80808061', 
+                  borderRadius: '10px', 
+                  width: '295px', 
+                  padding: '20px',
+                  textAlign: 'center'
+                }}
+              >
+                <img src={partner.ppp} alt={`${partner.name} photo`} 
+                    style={{ width: partner.width, height: partner.height, padding: partner.padding,borderRadius: '0', objectFit: 'cover', marginBottom: '10px'}} />
+                <div 
+                    style={{display: "grid", justifyContent: "space-around", alignItems: 'end',justifyItems:'center', width: '100%' ,    height: '100%'}}>
+                <div 
+                    style={{fontWeight: 600, fontSize: '1.25rem', lineHeight: '1.75rem', marginBottom: '10px', color: 'rgba(31, 41, 55, 1)',display: 'flex',alignItems: 'flex-end'}}>{partner.name}</div>
+                <div 
+                    style={{ display: 'flex', justifyContent: '', gap: '10px' , alignItems: 'flex-end'}}>
+                  <a href={partner.website} target="_blank" rel="noopener noreferrer">
+                    <img src="/assets/ppp/erth.svg" alt="wabsite" style={{ width: '17px', height: '17px' }}/>
+                  </a>
+                </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
-    ))}
-  </div>
-</div>
-
-
-
-
-
       </div>
     </div>
   );

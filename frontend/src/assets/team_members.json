@@ -13,42 +13,6 @@
       "image": "/assets/pictures/team_members/lew_lefton.webp"
     },
     {
-      "firstName": "Craig",
-      "lastName": "Abbey",
-      "email": "cwabbey@buffalo.edu",
-      "institutionalAffiliation": "University at Buiffalo",
-      "role": "Co-PI",
-      "biosketch": "Craig has been the research director for the Center for Measuring University Performance since 2005. He serves as Vice Provost for Institutional Analysis and Planning and Accreditation Liaison Officer at the University at Buffalo. Previously, he worked for the SUNY System as Chief Data Officer, the New York State Legislature as a staff economist and the Congressional Research Service as a public policy analyst.",
-      "linkedin": "https://www.linkedin.com/in/craig-abbey-1579a5138/",
-      "github": "",
-      "website": "",
-      "image": "/assets/pictures/team_members/craig_abbey.webp"
-    },
-    {
-      "firstName": "Didier",
-      "lastName": "Contis",
-      "email": "didier.contis@gatech.edu",
-      "institutionalAffiliation": "Georgia Tech",
-      "role": "Co-PI",
-      "biosketch": "Didier Contis is the Executive Director of Academic Technology, Innovation, Research Computing for the Office of Information Technology. In his role, Didier provides long-range vision, strategic directions, and support for the research and academic technologies of the Institute by partnering with research and academic entities, and leading and executing the aspects of IT strategy that enable the Institute to achieve its research, teaching and learning, and innovation goals.\n\nHe previously served as the Interim Chief Information Security Officer (2021) and led the initial Institute response to the 2021 campus-wide external endpoint audit using the centralized coordination with distributed execution organizational approach. He also served as Interim Associate VP for Data Strategy and Analytics and was a member of the Data Security Task Force appointment (2020), charged with improving campus policies and practices concerning the use and sharing of sensitive data.\n\nSince Fall 2021, he has been co-teaching a Vertically Integrated Project class focused on using data as an asset and is interested in applying knowledge graphs for data analytics. In partnership with the University of Michigan and the New School, Didier advocates for the safe and responsible use of eXtended Reality (XR) technologies in higher education. He has co-taught an Educause Learning Lab on XR Security, Privacy, Safety, and Ethics Considerations in Higher Education.\n\nAs the Director of Technology Services for CoE from 2007 to 2022, he established several partnerships with the Georgia Tech central IT organization and other academic units to develop new campus-wide services supporting the educational and research ecosystem, with a strong focus on protecting research data, empowering users, and providing equitable access. Some of these initiatives included the launch of the first large-scale GPU-enabled virtual computer lab to provide students access to scientific and engineering applications irrespective of time, place, and device constraints, and a multi-academic unit partnership to create a federated and distributed private academic cloud, supporting research and instruction.",
-      "linkedin": "https://www.linkedin.com/in/didiercontis/",
-      "github": "",
-      "website": "https://oit.gatech.edu/about/leadership/didiercontis",
-      "image": "/assets/pictures/team_members/didier_contis.webp"
-    },
-    {
-      "firstName": "Lila",
-      "lastName": "Ghemri",
-      "email": "lila.ghemri@tsu.edu",
-      "institutionalAffiliation": "Texas Southern University",
-      "role": "Co-PI",
-      "biosketch": "Lila Ghemri joined Texas Southern University in 2002, after ten years in industry developing AI systems (Knowledge bases and Information extraction). She has been teaching undergraduate and graduate courses in various computer science topics as well as advising graduate and undergraduate students in research. She holds a BSc in Computer Engineering from the University of Science and Technology in Algiers, Algeria, and a PhD in Computer Science from the University of Bristol in the UK.  Ghemri research interests are in machine learning, data analytics and privacy preserving techniques.",
-      "linkedin": "https://www.linkedin.com/in/lila-ghemri-66859a17/",
-      "github": "https://github.com/GhemriLila",
-      "website": "",
-      "image": "/assets/pictures/team_members/lila_ghemri.webp"
-    },
-    {
       "firstName": "Kexin",
       "lastName": "Rong",
       "email": "krong@gatech.edu",
@@ -58,31 +22,20 @@
       "linkedin": "",
       "github": "",
       "website": "https://kexinrong.github.io/",
-      "image": "/assets/pictures/team_members/kexin_rong.webp"
+      "image": "/assets/pictures/team_members/kexin_rong.webp" 
+
     },
     {
-      "firstName": "Sufyan",
-      "lastName": "Baksh",
-      "email": "sbaksh@fisk.edu",
-      "institutionalAffiliation": "Fisk University",
-      "role": "Advisor",
-      "biosketch": "Dr. Sufyan Baksh is the Executive Director of Innovation and Distinguished Professor of Business in the Department of Business Administration at Fisk University. He was a professor at the University of Scranton, where he worked from fall 2008 until 2022. He was also the program director for three programs (social media strategies, business communication, and CAS-accelerated MBA programs) at The University of Scranton.  He received a Ph.D. in integrated marketing communication & advanced research methods from Texas Tech University. He has completed the post-doctoral bridge program in marketing and management from the Warrington College of Business at the University of Florida. He has an MBA in entrepreneurship and international business from RIT and an MBA/MMS in marketing from RIMSR, and a BA in Economics & Commerce from Jai Hind College (Mumbai, India). He is a board member of Wahed Invest Inc. and has worked for LINOpinion PR (Mumbai, India) for four years, in addition to spending more than 10 years in international Marketing and Finance. His research in marketing, communication, digital transformation, and business is published in several internationally renowned peer-reviewed journals, and he has presented at leading national and international conferences.",
-      "linkedin": "https://www.linkedin.com/in/sufyan-mohammed/",
+     "firstName": "Didier",
+      "lastName": "Contis",
+      "email": "didier.contis@gatech.edu",
+      "institutionalAffiliation": "Georgia Tech",
+      "role": "Co-PI",
+      "biosketch": "Didier Contis is the Executive Director of Academic Technology, Innovation, Research Computing for the Office of Information Technology. In his role, Didier provides long-range vision, strategic directions, and support for the research and academic technologies of the Institute by partnering with research and academic entities, and leading and executing the aspects of IT strategy that enable the Institute to achieve its research, teaching and learning, and innovation goals.\n\nHe previously served as the Interim Chief Information Security Officer (2021) and led the initial Institute response to the 2021 campus-wide external endpoint audit using the centralized coordination with distributed execution organizational approach. He also served as Interim Associate VP for Data Strategy and Analytics and was a member of the Data Security Task Force appointment (2020), charged with improving campus policies and practices concerning the use and sharing of sensitive data.\n\nSince Fall 2021, he has been co-teaching a Vertically Integrated Project class focused on using data as an asset and is interested in applying knowledge graphs for data analytics. In partnership with the University of Michigan and the New School, Didier advocates for the safe and responsible use of eXtended Reality (XR) technologies in higher education. He has co-taught an Educause Learning Lab on XR Security, Privacy, Safety, and Ethics Considerations in Higher Education.\n\nAs the Director of Technology Services for CoE from 2007 to 2022, he established several partnerships with the Georgia Tech central IT organization and other academic units to develop new campus-wide services supporting the educational and research ecosystem, with a strong focus on protecting research data, empowering users, and providing equitable access. Some of these initiatives included the launch of the first large-scale GPU-enabled virtual computer lab to provide students access to scientific and engineering applications irrespective of time, place, and device constraints, and a multi-academic unit partnership to create a federated and distributed private academic cloud, supporting research and instruction.",
+      "linkedin": "https://www.linkedin.com/in/didiercontis/",
       "github": "",
-      "website": "",
-      "image": "/assets/pictures/team_members/sufyan_baksh.webp"
-    },
-    {
-      "firstName": "Leslie",
-      "lastName": "Collins",
-      "email": "lecollins@fisk.edu",
-      "institutionalAffiliation": "Fisk University",
-      "role": "Advisor",
-      "biosketch": "",
-      "linkedin": "https://www.linkedin.com/in/leslie-collins-6791471b4/",
-      "github": "",
-      "website": "",
-      "image": "/assets/pictures/team_members/leslie_collins.webp"
+      "website": "https://oit.gatech.edu/about/leadership/didiercontis",
+      "image": "/assets/pictures/team_members/didier_contis.webp" 
     },
     {
       "firstName": "Kinnis",
@@ -97,6 +50,42 @@
       "image": "/assets/pictures/team_members/kinnis_gosha.webp"
     },
     {
+     "firstName": "Christopher",
+      "lastName": "Thomas",
+      "email": "christopher.thomas3@morehouse.edu",
+      "institutionalAffiliation": "Morehouse College",
+      "role": "Advisor",
+      "biosketch": "",
+      "linkedin": "https://www.linkedin.com/in/chris-thomas-22aa7028/",
+      "github": "",
+      "website": "",
+      "image": "/assets/pictures/team_members/christopher_thomas.webp" 
+    },
+    {
+      "firstName": "Lila",
+      "lastName": "Ghemri",
+      "email": "lila.ghemri@tsu.edu",
+      "institutionalAffiliation": "Texas Southern University",
+      "role": "Co-PI",
+      "biosketch": "Lila Ghemri joined Texas Southern University in 2002, after ten years in industry developing AI systems (Knowledge bases and Information extraction). She has been teaching undergraduate and graduate courses in various computer science topics as well as advising graduate and undergraduate students in research. She holds a BSc in Computer Engineering from the University of Science and Technology in Algiers, Algeria, and a PhD in Computer Science from the University of Bristol in the UK.  Ghemri research interests are in machine learning, data analytics and privacy preserving techniques.",
+      "linkedin": "https://www.linkedin.com/in/lila-ghemri-66859a17/",
+      "github": "https://github.com/GhemriLila",
+      "website": "",
+      "image": "/assets/pictures/team_members/lila_ghemri.webp"
+    },
+    {
+      "firstName": "Craig",
+      "lastName": "Abbey",
+      "email": "cwabbey@buffalo.edu",
+      "institutionalAffiliation": "University at Buiffalo",
+      "role": "Co-PI",
+      "biosketch": "Craig has been the research director for the Center for Measuring University Performance since 2005. He serves as Vice Provost for Institutional Analysis and Planning and Accreditation Liaison Officer at the University at Buffalo. Previously, he worked for the SUNY System as Chief Data Officer, the New York State Legislature as a staff economist and the Congressional Research Service as a public policy analyst.",
+      "linkedin": "https://www.linkedin.com/in/craig-abbey-1579a5138/",
+      "github": "",
+      "website": "",
+      "image": "/assets/pictures/team_members/craig_abbey.webp"
+    },
+    {
       "firstName": "Firdous",
       "lastName": "Kausar",
       "email": "",
@@ -109,20 +98,47 @@
       "image": "/assets/pictures/team_members/firdous_kausar.webp"
     },
     {
-      "firstName": "Christopher",
-      "lastName": "Thomas",
-      "email": "christopher.thomas3@morehouse.edu",
-      "institutionalAffiliation": "Morehouse College",
+      "firstName": "Leslie",
+      "lastName": "Collins",
+      "email": "lecollins@fisk.edu",
+      "institutionalAffiliation": "Fisk University",
       "role": "Advisor",
       "biosketch": "",
-      "linkedin": "https://www.linkedin.com/in/chris-thomas-22aa7028/",
+      "linkedin": "https://www.linkedin.com/in/leslie-collins-6791471b4/",
       "github": "",
       "website": "",
-      "image": "/assets/pictures/team_members/christopher_thomas.webp"
+      "image": "/assets/pictures/team_members/leslie_collins.webp"
+    },
+    {
+      "firstName": "Sufyan",
+      "lastName": "Baksh",
+      "email": "sbaksh@fisk.edu",
+      "institutionalAffiliation": "Fisk University",
+      "role": "Advisor",
+      "biosketch": "Dr. Sufyan Baksh is the Executive Director of Innovation and Distinguished Professor of Business in the Department of Business Administration at Fisk University. He was a professor at the University of Scranton, where he worked from fall 2008 until 2022. He was also the program director for three programs (social media strategies, business communication, and CAS-accelerated MBA programs) at The University of Scranton.  He received a Ph.D. in integrated marketing communication & advanced research methods from Texas Tech University. He has completed the post-doctoral bridge program in marketing and management from the Warrington College of Business at the University of Florida. He has an MBA in entrepreneurship and international business from RIT and an MBA/MMS in marketing from RIMSR, and a BA in Economics & Commerce from Jai Hind College (Mumbai, India). He is a board member of Wahed Invest Inc. and has worked for LINOpinion PR (Mumbai, India) for four years, in addition to spending more than 10 years in international Marketing and Finance. His research in marketing, communication, digital transformation, and business is published in several internationally renowned peer-reviewed journals, and he has presented at leading national and international conferences.",
+      "linkedin": "https://www.linkedin.com/in/sufyan-mohammed/",
+      "github": "",
+      "website": "",
+      "image": "/assets/pictures/team_members/sufyan_baksh.webp"
     }
+    
+    
   ],
 
   "advisory": [
+    {
+      "firstName": "Sufyan",
+      "lastName": "Baksh",
+      "email": "sbaksh@fisk.edu",
+      "institutionalAffiliation": "Fisk University",
+      "role": "Advisor",
+      "biosketch": "Dr. Sufyan Baksh is the Executive Director of Innovation and Distinguished Professor of Business in the Department of Business Administration at Fisk University. He was a professor at the University of Scranton, where he worked from fall 2008 until 2022. He was also the program director for three programs (social media strategies, business communication, and CAS-accelerated MBA programs) at The University of Scranton.  He received a Ph.D. in integrated marketing communication & advanced research methods from Texas Tech University. He has completed the post-doctoral bridge program in marketing and management from the Warrington College of Business at the University of Florida. He has an MBA in entrepreneurship and international business from RIT and an MBA/MMS in marketing from RIMSR, and a BA in Economics & Commerce from Jai Hind College (Mumbai, India). He is a board member of Wahed Invest Inc. and has worked for LINOpinion PR (Mumbai, India) for four years, in addition to spending more than 10 years in international Marketing and Finance. His research in marketing, communication, digital transformation, and business is published in several internationally renowned peer-reviewed journals, and he has presented at leading national and international conferences.",
+      "linkedin": "https://www.linkedin.com/in/sufyan-mohammed/",
+      "github": "",
+      "website": "",
+      "image": "/assets/pictures/team_members/sufyan_baksh.webp"
+    },
+   
     {
       "firstName": "Pamela",
       "lastName": "Clark",
@@ -136,42 +152,6 @@
       "image": "/assets/pictures/team_members/pamela_clark.webp"
     },
     {
-      "firstName": "Lila",
-      "lastName": "Ghemri",
-      "email": "lila.ghemri@tsu.edu",
-      "institutionalAffiliation": "Texas Southern University",
-      "role": "Co-PI",
-      "biosketch": "Lila Ghemri joined Texas Southern University in 2002, after ten years in industry developing AI systems (Knowledge bases and Information extraction). She has been teaching undergraduate and graduate courses in various computer science topics as well as advising graduate and undergraduate students in research. She holds a BSc in Computer Engineering from the University of Science and Technology in Algiers, Algeria, and a PhD in Computer Science from the University of Bristol in the UK.  Ghemri research interests are in machine learning, data analytics and privacy preserving techniques.",
-      "linkedin": "https://www.linkedin.com/in/lila-ghemri-66859a17/",
-      "github": "https://github.com/GhemriLila",
-      "website": "",
-      "image": "/assets/pictures/team_members/lila_ghemri.webp"
-    },
-    {
-      "firstName": "Kexin",
-      "lastName": "Rong",
-      "email": "krong@gatech.edu",
-      "institutionalAffiliation": "Georgia Institute of Technology",
-      "role": "Co-PI",
-      "biosketch": "Kexin Rong is an Assistant Professor in the School of Computer Science at the Georgia Institute of Technology. Her research lies at the intersection of data management and machine learning, focusing on developing systems and algorithms to streamline large-scale data analytics. She has received an Amazon Research Award, distinguished reviewer awards at SIGMOD and PVLDB, an honorable mention for the SIGMOD Jim Gray Doctoral Dissertation Award, EECS Rising Stars by UC Berkeley. She received a Ph.D. in Computer Science from Stanford University in 2021, and a B.S. in Computer Science from California Institute of Technology.",
-      "linkedin": "",
-      "github": "",
-      "website": "https://kexinrong.github.io/",
-      "image": "/assets/pictures/team_members/kexin_rong.webp"
-    },
-    {
-      "firstName": "Sufyan",
-      "lastName": "Baksh",
-      "email": "sbaksh@fisk.edu",
-      "institutionalAffiliation": "Fisk University",
-      "role": "Advisor",
-      "biosketch": "Dr. Sufyan Baksh is the Executive Director of Innovation and Distinguished Professor of Business in the Department of Business Administration at Fisk University. He was a professor at the University of Scranton, where he worked from fall 2008 until 2022. He was also the program director for three programs (social media strategies, business communication, and CAS-accelerated MBA programs) at The University of Scranton.  He received a Ph.D. in integrated marketing communication & advanced research methods from Texas Tech University. He has completed the post-doctoral bridge program in marketing and management from the Warrington College of Business at the University of Florida. He has an MBA in entrepreneurship and international business from RIT and an MBA/MMS in marketing from RIMSR, and a BA in Economics & Commerce from Jai Hind College (Mumbai, India). He is a board member of Wahed Invest Inc. and has worked for LINOpinion PR (Mumbai, India) for four years, in addition to spending more than 10 years in international Marketing and Finance. His research in marketing, communication, digital transformation, and business is published in several internationally renowned peer-reviewed journals, and he has presented at leading national and international conferences.",
-      "linkedin": "https://www.linkedin.com/in/sufyan-mohammed/",
-      "github": "",
-      "website": "",
-      "image": "/assets/pictures/team_members/sufyan_baksh.webp"
-    },
-    {
       "firstName": "Leslie",
       "lastName": "Collins",
       "email": "lecollins@fisk.edu",
@@ -184,42 +164,6 @@
       "image": "/assets/pictures/team_members/leslie_collins.webp"
     },
     {
-      "firstName": "Kinnis",
-      "lastName": "Gosha",
-      "email": "",
-      "institutionalAffiliation": "Morehouse College",
-      "role": "Advisor",
-      "biosketch": "Dr. Gosha\u2019s research interests include conversational AI, social media data analytics, computer science education, broadening participation in computing, and culturally relevant computing. Gosha also leads Morehouse\u2019s Software Engineering degree program, where he builds collaborations with industry partners to provide his students with a variety of experiential learning experiences. In October of 2022, Gosha took over as the Principal Investigator of the Institute for African-American Mentoring in Computing Sciences (IAAMCS), a Broadening Participation in Computing Alliance, funded by the National Science Foundation. \n\nTo date, 21 undergraduate researchers in his lab have gone on to pursue a doctoral degree in computing. PI Gosha currently has over 60 peer-reviewed publications in the area of Broadening Participation in Computing (BPC). Since arriving at Morehouse (2011), he has included undergraduate student researchers as co-authors in 26 peer-reviewed manuscripts. Gosha is very active in the BPC community serving as a regular paper and poster reviewer for the Tapia, SIGCSE, and RESPECT conferences. Currently, Gosha is the Co-Chair of the IEEE Special Technical Community for Broadening Participation and the founder and Co-Chair of the Black Issues in Computing Education (BICE) Symposium. Additionally, he is a newly elected board member of both the Computing Research Association and the National Science Foundation Computer and Information Science and Engineering (CISE) Advisory Committee.",
-      "linkedin": "https://www.linkedin.com/in/kinnisgosha/",
-      "github": "",
-      "website": "",
-      "image": "/assets/pictures/team_members/kinnis_gosha.webp"
-    },
-    {
-      "firstName": "Firdous",
-      "lastName": "Kausar",
-      "email": "",
-      "institutionalAffiliation": "Fisk University",
-      "role": "Advisor",
-      "biosketch": "Dr. Firdous Kausar is an associate professor in the Department of Mathematics and Computer Science. Prior to Fisk, she worked as an associate professor and assistant professor in the Electrical and Computer Engineering Department, Sultan Qaboos University, Oman, from 2017 to 2023. She also worked as an assistant professor in Computer Science Department at Imam Muhammad Ibn Saud Islamic University, Riyadh, Saudi Arabia, from 2010 t0 2017.\nHer research interests include network security, access control, authentication and key management, cybersecurity data science, IoT security, blockchain, digital forensics, biometric cryptosystems, and machine learning. She has co-organized several international workshops and conferences, served on many technical program committees, and reviewed papers for several journals, conferences, and workshops. She is a senior member of IEEE.",
-      "linkedin": "https://www.linkedin.com/in/firdous-kausar-a3669110/",
-      "github": "",
-      "website": "",
-      "image": "/assets/pictures/team_members/firdous_kausar.webp"
-    },
-    {
-      "firstName": "Christopher",
-      "lastName": "Thomas",
-      "email": "christopher.thomas3@morehouse.edu",
-      "institutionalAffiliation": "Morehouse College",
-      "role": "Advisor",
-      "biosketch": "",
-      "linkedin": "https://www.linkedin.com/in/chris-thomas-22aa7028/",
-      "github": "",
-      "website": "",
-      "image": "/assets/pictures/team_members/christopher_thomas.webp"
-    },
-    {
       "firstName": "Majed",
       "lastName": "El-dweik",
       "email": "majed.dweik@aamu.edu",
@@ -230,6 +174,30 @@
       "github": "",
       "website": "",
       "image": "/assets/pictures/team_members/majed_el-dweik.webp"
+    },
+    {
+      "firstName": "Lila",
+      "lastName": "Ghemri",
+      "email": "lila.ghemri@tsu.edu",
+      "institutionalAffiliation": "Texas Southern University",
+      "role": "Co-PI",
+      "biosketch": "Lila Ghemri joined Texas Southern University in 2002, after ten years in industry developing AI systems (Knowledge bases and Information extraction). She has been teaching undergraduate and graduate courses in various computer science topics as well as advising graduate and undergraduate students in research. She holds a BSc in Computer Engineering from the University of Science and Technology in Algiers, Algeria, and a PhD in Computer Science from the University of Bristol in the UK.  Ghemri research interests are in machine learning, data analytics and privacy preserving techniques.",
+      "linkedin": "https://www.linkedin.com/in/lila-ghemri-66859a17/",
+      "github": "https://github.com/GhemriLila",
+      "website": "",
+      "image": "/assets/pictures/team_members/lila_ghemri.webp"
+    },
+    {
+      "firstName": "Kinnis",
+      "lastName": "Gosha",
+      "email": "",
+      "institutionalAffiliation": "Morehouse College",
+      "role": "Advisor",
+      "biosketch": "Dr. Gosha\u2019s research interests include conversational AI, social media data analytics, computer science education, broadening participation in computing, and culturally relevant computing. Gosha also leads Morehouse\u2019s Software Engineering degree program, where he builds collaborations with industry partners to provide his students with a variety of experiential learning experiences. In October of 2022, Gosha took over as the Principal Investigator of the Institute for African-American Mentoring in Computing Sciences (IAAMCS), a Broadening Participation in Computing Alliance, funded by the National Science Foundation. \n\nTo date, 21 undergraduate researchers in his lab have gone on to pursue a doctoral degree in computing. PI Gosha currently has over 60 peer-reviewed publications in the area of Broadening Participation in Computing (BPC). Since arriving at Morehouse (2011), he has included undergraduate student researchers as co-authors in 26 peer-reviewed manuscripts. Gosha is very active in the BPC community serving as a regular paper and poster reviewer for the Tapia, SIGCSE, and RESPECT conferences. Currently, Gosha is the Co-Chair of the IEEE Special Technical Community for Broadening Participation and the founder and Co-Chair of the Black Issues in Computing Education (BICE) Symposium. Additionally, he is a newly elected board member of both the Computing Research Association and the National Science Foundation Computer and Information Science and Engineering (CISE) Advisory Committee.",
+      "linkedin": "https://www.linkedin.com/in/kinnisgosha/",
+      "github": "",
+      "website": "",
+      "image": "/assets/pictures/team_members/kinnis_gosha.webp"
     },
     {
       "firstName": "Antwain",
@@ -254,6 +222,18 @@
       "github": "",
       "website": "",
       "image": "/assets/pictures/team_members/sajid_hussain.webp"
+    },
+    {
+      "firstName": "Firdous",
+      "lastName": "Kausar",
+      "email": "",
+      "institutionalAffiliation": "Fisk University",
+      "role": "Advisor",
+      "biosketch": "Dr. Firdous Kausar is an associate professor in the Department of Mathematics and Computer Science. Prior to Fisk, she worked as an associate professor and assistant professor in the Electrical and Computer Engineering Department, Sultan Qaboos University, Oman, from 2017 to 2023. She also worked as an assistant professor in Computer Science Department at Imam Muhammad Ibn Saud Islamic University, Riyadh, Saudi Arabia, from 2010 t0 2017.\nHer research interests include network security, access control, authentication and key management, cybersecurity data science, IoT security, blockchain, digital forensics, biometric cryptosystems, and machine learning. She has co-organized several international workshops and conferences, served on many technical program committees, and reviewed papers for several journals, conferences, and workshops. She is a senior member of IEEE.",
+      "linkedin": "https://www.linkedin.com/in/firdous-kausar-a3669110/",
+      "github": "",
+      "website": "",
+      "image": "/assets/pictures/team_members/firdous_kausar.webp"
     },
     {
       "firstName": "Aaron",
@@ -304,16 +284,16 @@
       "image": "/assets/pictures/team_members/renata_rawlings-goss.webp"
     },
     {
-      "firstName": "Muhammad",
-      "lastName": "Sharif Uddin",
-      "email": "muhammad.uddin@morgan.edu",
-      "institutionalAffiliation": "Morgan State University",
-      "role": "Advisor",
-      "biosketch": "Mr. Uddin is an international educator and scholar of educational leadership with robust longstanding experience in academic administration. Currently, he is a doctoral candidate in Urban Educational Leadership Program at Morgan State University, USA, and serving as the President of Graduate Student Association (2020-2021). He has a bachelor of mathematics and a bachelor of educational administration. He also has two master\u2019s degrees. One is in English, and the other one is in Educational Administration and Supervision.",
-      "linkedin": "https://www.linkedin.com/in/sharif-uddin-60b21b50/",
+      "firstName": "Kexin",
+      "lastName": "Rong",
+      "email": "krong@gatech.edu",
+      "institutionalAffiliation": "Georgia Institute of Technology",
+      "role": "Co-PI",
+      "biosketch": "Kexin Rong is an Assistant Professor in the School of Computer Science at the Georgia Institute of Technology. Her research lies at the intersection of data management and machine learning, focusing on developing systems and algorithms to streamline large-scale data analytics. She has received an Amazon Research Award, distinguished reviewer awards at SIGMOD and PVLDB, an honorable mention for the SIGMOD Jim Gray Doctoral Dissertation Award, EECS Rising Stars by UC Berkeley. She received a Ph.D. in Computer Science from Stanford University in 2021, and a B.S. in Computer Science from California Institute of Technology.",
+      "linkedin": "",
       "github": "",
-      "website": "",
-      "image": "/assets/pictures/team_members/muhammad_sharif.webp"
+      "website": "https://kexinrong.github.io/",
+      "image": "/assets/pictures/team_members/kexin_rong.webp"
     },
     {
       "firstName": "Taiesha",
@@ -326,6 +306,30 @@
       "github": "",
       "website": "",
       "image": "/assets/pictures/team_members/taiesha_smith.webp"
+    },
+    {
+      "firstName": "Christopher",
+      "lastName": "Thomas",
+      "email": "christopher.thomas3@morehouse.edu",
+      "institutionalAffiliation": "Morehouse College",
+      "role": "Advisor",
+      "biosketch": "",
+      "linkedin": "https://www.linkedin.com/in/chris-thomas-22aa7028/",
+      "github": "",
+      "website": "",
+      "image": "/assets/pictures/team_members/christopher_thomas.webp"
+    },
+    {
+      "firstName": "Muhammad",
+      "lastName": "Sharif Uddin",
+      "email": "muhammad.uddin@morgan.edu",
+      "institutionalAffiliation": "Morgan State University",
+      "role": "Advisor",
+      "biosketch": "Mr. Uddin is an international educator and scholar of educational leadership with robust longstanding experience in academic administration. Currently, he is a doctoral candidate in Urban Educational Leadership Program at Morgan State University, USA, and serving as the President of Graduate Student Association (2020-2021). He has a bachelor of mathematics and a bachelor of educational administration. He also has two master\u2019s degrees. One is in English, and the other one is in Educational Administration and Supervision.",
+      "linkedin": "https://www.linkedin.com/in/sharif-uddin-60b21b50/",
+      "github": "",
+      "website": "",
+      "image": "/assets/pictures/team_members/muhammad_sharif.webp"
     },
     {
       "firstName": "Talitha",
@@ -452,53 +456,60 @@
   ],
   "partnershipData": [
     {
-      "name": "AUC Data Sci.Initiative",
+      "name": "AUC Science Initiative",
       "website": "https://aucenter.edu/category/data-science/",
       "ppp": "/assets/ppp/cropped-AUCClogo_art2-122x122.png",
       "width": "90px",
-      "height": "90px"
+      "height": "90px",
+      "padding" : "0px 0px"
     },
     {
       "name": "Metaphacts",
       "website": "https://metaphacts.com/",
       "ppp": "/assets/ppp/logo.svg",
       "width": "120px",
-      "height": "100px"
+      "height": "100px",
+      "padding" : "0px 0px"
     },
     {
       "name": "MUP ",
       "website": "https://mupcenter.org/",
       "ppp": "/assets/ppp/mup-logo-final-horiz-web-1024x251.png",
       "width": "250px",
-      "height": "60px"
+      "height": "60px",
+      "padding" : "0px 0px"
     },
     {
       "name": "OurResearch / OpenAlex",
       "website": "http://ourresearch.org/",
       "ppp": "/assets/ppp/ourresearch_logo.ed1d8a71.png",
       "width": "230px",
-      "height": "50px"
+      "height": "50px",
+      "padding" : "0px 0px"
     },
     {
       "name": "Renci",
       "website": "https://renci.org/",
       "ppp": "/assets/ppp/renci-logo.png",
       "width": "120px",
-      "height": "70px"
+      "height": "70px",
+      "padding" : "0px 0px"
     },
     {
       "name": "system.com",
       "website": "https://www.system.com/",
       "ppp": "/assets/ppp/system.png",
       "width": "160px",
-      "height": "70px"
+      "height": "70px",
+      "padding" : "0px 0px"
     },
     {
       "name": "TDP Data Systems",
       "website": "https://www.decisionplatform.io/B8",
       "ppp": "/assets/ppp/DataSystems.png",
       "width": "130px",
-      "height": "70px"
+      "height": "70px",
+      "padding" : "0px 0px"
     }
   ]
 } 
