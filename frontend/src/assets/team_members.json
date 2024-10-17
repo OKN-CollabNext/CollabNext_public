@@ -370,30 +370,6 @@
   ],
   "students": [
     {
-      "firstName": "Ikechukwu",
-      "lastName": "Mgbemele",
-      "email": "imgbemele@gmail.com",
-      "institutionalAffiliation": "Fisk University",
-      "role": "Student",
-      "biosketch": "Ikechukwu is an enthusiastic and passionate computer science major at Fisk University exploring novel and intelligent techniques for building great software products which users enjoy using. He is very passionate, eager to learn, collaborative, and dedicated. He has a 1 year software engineering experience at Gilah Global Limited where he previously interned and a 6 months (and counting) software engineering experience here at Georgia Tech. He is very proficient in Python, Java, and TypeScript programming languages, and have developed web and mobile applications using Java, Python, React.js, Next.js, TypeScript, Redux-toolkit, Nodejs with Expressjs, Chakra UI, SCSS, MongoDb, MySql, Bootstrap, and TailwindCSS, with most the source codes on Github. He is working as a Frontend Developer on this project.",
-      "linkedin": "https://www.linkedin.com/in/ikechukwu-mgbemele/",
-      "github": "https://github.com/ikaay1",
-      "website": "https://ikechi.vercel.app",
-      "image": "/assets/pictures/team_members/ikechukwu_mgbemele.webp"
-    },
-    {
-      "firstName": "Netra",
-      "lastName": "Nyaupane",
-      "email": "nyaupanenetrap@gmail.com",
-      "institutionalAffiliation": "Fisk University",
-      "role": "Student",
-      "biosketch": "Netra Nyaupane is an aspiring Software Engineer and a Computer Science major at Fisk University, known for his strong foundation in full-stack development, data structures, and algorithms. He has demonstrated hands-on experience in building scalable web applications using technologies like Python, JavaScript, React, Node.js, and MongoDB, and has a solid understanding of cloud services such as AWS and Azure. Netra’s ability to design, develop, and deploy software solutions is evident through projects like a real-time chat application and a student networking platform. As a Fisk Executive Leadership Scholar, he has not only excelled academically but also shown a passion for solving complex problems. Netra is eager to apply his technical skills and continue growing in a collaborative, fast-paced tech environment.",
-      "linkedin": "https://www.linkedin.com/in/netra-nyaupane-3b4b89248/",
-      "github": "github.com/nyaupane-netra",
-      "website": "https://netra-nyaupane.tech/",
-      "image": "/assets/pictures/team_members/netra_nyaupane.webp"
-    },
-    {
       "firstName": "Robert",
       "lastName": "Briggs Jr.",
       "email": "robert.briggs@morehouse.edu",
@@ -428,6 +404,30 @@
       "github": "https://github.com/ILIAink",
       "website": "http://ilia.ink/",
       "image": "/assets/pictures/team_members/ilia_khalighi.webp"
+    },
+    {
+      "firstName": "Ikechukwu",
+      "lastName": "Mgbemele",
+      "email": "imgbemele@gmail.com",
+      "institutionalAffiliation": "Fisk University",
+      "role": "Student",
+      "biosketch": "Ikechukwu is an enthusiastic and passionate computer science major at Fisk University exploring novel and intelligent techniques for building great software products which users enjoy using. He is very passionate, eager to learn, collaborative, and dedicated. He has a 1 year software engineering experience at Gilah Global Limited where he previously interned and a 6 months (and counting) software engineering experience here at Georgia Tech. He is very proficient in Python, Java, and TypeScript programming languages, and have developed web and mobile applications using Java, Python, React.js, Next.js, TypeScript, Redux-toolkit, Nodejs with Expressjs, Chakra UI, SCSS, MongoDb, MySql, Bootstrap, and TailwindCSS, with most the source codes on Github. He is working as a Frontend Developer on this project.",
+      "linkedin": "https://www.linkedin.com/in/ikechukwu-mgbemele/",
+      "github": "https://github.com/ikaay1",
+      "website": "https://ikechi.vercel.app",
+      "image": "/assets/pictures/team_members/ikechukwu_mgbemele.webp"
+    },
+    {
+      "firstName": "Netra",
+      "lastName": "Nyaupane",
+      "email": "nyaupanenetrap@gmail.com",
+      "institutionalAffiliation": "Fisk University",
+      "role": "Student",
+      "biosketch": "Netra Nyaupane is an aspiring Software Engineer and a Computer Science major at Fisk University, known for his strong foundation in full-stack development, data structures, and algorithms. He has demonstrated hands-on experience in building scalable web applications using technologies like Python, JavaScript, React, Node.js, and MongoDB, and has a solid understanding of cloud services such as AWS and Azure. Netra’s ability to design, develop, and deploy software solutions is evident through projects like a real-time chat application and a student networking platform. As a Fisk Executive Leadership Scholar, he has not only excelled academically but also shown a passion for solving complex problems. Netra is eager to apply his technical skills and continue growing in a collaborative, fast-paced tech environment.",
+      "linkedin": "https://www.linkedin.com/in/netra-nyaupane-3b4b89248/",
+      "github": "github.com/nyaupane-netra",
+      "website": "https://netra-nyaupane.tech/",
+      "image": "/assets/pictures/team_members/netra_nyaupane.webp"
     },
     {
       "firstName": "Ramkrishna",
