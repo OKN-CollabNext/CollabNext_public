@@ -1,5 +1,5 @@
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-
+import React from 'react';
+import { Route, Routes } from 'react-router-dom';
 import { Box, ChakraProvider } from '@chakra-ui/react';
 
 import Footer from './components/Footer';
@@ -15,28 +15,26 @@ import Feedback from './pages/Feedback';
 
 function App() {
   return (
-    <Router>
-      <ChakraProvider>
-        <Box display={{base: 'none', lg: 'block'}}>
-          <Navbar />
-        </Box>
-        <Box display={{lg: 'none'}}>
-          <NavbarMobile />
-        </Box>
-        <Box>
-          <Routes>
-            <Route path='/' element={<Home />} />
-            <Route path='/about' element={<About />} />
-            <Route path='/search' element={<Search />} />
-            <Route path='/topic-search' element={<TopicSearch />} />
-            <Route path='/contact' element={<ContactUs />} />
-            <Route path='/team' element={<Acknowledgment />} />
-            <Route path='/feedback' element={<Feedback />}/>
-          </Routes>
-        </Box>
-        <Footer />
-      </ChakraProvider>
-    </Router>
+    <ChakraProvider>
+      <Box display={{base: 'none', lg: 'block'}}>
+        <Navbar />
+      </Box>
+      <Box display={{lg: 'none'}}>
+        <NavbarMobile />
+      </Box>
+      <Box>
+        <Routes>
+          <Route path='/' element={<Home />} />
+          <Route path='/about' element={<About />} />
+          <Route path='/search' element={<Search />} />
+          <Route path='/topic-search' element={<TopicSearch />} />
+          <Route path='/contact' element={<ContactUs />} />
+          <Route path='/team' element={<Acknowledgment />} />
+          <Route path='/feedback' element={<Feedback />}/>
+        </Routes>
+      </Box>
+      <Footer />
+    </ChakraProvider>
   );
 }
 
