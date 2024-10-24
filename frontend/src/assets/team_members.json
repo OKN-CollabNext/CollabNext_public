@@ -110,6 +110,18 @@
       "image": "/assets/pictures/team_members/leslie_collins.webp"
     },
     {
+      "firstName": "Hannibal",
+      "lastName": "Hamdallahi",
+      "email": "aleach@fisk.edu",
+      "institutionalAffiliation": "Fisk",
+      "role": "Sr. Personnel",
+      "biosketch": "",
+      "linkedin": "",
+      "github": "",
+      "website":"",
+      "image": "/assets/pictures/team_members/current-logo.png "
+    },
+    {
       "firstName": "Sufyan",
       "lastName": "Baksh",
       "email": "sbaksh@fisk.edu",
@@ -272,6 +284,18 @@
       "image": "/assets/pictures/team_members/john_porter.webp"
     },
     {
+      "firstName": "Lei",
+      "lastName": "Qian",
+      "email": "lei.qian@mmc.edu",
+      "institutionalAffiliation": "Meharry Medical College",
+      "role": "Advisor",
+      "biosketch": "",
+      "linkedin": "",
+      "github": "",
+      "website":"",
+      "image": "/assets/pictures/team_members/current-logo.png "
+    },
+    {
       "firstName": "Renata",
       "lastName": "Rawlings-goss",
       "email": "rrawlings.goss@gatech.edu",
@@ -282,6 +306,18 @@
       "github": "",
       "website": "",
       "image": "/assets/pictures/team_members/renata_rawlings-goss.webp"
+    },
+    {
+      "firstName": "Beverly",
+      "lastName": "Robinson",
+      "email": "brobinson@fisk.edu",
+      "institutionalAffiliation": "Fisk University",
+      "role": "Advisor",
+      "biosketch": "",
+      "linkedin": "",
+      "github": "",
+      "website":"",
+      "image": "/assets/pictures/team_members/current-logo.png "
     },
     {
       "firstName": "Kexin",
@@ -382,6 +418,18 @@
       "image": "/assets/pictures/team_members/robert_briggs.webp"
     },
     {
+      "firstName": "Samarth",
+      "lastName": "Chandna",
+      "email": "schandna6@gatech.edu",
+      "institutionalAffiliation": "Georgia Tech",
+      "role": "Student",
+      "biosketch": "",
+      "linkedin": "",
+      "github": "",
+      "website":"",
+      "image": "/assets/pictures/team_members/current-logo.png "
+    },
+    {
       "firstName": "Chinar",
       "lastName": "Dankhara",
       "email": "chinardankhara@gatech.edu",
@@ -392,6 +440,42 @@
       "github": "https://www.github.com/chinardankhara",
       "website": "",
       "image": "/assets/pictures/team_members/chinar_dankhara.webp"
+    },
+    {
+      "firstName": "Sambridhi",
+      "lastName": "Deo",
+      "email": "SDeo06@my.fisk.edu",
+      "institutionalAffiliation": "Fisk University",
+      "role": "Student",
+      "biosketch": "",
+      "linkedin": "",
+      "github": "",
+      "website":"",
+      "image": "/assets/pictures/team_members/current-logo.png "
+    },
+    {
+      "firstName": "Lazarus",
+      "lastName": "Egwurube",
+      "email": "l.egwurube7302@student.tsu.edu",
+      "institutionalAffiliation": "Texas Southern University",
+      "role": "Student",
+      "biosketch": "I’m a graduate student with strong coding skills and a passion for cloud technologies, cybersecurity, and cloud security. I’m familiar with Google Cloud and AWS, and I’m eager to deepen my expertise in these areas. My goal is to become a cloud security expert, combining my technical skills with my drive to make the digital world safer.",
+      "linkedin": "https://www.linkedin.com/in/lazarus-egwurube/",
+      "github": "https://github.com/Lazbeats",
+      "website":"",
+      "image": "/assets/pictures/team_members/current-logo.png "
+    },
+    {
+      "firstName": "Diamond",
+      "lastName": "GC",
+      "email": "DGC10@my.fisk.edu",
+      "institutionalAffiliation": "Fisk University",
+      "role": "Student",
+      "biosketch": "",
+      "linkedin": "",
+      "github": "",
+      "website":"",
+      "image": "/assets/pictures/team_members/current-logo.png "
     },
     {
       "firstName": "Ilia",
@@ -406,6 +490,18 @@
       "image": "/assets/pictures/team_members/ilia_khalighi.webp"
     },
     {
+      "firstName": "Vidushi",
+      "lastName": "Maheshwari",
+      "email": "vmaheshwari32@gatech.edu",
+      "institutionalAffiliation": "Georgia Tech",
+      "role": "Student",
+      "biosketch": "",
+      "linkedin": "",
+      "github": "",
+      "website":"",
+      "image": "/assets/pictures/team_members/current-logo.png "
+    },
+    {
       "firstName": "Ikechukwu",
       "lastName": "Mgbemele",
       "email": "imgbemele@gmail.com",
@@ -418,6 +514,30 @@
       "image": "/assets/pictures/team_members/ikechukwu_mgbemele.webp"
     },
     {
+      "firstName": "Rejin",
+      "lastName": "Nepal",
+      "email": "RNepal30@my.fisk.edu",
+      "institutionalAffiliation": "Fisk University",
+      "role": "Student",
+      "biosketch": "",
+      "linkedin": "",
+      "github": "",
+      "website":"",
+      "image": "/assets/pictures/team_members/current-logo.png "
+    },
+    {
+      "firstName": "Mingxuan",
+      "lastName": "Nie",
+      "email": "mnie31@gatech.edu",
+      "institutionalAffiliation": "Georgia Tech",
+      "role": "Student",
+      "biosketch": "",
+      "linkedin": "",
+      "github": "",
+      "website":"",
+      "image": "/assets/pictures/team_members/current-logo.png "
+    },
+    {
       "firstName": "Netra",
       "lastName": "Nyaupane",
       "email": "nyaupanenetrap@gmail.com",
@@ -428,6 +548,30 @@
       "github": "github.com/nyaupane-netra",
       "website": "https://netra-nyaupane.tech/",
       "image": "/assets/pictures/team_members/netra_nyaupane.webp"
+    },
+    {
+      "firstName": "Maruti Ram",
+      "lastName": "Ponnaganti",
+      "email": "mponnaganti3@gatech.edu",
+      "institutionalAffiliation": "Georgia Tech",
+      "role": "Student",
+      "biosketch": "",
+      "linkedin": "",
+      "github": "",
+      "website":"",
+      "image": "/assets/pictures/team_members/current-logo.png "
+    },
+    {
+      "firstName": "Sabhya",
+      "lastName": "Rai",
+      "email": "srai01@my.fisk.edu",
+      "institutionalAffiliation": "Fisk University",
+      "role": "Student",
+      "biosketch": "",
+      "linkedin": "",
+      "github": "",
+      "website":"",
+      "image": "/assets/pictures/team_members/current-logo.png "
     },
     {
       "firstName": "Ramkrishna",
@@ -452,6 +596,18 @@
       "github": "https://github.com/ksmith2002",
       "website": "",
       "image": "/assets/pictures/team_members/keller_smith.webp"
+    },
+    {
+      "firstName": "Siddharth Singh",
+      "lastName": "Solanki",
+      "email": "siddharth.solanki@gatech.edu",
+      "institutionalAffiliation": "Georgia Tech",
+      "role": "Student",
+      "biosketch": "",
+      "linkedin": "",
+      "github": "",
+      "website":"",
+      "image": "/assets/pictures/team_members/current-logo.png "
     }
   ],
   "partnershipData": [
