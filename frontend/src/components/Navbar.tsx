@@ -36,7 +36,7 @@ const Navbar = () => {
           {text: 'Home', href: '/'},
           {text: 'About Us', href: '/about'},
           {text: 'Team', href: '/team'},
-          {text: 'Technology', href: '/'},
+          {text: 'Technology', href: '/technology'},
           {text: 'Data Sources', href: '/'},
         ].map(({text, href}) => (
           <Text key={text} mr='2.5rem' color='#000000'>
