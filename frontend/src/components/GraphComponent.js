@@ -111,6 +111,15 @@ const GraphComponent = ({graphData}) => {
           };
         }
 
+        if (node.data.type === 'KEYWORD') {
+          return {
+            ...basicStyle,
+            size: 10,
+            color: '#882255',
+            zIndex: 1,
+          };
+        }
+
         return {
           ...basicStyle,
         };
