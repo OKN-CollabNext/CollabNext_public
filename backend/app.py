@@ -18,10 +18,10 @@ with open('institutions.csv', 'r') as file:
 with open('subfields.csv', 'r') as file:
     autofill_subfields_list = file.read().split('\n')
 SUBFIELDS = True
+autofill_topic_space_list = []
 if not SUBFIELDS:
   with open('keywords.csv', 'r') as fil:
       autofill_topics_list = fil.read().split('\n')
-
 
 @app.route('/')
 def index():
@@ -368,6 +368,12 @@ def search_topic_space():
     edge_additions = []
     if node['label'] == search or node['subfield_name'] == search or node['field_name'] == search or node['domain_name'] == search or search in node['keywords'].split("; "):
       topic_node = { 'id': node['id'], 'label': node['label'], 'type': 'TOPIC', "keywords":node['keywords'], "summary": node['summary'], "wikipedia_url": node['wikipedia_url']}
+      keywords = get_keywords_from_topics(node['label'])
+      for k in keywords:
+        keyword_node = { "id": k[1], 'label': k[0], 'type': 'KEYWORD'}
+        node_additions.append(keyword_node)
+        keyword_edge = { 'id': f"""{node['id']}-{k[1]}""" ,'start': node['id'], 'end': k[1], "label": "hasKeyword", "start_type": "TOPIC", "end_type": "KEYWORD"}
+        edge_additions.append(keyword_edge)
       node_additions.append(topic_node)
       subfield_node = { "id": node["subfield_id"], 'label': node['subfield_name'], 'type': 'SUBFIELD'}
       node_additions.append(subfield_node)
@@ -478,6 +484,29 @@ def autofill_topics():
         if topic.lower() in i.lower():
           possible_searches.append(i)
   return {"possible_searches": possible_searches}
+
+@app.route('/autofill-topic-space', methods=['POST'])
+def autofill_topic_space():
+  global autofill_topic_space_list
+  if autofill_topic_space_list == []:
+    with open('keywords.csv', 'r') as file:
+      keywords = file.read().split('\n')
+    with open('subfields.csv', 'r') as file:
+      subfields = file.read().split('\n')
+    with open('topics.csv', 'r') as file:
+      topics = file.read().split('\n')
+    with open('domains_and_fields.csv', 'r') as file:
+      domains_and_fields = file.read().split('\n')
+    autofill_topic_space_list = keywords + subfields + topics + domains_and_fields
+    autofill_topic_space_list = list(set(autofill_topic_space_list))
+  topic = request.json.get('topic')
+  possible_searches = []
+  if len(topic) > 2:
+    for i in autofill_topic_space_list:
+        if topic.lower() in i.lower():
+          possible_searches.append(i)
+  return {"possible_searches": possible_searches}
+
 
 def list_given_institution(ror, name, id):
   """
@@ -815,7 +844,7 @@ def get_keywords_from_topics(topic):
   topic_list : list of keyword names which OpenAlex matches the topic to.
   """
   query = f"""
-  SELECT DISTINCT ?keywordName
+  SELECT DISTINCT ?keywordName ?keyword
     WHERE {'{'}
     ?topic <http://www.w3.org/2004/02/skos/core#prefLabel> "{topic}" .
     ?topic <https://semopenalex.org/ontology/hasKeyword> ?keyword .
@@ -825,7 +854,7 @@ def get_keywords_from_topics(topic):
   results = query_endpoint(query)
   keyword_list = []
   for a in results:
-    keyword_list.append(a['keywordName'])
+    keyword_list.append((a['keywordName'], a['keyword'].replace('semopenalex', 'openalex').replace('keyword', 'keywords')))
   return keyword_list
 
 def get_topics_oa(ror, name, id):

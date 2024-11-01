@@ -6,7 +6,8 @@ import {Circles} from 'react-loader-spinner';
 import {Box, Button} from '@chakra-ui/react';
 
 import GraphComponent from '../components/GraphComponent';
-import {baseUrl} from '../utils/constants';
+import { baseUrl, handleTopicSpaceAutofill, initialValue } from '../utils/constants';
+import Suggested from '../components/Suggested';
 
 const TopicSearch = () => {
   let [topicType, setTopicType] = useState('');
@@ -16,6 +17,8 @@ const TopicSearch = () => {
   useEffect(() => {
     handleSearch();
   }, []);
+
+  const [suggestedTopics, setSuggestedTopics] = useState([]);
 
   const handleSearch = (topic?: string) => {
     if (topicType) {
@@ -73,11 +76,19 @@ const TopicSearch = () => {
         <input
           type='text'
           value={topicType}
-          onChange={(e) => setTopicType(e.target.value)}
+          onChange={(e) => {
+            setTopicType(e.target.value);
+            handleTopicSpaceAutofill(
+              e.target.value,
+              setSuggestedTopics,
+            );
+          }}
+          list='topics'
           placeholder='Type Topic'
           className='textbox'
           disabled={isLoading}
         />
+        <Suggested suggested={suggestedTopics} institutions={false} />
         <Button
           width='100%'
           marginTop='10px'
