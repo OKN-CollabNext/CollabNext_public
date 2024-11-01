@@ -5,7 +5,6 @@ import json
 import mysql.connector
 from mysql.connector import Error
 import pandas as pd
-import os
 
 app= Flask(__name__, static_folder='build', static_url_path='/')
 CORS(app)

@@ -295,6 +295,18 @@
       "image": "/assets/pictures/team_members/renata_rawlings-goss.webp"
     },
     {
+      "firstName": "Beverly",
+      "lastName": "McDonalds-Robinson",
+      "email": "brobinson@fisk.edu",
+      "institutionalAffiliation": "Fisk University",
+      "role": "Advisory",
+      "biosketch": "Dr. McDonalds-Robinson is the Director of Sponsored Programs and Creative Activities at Fisk University.",
+      "linkedin": "https://www.linkedin.com/in/dr-beverly-mcdonald-robinson-9b3651ab/",
+      "github": "",
+      "website": "",
+      "image": "/assets/pictures/team_members/beverly_robinson.webp"
+    },
+    {
       "firstName": "Kexin",
       "lastName": "Rong",
       "email": "krong@gatech.edu",
