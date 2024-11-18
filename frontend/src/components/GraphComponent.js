@@ -40,9 +40,9 @@ const GraphComponent = ({graphData}) => {
         const basicStyle = {
           borderColor: '#1d1d1d',
           borderWidth: 0.6,
-          color: '#DD2222',
-          colorHover: '#e7644e',
-          colorSelected: '#e7644e',
+          color: '#DEA521',
+          // colorHover: '#EEB6A4',
+          // colorSelected: '#F15627',
           fontSize: 3,
           label: node.data.label,
           size: 6,
@@ -70,7 +70,7 @@ const GraphComponent = ({graphData}) => {
           return {
             ...basicStyle,
             size: 10,
-            color: '#44AA99',
+            color: '#1BC415',
             zIndex: 1,
           };
         }
