@@ -25,6 +25,8 @@ const validateSchema = Yup.object().shape({
   researcher: Yup.string().notRequired(),
 });
 
+const DESCRIPTION_TEXT = "CollabNext is part of the the Prototype Open Knowledge Network. We are developing a knowledge graph with entities consisting of people, organizations, and research topics. We are adopting an intentional design approach, initially prioritizing HBCUs and emerging researchers in a deliberate effort to counterbalance the Matthew effect, a naturally accumulated advantage of well-resourced research organizations.";
+
 const initialValues = {
   institution: '',
   type: 'Education',
@@ -41,14 +43,32 @@ const Home = () => {
   console.log(suggestedTopics);
   return (
     <Box w={{lg: '700px'}} mx='auto' mt='1.5rem'>
+      <Box
+        background='linear-gradient(180deg, #003057 0%, rgba(0, 0, 0, 0.5) 100%)'
+        borderRadius={{lg: '6px'}}
+        px={{base: '1.5rem', lg: '2.5rem'}}
+        py={{base: '1.5rem', lg: '2rem'}}
+      >
+        <Text
+          fontFamily='DM Sans'
+          fontSize={{base: '12px', lg: '16px'}}
+          color='#FFFFFF'
+          lineHeight='1.6'
+        >
+          {DESCRIPTION_TEXT}
+        </Text>
+      </Box>
+      
       <Text
         pl={{base: '1rem', lg: 0}}
         fontFamily='DM Sans'
         fontSize={{lg: '22px'}}
         color='#000000'
+        mt='2rem'
       >
         What are you searching for?
       </Text>
+
       <Box
         background='linear-gradient(180deg, #003057 0%, rgba(0, 0, 0, 0.5) 100%)'
         borderRadius={{lg: '6px'}}
