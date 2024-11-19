@@ -13,7 +13,6 @@ const TopicInstitutionMetadata = ({data}: {data: ResearchDataInterface}) => {
       className='list-map'
     >
       <Box w={{lg: '34%'}}>
-        <button className='topButton'>List Map</button>
         <h2>{data?.institution_name}</h2>
         <h2>{data?.topic_name}</h2>
         <a target='_blank' rel='noreferrer' href={data?.institution_url}>

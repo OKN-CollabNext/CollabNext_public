@@ -13,7 +13,6 @@ const TopicResearcherMetadata = ({data}: {data: ResearchDataInterface}) => {
       className='list-map'
     >
       <Box w={{lg: '34%'}}>
-        <button className='topButton'>List Map</button>
         <h2>{data?.researcher_name}</h2>
         <h2>{data?.topic_name}</h2>
         <a

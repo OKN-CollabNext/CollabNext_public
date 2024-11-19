@@ -297,9 +297,9 @@ const Search = () => {
         >
           Search
         </Button>
-        <button className='button' onClick={handleToggle}>
+        {/* <button className='button' onClick={handleToggle}>
           {isNetworkMap ? 'See List Map' : 'See Network Map'}
-        </button>
+        </button> */}
       </div>
       <div className='content'>
         {isLoading ? (
@@ -326,12 +326,15 @@ const Search = () => {
           </Box>
         ) : isNetworkMap ? (
           <div className='network-map'>
-            <button className='topButton'>Network Map</button>
+            {/* <button className='topButton' onClick={handleToggle}>{isNetworkMap ? 'Network Map (click to see List Map)' : 'List Map (click to see Network Map)'}</button> */}
+            <button className='topButton' onClick={handleToggle}>{'Network Map (click to see List Map)'}</button>
+
             {/* <img src={NetworkMap} alt='Network Map' /> */}
             <GraphComponent graphData={data?.graph} />
           </div>
         ) : (
           <div>
+            <button className='topButton' onClick={handleToggle}>{'List Map (click to see Network Map)'}</button>
             {data?.search === 'institution' ? (
               <InstitutionMetadata data={data} />
             ) : data?.search === 'topic' ? (
