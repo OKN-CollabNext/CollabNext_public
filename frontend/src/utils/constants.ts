@@ -152,3 +152,32 @@ export const handleAutofill = (
       console.log(error);
     });
 };
+
+export const handleTopicSpaceAutofill = (
+  text: string,
+  setSuggestedTopics: React.Dispatch<React.SetStateAction<never[]>>,
+) => {
+  fetch(
+    `${baseUrl}/autofill-topic-space`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(
+        {
+          topic: text,
+        }
+      ),
+    },
+  )
+    .then((res) => res.json())
+    .then((data) => {
+      console.log(data);
+      setSuggestedTopics(data?.possible_searches);
+    })
+    .catch((error) => {
+      setSuggestedTopics([]);
+      console.log(error);
+    });
+};
