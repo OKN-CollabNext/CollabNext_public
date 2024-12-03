@@ -5,9 +5,156 @@ import json
 import mysql.connector
 from mysql.connector import Error
 import pandas as pd
+import psycopg2
 
 app= Flask(__name__, static_folder='build', static_url_path='/')
 CORS(app)
+
+## Postgres database connection parameters
+HOST = "openalex.postgres.database.azure.com"
+DATABASE = "postgres"
+USER = "postgres"
+PASSWORD = "collabnext1!"
+
+
+def execute_query(query, params):
+    """
+    Utility function to execute a query and fetch results from the database.
+    Handles connection and cursor management.
+    """
+    try:
+        with psycopg2.connect(
+            user=USER,
+            password=PASSWORD,
+            host=HOST,            
+            database=DATABASE,
+            sslmode="disable"
+        ) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(query, params)                
+                return cursor.fetchall()
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
+
+def get_author_ids(author_name):  
+    query = """SELECT get_author_id(%s);"""
+    results = execute_query(query, (author_name,))
+    if results:
+        # psycopg2 returns a list of tuples with each tuple representing a row
+        # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
+        return results[0][0]
+    return None
+
+def get_institution_id(institution_name):
+    query = """SELECT get_institution_id(%s);"""
+    results = execute_query(query, (institution_name,))
+    if results:
+        # psycopg2 returns a list of tuples with each tuple representing a row
+        # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
+        return results[0][0]['institution_id']
+    return None
+
+def search_by_author_institution_topic(author_name, institution_name, topic_name):
+    author_ids = get_author_ids(author_name)
+    if not author_ids:
+        print("No author IDs found.")
+        return None
+    # always pick the first author
+    author_id = author_ids[0]['author_id']
+
+    institution_id = get_institution_id(institution_name)
+
+    query = """SELECT search_by_author_institution_topic(%s, %s, %s);"""
+    results = execute_query(query, (author_id, institution_id, topic_name))
+    if results:
+        # psycopg2 returns a list of tuples with each tuple representing a row
+        # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
+        return results[0][0]
+    return None
+
+def search_by_author_institution(author_name, institution_name):
+    author_ids = get_author_ids(author_name)
+    if not author_ids:
+        print("No author IDs found.")
+        return None
+    # always pick the first author
+    author_id = author_ids[0]['author_id']
+
+    institution_id = get_institution_id(institution_name)
+
+    query = """SELECT search_by_author_institution(%s, %s);"""
+    results = execute_query(query, (author_id, institution_id))
+    if results:
+        # psycopg2 returns a list of tuples with each tuple representing a row
+        # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
+        return results[0][0]
+    return None
+
+def search_by_institution_topic(institution_name, topic_name):
+    institution_id = get_institution_id(institution_name)
+
+    query = """SELECT search_by_institution_topic(%s, %s);"""
+    results = execute_query(query, (institution_id, topic_name))
+    if results:
+        # psycopg2 returns a list of tuples with each tuple representing a row
+        # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
+        return results[0][0]
+    return None
+
+def search_by_author_topic(author_name, topic_name):
+    author_ids = get_author_ids(author_name)
+    if not author_ids:
+        print("No author IDs found.")
+        return None
+    # always pick the first author
+    author_id = author_ids[0]['author_id']
+
+    query = """SELECT search_by_author_topic(%s, %s);"""
+    results = execute_query(query, (author_id, topic_name))
+    if results:
+        # psycopg2 returns a list of tuples with each tuple representing a row
+        # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
+        return results[0][0]
+    return None
+
+def search_by_topic(topic_name):
+    query = """SELECT search_by_topic(%s);"""
+    results = execute_query(query, (topic_name,))
+    if results:
+        # psycopg2 returns a list of tuples with each tuple representing a row
+        # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
+        return results[0][0]
+    return None
+
+def search_by_institution(institution_name):
+    institution_id = get_institution_id(institution_name)
+
+    query = """SELECT search_by_institution(%s);"""
+    results = execute_query(query, (institution_id,))
+    if results:
+        # psycopg2 returns a list of tuples with each tuple representing a row
+        # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
+        return results[0][0]
+    return None
+
+def search_by_author(author_name):
+    author_ids = get_author_ids(author_name)
+    if not author_ids:
+        print("No author IDs found.")
+        return None
+
+    # always pick the first author
+    author_id = author_ids[0]['author_id']    
+
+    query = """SELECT search_by_author(%s);"""
+    results = execute_query(query, (author_id,))
+    if results:
+        # psycopg2 returns a list of tuples with each tuple representing a row
+        # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
+        return results[0][0]
+    return None
+
 
 ## Creates lists for autofill functionality from the institution and keyword csv files
 with open('institutions.csv', 'r') as file:
