@@ -193,40 +193,310 @@ def initial_search():
   type = request.json.get('type')
   topic = request.json.get('topic')
   if institution and researcher and topic:
-    data = get_institution_and_topic_and_researcher_metadata(institution, topic, researcher)
+    data = search_by_author_institution_topic(researcher, institution, topic)
+    list = []
+    metadata = {}
+
+    metadata['homepage'] = data['institution_metadata']['url']
+    metadata['institution_oa_link'] = data['institution_metadata']['openalex_url']
+    metadata['ror'] = data['institution_metadata']['ror']
+    metadata['institution_name'] = institution
+
+    if data['author_metadata']['orcid'] is None:
+      metadata['orcid'] = ''
+    else:
+      metadata['orcid'] = data['author_metadata']['orcid']
+    metadata['researcher_name'] = researcher
+    metadata['researcher_oa_link'] = data['author_metadata']['openalex_url']
+    """if data['author_metadata']['last_known_institution'] is None:
+      metadata['current_institution'] = ""
+    else:
+      metadata['current_institution'] = data['author_metadata']['last_known_institution']"""
+    metadata['current_institution'] = ""
+    last_known_institution = metadata['current_institution']
+
+    topic_clusters = []
+    for entry in data['subfield_metadata']:
+      topic_cluster = entry['topic']
+      topic_clusters.append(topic_cluster)
+    metadata['topic_name'] = topic
+    metadata['topic_clusters'] = topic_clusters
+    metadata['work_count'] = data['totals']['total_num_of_works']
+    metadata['cited_by_count'] = data['totals']['total_num_of_citations']
+    metadata['topic_oa_link'] = ""
+
+    nodes = []
+    edges = []
+    institution_id = metadata['institution_oa_link']
+    researcher_id = metadata['researcher_oa_link']
+    subfield_id = metadata['topic_oa_link']
+    nodes.append({ 'id': institution_id, 'label': institution, 'type': 'INSTITUTION' })
+    edges.append({ 'id': f"""{researcher_id}-{institution_id}""", 'start': researcher_id, 'end': institution_id, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
+    nodes.append({ 'id': researcher_id, 'label': researcher, 'type': 'AUTHOR' })
+    nodes.append({ 'id': subfield_id, 'label': topic, 'type': 'TOPIC' })
+    edges.append({ 'id': f"""{researcher_id}-{subfield_id}""", 'start': researcher_id, 'end': subfield_id, "label": "researches", "start_type": "AUTHOR", "end_type": "TOPIC"})
+    for entry in data['data']:
+      work_name = entry['work_name']
+      number = entry['cited_by_count']
+      list.append((work_name, number))
+      nodes.append({ 'id': work_name, 'label': work_name, 'type': 'WORK' })
+      nodes.append({'id': number, 'label': number, 'type': "NUMBER"})
+      edges.append({ 'id': f"""{researcher_id}-{work_name}""", 'start': researcher_id, 'end': work_name, "label": "authored", "start_type": "AUTHOR", "end_type": "WORK"})
+      edges.append({ 'id': f"""{work_name}-{number}""", 'start': work_name, 'end': number, "label": "citedBy", "start_type": "WORK", "end_type": "NUMBER"})
+    graph = {"nodes": nodes, "edges": edges}
+    results = {"metadata": metadata, "graph": graph, "list":list}
+    """data = get_institution_and_topic_and_researcher_metadata(institution, topic, researcher)
     work_list, graph, extra_metadata = list_given_researcher_topic(topic, researcher, institution, data['topic_oa_link'], data['researcher_oa_link'], data['institution_oa_link'])
     data['work_count'] = extra_metadata['work_count']
     data['cited_by_count'] = extra_metadata['cited_by_count']
-    results = {"metadata": data, "graph": graph, "list": work_list}
+    results = {"metadata": data, "graph": graph, "list": work_list}"""
   elif institution and researcher:
-    data = get_researcher_and_institution_metadata(researcher, institution)
+    data = search_by_author_institution(researcher, institution)
+    list = []
+    metadata = {}
+
+    metadata['homepage'] = data['institution_metadata']['url']
+    metadata['institution_oa_link'] = data['institution_metadata']['openalex_url']
+    metadata['ror'] = data['institution_metadata']['ror']
+    metadata['institution_name'] = institution
+
+    if data['author_metadata']['orcid'] is None:
+      metadata['orcid'] = ''
+    else:
+      metadata['orcid'] = data['author_metadata']['orcid']
+    metadata['researcher_name'] = researcher
+    metadata['researcher_oa_link'] = data['author_metadata']['openalex_url']
+    """if data['author_metadata']['last_known_institution'] is None:
+      metadata['current_institution'] = ""
+    else:
+      metadata['current_institution'] = data['author_metadata']['last_known_institution']"""
+    metadata['current_institution'] = ""
+    last_known_institution = metadata['current_institution']
+    metadata['work_count'] = data['author_metadata']['num_of_works']
+    metadata['cited_by_count'] = data['author_metadata']['num_of_citations']
+
+    nodes = []
+    edges = []
+    author_id = metadata['researcher_oa_link']
+    nodes.append({ 'id': institution, 'label': institution, 'type': 'INSTITUTION' })
+    edges.append({ 'id': f"""{author_id}-{institution}""", 'start': author_id, 'end': institution, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
+    nodes.append({ 'id': author_id, 'label': researcher, "type": "AUTHOR"})
+    for entry in data['data']:
+      topic_name = entry['topic_name']
+      num_works = entry["num_of_works"]
+      list.append((topic_name, num_works))
+      nodes.append({'id': topic_name, 'label': topic_name, 'type': "TOPIC"})
+      number_id = topic_name + ":" + str(num_works)
+      nodes.append({'id': number_id, 'label': num_works, 'type': "NUMBER"})
+      edges.append({ 'id': f"""{author_id}-{topic_name}""", 'start': author_id, 'end': topic_name, "label": "researches", "start_type": "AUTHOR", "end_type": "TOPIC"})
+      edges.append({ 'id': f"""{topic_name}-{number_id}""", 'start': topic_name, 'end': number_id, "label": "number", "start_type": "TOPIC", "end_type": "NUMBER"})
+    graph = {"nodes": nodes, "edges": edges}
+    results = {"metadata": metadata, "graph": graph, "list": list}
+    """data = get_researcher_and_institution_metadata(researcher, institution)
     topic_list, graph = list_given_researcher_institution(data['researcher_oa_link'], researcher, institution)
-    results = {"metadata": data, "graph": graph, "list": topic_list}
+    results = {"metadata": data, "graph": graph, "list": topic_list}"""
   elif institution and topic:
-    data = get_institution_and_topic_metadata(institution, topic)
+    data = search_by_institution_topic(institution, topic)
+    list = []
+    metadata = {}
+
+    topic_clusters = []
+    for entry in data['subfield_metadata']:
+      topic_cluster = entry['topic']
+      topic_clusters.append(topic_cluster)
+    metadata['topic_name'] = topic
+    metadata['topic_clusters'] = topic_clusters
+    metadata['work_count'] = data['totals']['total_num_of_works']
+    metadata['cited_by_count'] = data['totals']['total_num_of_citations']
+    metadata['people_count'] = data['totals']['total_num_of_authors']
+    metadata['topic_oa_link'] = ""
+    metadata['topic_name'] = topic
+
+    metadata['homepage'] = data['institution_metadata']['url']
+    metadata['institution_oa_link'] = data['institution_metadata']['openalex_url']
+    metadata['ror'] = data['institution_metadata']['ror']
+    metadata['institution_name'] = institution
+
+    nodes = []
+    edges = []
+    subfield_id = metadata['topic_oa_link']
+    institution_id = metadata['institution_oa_link']
+    nodes.append({ 'id': subfield_id, 'label': topic, 'type': 'TOPIC' })
+    nodes.append({ 'id': institution_id, 'label': institution, 'type': 'INSTITUTION' })
+    edges.append({ 'id': f"""{institution_id}-{subfield_id}""", 'start': institution_id, 'end': subfield_id, "label": "researches", "start_type": "INSTITUTION", "end_type": "TOPIC"})
+    for entry in data['data']:
+      author_id = entry['author_id']
+      author_name = entry['author_name']
+      number = entry['num_of_works']
+      list.append((author_name, number))
+      nodes.append({ 'id': author_id, 'label': author_name, 'type': 'AUTHOR' })
+      nodes.append({ 'id': number, 'label': number, 'type': 'NUMBER' })
+      edges.append({ 'id': f"""{author_id}-{number}""", 'start': author_id, 'end': number, "label": "numWorks", "start_type": "AUTHOR", "end_type": "NUMBER"})
+      edges.append({ 'id': f"""{author_id}-{institution_id}""", 'start': author_id, 'end': institution_id, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
+    graph = {"nodes": nodes, "edges": edges}
+    results = {"metadata": metadata, "graph": graph, "list": list}
+    """data = get_institution_and_topic_metadata(institution, topic)
     topic_list, graph, extra_metadata = list_given_institution_topic(institution, data['institution_oa_link'], topic, data['topic_oa_link'])
     data['work_count'] = extra_metadata['work_count']
     data['people_count'] = extra_metadata['num_people']
-    results = {"metadata": data, "graph": graph, "list": topic_list}
+    results = {"metadata": data, "graph": graph, "list": topic_list}"""
   elif researcher and topic:
-    data = get_topic_and_researcher_metadata(topic, researcher)
+    data = search_by_author_topic(researcher, topic)
+    list = []
+    metadata = {}
+    
+    topic_clusters = []
+    for entry in data['subfield_metadata']:
+      topic_cluster = entry['topic']
+      topic_clusters.append(topic_cluster)
+    metadata['topic_name'] = topic
+    metadata['topic_clusters'] = topic_clusters
+    metadata['work_count'] = data['totals']['total_num_of_works']
+    metadata['cited_by_count'] = data['totals']['total_num_of_citations']
+    metadata['topic_oa_link'] = ""
+
+    if data['author_metadata']['orcid'] is None:
+      metadata['orcid'] = ''
+    else:
+      metadata['orcid'] = data['author_metadata']['orcid']
+    metadata['researcher_name'] = researcher
+    metadata['researcher_oa_link'] = data['author_metadata']['openalex_url']
+    if data['author_metadata']['last_known_institution'] is None:
+      metadata['current_institution'] = ""
+    else:
+      metadata['current_institution'] = data['author_metadata']['last_known_institution']
+    last_known_institution = metadata['current_institution']
+
+    nodes = []
+    edges = []
+    researcher_id = metadata['researcher_oa_link']
+    subfield_id = metadata['topic_oa_link']
+    nodes.append({ 'id': last_known_institution, 'label': last_known_institution, 'type': 'INSTITUTION' })
+    edges.append({ 'id': f"""{researcher_id}-{last_known_institution}""", 'start': researcher_id, 'end': last_known_institution, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
+    nodes.append({ 'id': researcher_id, 'label': researcher, 'type': 'AUTHOR' })
+    nodes.append({ 'id': subfield_id, 'label': topic, 'type': 'TOPIC' })
+    edges.append({ 'id': f"""{researcher_id}-{subfield_id}""", 'start': researcher_id, 'end': subfield_id, "label": "researches", "start_type": "AUTHOR", "end_type": "TOPIC"})
+    for entry in data['data']:
+      work = entry['work_name']
+      number = entry['num_of_citations']
+      list.append((work, number))
+      nodes.append({ 'id': work, 'label': work, 'type': 'WORK' })
+      nodes.append({'id': number, 'label': number, 'type': "NUMBER"})
+      edges.append({ 'id': f"""{researcher_id}-{work}""", 'start': researcher_id, 'end': work, "label": "authored", "start_type": "AUTHOR", "end_type": "WORK"})
+      edges.append({ 'id': f"""{work}-{number}""", 'start': work, 'end': number, "label": "citedBy", "start_type": "WORK", "end_type": "NUMBER"})
+    graph = {"nodes": nodes, "edges": edges}
+    results = {"metadata": metadata, "graph": graph, "list": list}
+    
+    """data = get_topic_and_researcher_metadata(topic, researcher)
     work_list, graph, extra_metadata = list_given_researcher_topic(topic, researcher, data['current_institution'], data['topic_oa_link'], data['researcher_oa_link'], data['institution_oa_link'])
     data['work_count'] = extra_metadata['work_count']
     data['cited_by_count'] = extra_metadata['cited_by_count']
-    results = {"metadata": data, "graph": graph, "list": work_list}
+    results = {"metadata": data, "graph": graph, "list": work_list}"""
   elif topic:
-    data = get_subfield_metadata(topic)
+    data = search_by_topic(topic)
+    list = []
+    metadata = {}
+
+    topic_clusters = []
+    for entry in data['subfield_metadata']:
+      topic_cluster = entry['topic']
+      topic_clusters.append(topic_cluster)
+    metadata['topic_clusters'] = topic_clusters
+    metadata['work_count'] = data['totals']['total_num_of_works']
+    metadata['cited_by_count'] = data['totals']['total_num_of_citations']
+    metadata['researchers'] = data['totals']['total_num_of_authors']
+
+    nodes = []
+    edges = []
+    topic_id = topic
+    nodes.append({ 'id': topic_id, 'label': topic, 'type': 'TOPIC' })
+    for entry in data['data']:
+      institution = entry['institution_name']
+      number = entry['num_of_authors']
+      list.append((institution, number))
+      nodes.append({ 'id': institution, 'label': institution, 'type': 'INSTITUTION' })
+      nodes.append({'id': number, 'label': number, 'type': "NUMBER"})
+      edges.append({ 'id': f"""{institution}-{topic_id}""", 'start': institution, 'end': topic_id, "label": "researches", "start_type": "INSTITUTION", "end_type": "TOPIC"})
+      edges.append({ 'id': f"""{institution}-{number}""", 'start': institution, 'end': number, "label": "number", "start_type": "INSTITUTION", "end_type": "NUMBER"})
+    graph = {"nodes": nodes, "edges": edges}
+
+    results = {"metadata": metadata, "graph": graph, "list": list}
+
+    """data = get_subfield_metadata(topic)
     topic_list, graph, extra_metadata = list_given_topic(topic, data['oa_link'])
     data['work_count'] = extra_metadata['work_count']
-    results = {"metadata": data, "graph": graph, "list": topic_list}
+    results = {"metadata": data, "graph": graph, "list": topic_list}"""
   elif institution:
+    data = search_by_institution(institution)
+    list = []
+    metadata = data['institution_metadata']
+   
+    metadata['homepage'] = metadata['url']
+    metadata['works_count'] = metadata['num_of_works']
+    metadata['name'] = metadata['institution_name']
+    metadata['cited_count'] = metadata['num_of_citations']
+    metadata['oa_link'] = metadata['openalex_url']
+    metadata['author_count'] = metadata['num_of_authors']
+
+    nodes = []
+    edges = []
+    institution_id = metadata['openalex_url']
+    nodes.append({ 'id': institution_id, 'label': institution, 'type': 'INSTITUTION' })
+    for entry in data['data']:
+      subfield = entry['topic_name']
+      number = entry['num_of_authors']
+      list.append((subfield, number))
+      nodes.append({'id': subfield, 'label': subfield, 'type': "TOPIC"})
+      number_id = subfield + ":" + str(number)
+      nodes.append({'id': number_id, 'label': number, 'type': "NUMBER"})
+      edges.append({ 'id': f"""{institution_id}-{subfield}""", 'start': institution_id, 'end': subfield, "label": "researches", "start_type": "INSTITUTION", "end_type": "TOPIC"})
+      edges.append({ 'id': f"""{subfield}-{number_id}""", 'start': subfield, 'end': number_id, "label": "number", "start_type": "TOPIC", "end_type": "NUMBER"})
+    graph = {"nodes": nodes, "edges": edges}
+    print(get_institution_metadata(institution))
+    print(metadata)
+    results = {"metadata": metadata, "graph": graph, "list": list}
+    """
     data = get_institution_metadata(institution)
     topic_list, graph = list_given_institution(data['ror'], data['name'], data['oa_link'])
     results = {"metadata": data, "graph": graph, "list": topic_list}
+    """
   elif researcher:
+    data = search_by_author(researcher)
+    list = []
+    metadata = data['author_metadata']
+
+    if metadata['orcid'] is None:
+      metadata['orcid'] = ''
+    metadata['work_count'] = metadata['num_of_works']
+    metadata['current_institution'] = metadata['last_known_institution']
+    metadata['cited_by_count'] = metadata['num_of_citations']
+    metadata['oa_link'] = metadata['openalex_url']
+    if metadata['last_known_institution'] is None:
+      last_known_institution = ""
+    else:
+      last_known_institution = metadata['last_known_institution']
+
+    nodes = []
+    edges = []
+    nodes.append({ 'id': last_known_institution, 'label': last_known_institution, 'type': 'INSTITUTION' })
+    edges.append({ 'id': f"""{metadata['openalex_url']}-{last_known_institution}""", 'start': metadata['openalex_url'], 'end': last_known_institution, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
+    nodes.append({ 'id': metadata['openalex_url'], 'label': researcher, "type": "AUTHOR"})
+    for entry in data['data']:
+      topic = entry['topic']
+      num_works = entry['num_of_works']
+      list.append((topic, num_works))
+      nodes.append({'id': topic, 'label': topic, 'type': "TOPIC"})
+      number_id = topic + ":" + str(num_works)
+      nodes.append({'id': number_id, 'label': num_works, 'type': "NUMBER"})
+      edges.append({ 'id': f"""{metadata['openalex_url']}-{topic}""", 'start': metadata['openalex_url'], 'end': topic, "label": "researches", "start_type": "AUTHOR", "end_type": "TOPIC"})
+      edges.append({ 'id': f"""{metadata['openalex_url']}-{number_id}""", 'start': topic, 'end': number_id, "label": "number", "start_type": "TOPIC", "end_type": "NUMBER"})
+    graph = {"nodes": nodes, "edges": edges}
+    results = {"metadata": metadata, "graph": graph, "list": list}
+    """
     data = get_author_metadata(researcher)
     topic_list, graph = list_given_researcher_institution(data['oa_link'], data['name'], data['current_institution'])
     results = {"metadata": data, "graph": graph, "list": topic_list}
+    """
   return results
 
 def get_institution_metadata(institution):
@@ -803,7 +1073,6 @@ def list_given_researcher_topic(subfield, researcher, institution, subfield_id, 
 
   nodes = []
   edges = []
-  print(institution_id, institution)
   nodes.append({ 'id': institution_id, 'label': institution, 'type': 'INSTITUTION' })
   edges.append({ 'id': f"""{researcher_id}-{institution_id}""", 'start': researcher_id, 'end': institution_id, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
   nodes.append({ 'id': researcher_id, 'label': researcher, 'type': 'AUTHOR' })
