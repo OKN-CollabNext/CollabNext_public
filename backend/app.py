@@ -1562,6 +1562,19 @@ def combine_graphs(graph1, graph2):
 def serve(path):
     return send_from_directory(app.static_folder, 'index.html')
 
+@app.route('/get-mup-id', methods=['POST'])
+def get_mup_id():
+    data = request.json
+    if not data or 'institution_name' not in data:
+        abort(400, description="Missing 'institution_name' in request data")
+
+    institution_name = data['institution_name']
+    result = get_institution_mup_id(institution_name)
+    if result:
+        return jsonify(result)
+    else:
+        return jsonify({"error": "No MUP ID found"}), 404
+
 ## Main 
 if __name__ =='__main__':
   app.run()
