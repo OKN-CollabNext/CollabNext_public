@@ -68,6 +68,7 @@ stages:
         rm -rf $(System.DefaultWorkingDirectory)/backend/build
         mkdir $(System.DefaultWorkingDirectory)/backend/build
         cp -r $(System.DefaultWorkingDirectory)/frontend/build/* $(System.DefaultWorkingDirectory)/backend/build
+        cp $(System.DefaultWorkingDirectory)/backend/startup.sh $(System.DefaultWorkingDirectory)/backend/
       workingDirectory: $(System.DefaultWorkingDirectory)/backend
       displayName: "Install requirements"
     - task: ArchiveFiles@2
@@ -78,7 +79,7 @@ stages:
         archiveType: zip
         archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
         replaceExistingArchive: true
-
+    
     - upload: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
       displayName: 'Upload package'
       artifact: drop
@@ -106,3 +107,4 @@ stages:
               azureSubscription: $(azureServiceConnectionId)
               appName: $(webAppName)
               package: $(Pipeline.Workspace)/drop/$(Build.BuildId).zip
+              startUpCommand: 'sh startup.sh'

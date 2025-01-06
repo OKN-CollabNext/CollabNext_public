@@ -5,6 +5,7 @@ import json
 import mysql.connector
 from mysql.connector import Error
 import pandas as pd
+import os
 
 app= Flask(__name__, static_folder='build', static_url_path='/')
 CORS(app)
@@ -1362,8 +1363,9 @@ def combine_graphs(graph1, graph2):
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
     return send_from_directory(app.static_folder, 'index.html')
 
-## Main 
-if __name__ =='__main__':
-  app.run()
+if __name__ == '__main__':
+    app.run()
