@@ -10,6 +10,8 @@ import os
 app= Flask(__name__, static_folder='build', static_url_path='/')
 CORS(app)
 
+# Make a change 
+
 ## Creates lists for autofill functionality from the institution and keyword csv files
 with open('institutions.csv', 'r') as file:
     autofill_inst_list = file.read().split(',\n')
