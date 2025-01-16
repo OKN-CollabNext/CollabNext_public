@@ -21,7 +21,8 @@ if not SUBFIELDS:
       autofill_topics_list = fil.read().split('\n')
 
 
-@app.route('/')
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
 def index():
   return send_from_directory(app.static_folder, 'index.html')
 
