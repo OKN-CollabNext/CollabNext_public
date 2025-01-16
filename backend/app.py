@@ -219,11 +219,12 @@ def initial_search():
     for entry in data['subfield_metadata']:
       topic_cluster = entry['topic']
       topic_clusters.append(topic_cluster)
+      subfield_oa_link = entry['subfield_url']
     metadata['topic_name'] = topic
     metadata['topic_clusters'] = topic_clusters
     metadata['work_count'] = data['totals']['total_num_of_works']
     metadata['cited_by_count'] = data['totals']['total_num_of_citations']
-    metadata['topic_oa_link'] = ""
+    metadata['topic_oa_link'] = subfield_oa_link
 
     nodes = []
     edges = []
