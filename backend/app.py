@@ -23,7 +23,7 @@ if not SUBFIELDS:
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
-def index():
+def index(path):
   return send_from_directory(app.static_folder, 'index.html')
 
 @app.route('/initial-search', methods=['POST'])
