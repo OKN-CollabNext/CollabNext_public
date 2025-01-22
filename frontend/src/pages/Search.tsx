@@ -333,17 +333,23 @@ const Search = () => {
         ) : (
           <div>
             {data?.search === 'institution' ? (
-              <InstitutionMetadata data={data} />
+              <InstitutionMetadata data={data} setTopic={setTopicType} />
             ) : data?.search === 'topic' ? (
-              <TopicMetadata data={data} />
+              <TopicMetadata data={data} setInstitution={setUniversityName} />
             ) : data?.search === 'researcher' ? (
-              <ResearcherMetadata data={data} />
+              <ResearcherMetadata data={data} setTopic={setTopicType} />
             ) : data?.search === 'researcher-institution' ? (
-              <InstitutionResearcherMetaData data={data} />
+              <InstitutionResearcherMetaData
+                data={data}
+                setTopic={setTopicType}
+              />
             ) : data?.search === 'topic-researcher' ? (
               <TopicResearcherMetadata data={data} />
             ) : data?.search === 'topic-institution' ? (
-              <TopicInstitutionMetadata data={data} />
+              <TopicInstitutionMetadata
+                data={data}
+                setResearcher={setResearcherType}
+              />
             ) : (
               <AllThreeMetadata data={data} />
             )}
