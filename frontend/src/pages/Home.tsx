@@ -108,7 +108,7 @@ const Home = () => {
                 spacing={{base: 7, lg: '90px'}}
               >
                 {[
-                  {text: 'Organization', key: 'institution'},
+                  {text: 'Organization (eg. University)', key: 'institution'},
                   {text: 'Type', key: 'type'},
                 ].map(({text, key}) => (
                   <Box key={text}>
@@ -117,7 +117,7 @@ const Home = () => {
                         <FormControl
                           isInvalid={form.errors[key] && form.touched[key]}
                         >
-                          {text === 'Organization' ? (
+                          {text === 'Organization (eg. University)' ? (
                             <>
                               <Input
                                 variant={'flushed'}
