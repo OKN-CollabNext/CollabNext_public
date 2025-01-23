@@ -188,146 +188,134 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
     }
   }, [institutionName, BASE_URL]);
 
-  const renderSATTable = (data: SATData) => {
-    const sortedData = data.data
-      .sort((a, b) => b.year - a.year); // Sort by year descending
-
-    return (
-      <Table variant="simple">
-        <Thead>
-          <Tr>
-            <Th>Year</Th>
-            <Th isNumeric>SAT Score</Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {sortedData.map((item) => (
-            <Tr key={item.year}>
-              <Td>{item.year}</Td>
-              <Td isNumeric>{item.sat ?? 'No data'}</Td>
-            </Tr>
-          ))}
-        </Tbody>
-      </Table>
-    );
-  };
-
-  const renderEndowmentTable = (data: EndowmentGivingData) => {
-    const sortedData = data.data
-      .sort((a, b) => b.year - a.year);
-
-    const formatValue = (value: number | null | undefined) => {
-      if (value == null) return 'No data';
-      return `$${(value / 1000000).toFixed(2)}M`;
+  const createChartData = (label: string, data: Array<{year: number, [key: string]: any}>, valueKeys: string[], valueLabels: string[]) => {
+    const sortedData = [...data].sort((a, b) => a.year - b.year);
+    return {
+      labels: sortedData.map(item => item.year),
+      datasets: valueKeys.map((key, index) => ({
+        label: valueLabels[index],
+        data: sortedData.map(item => item[key]),
+        borderColor: [
+          '#003057',  // Blue
+          '#DD6B20',  // Orange
+          '#38A169',  // Green
+          '#805AD5',  // Purple
+        ][index % 4],
+        tension: 0.1,
+        fill: false,
+      }))
     };
+  };
+
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: false,
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+      }
+    },
+  };
+
+  const renderSATChart = (data: SATData) => {
+    const chartData = createChartData(
+      'SAT Scores',
+      data.data,
+      ['sat'],
+      ['SAT Score']
+    );
 
     return (
-      <Table variant="simple">
-        <Thead>
-          <Tr>
-            <Th>Year</Th>
-            <Th isNumeric>Endowment</Th>
-            <Th isNumeric>Giving</Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {sortedData.map((item) => (
-            <Tr key={item.year}>
-              <Td>{item.year}</Td>
-              <Td isNumeric>{formatValue(item.endowment)}</Td>
-              <Td isNumeric>{formatValue(item.giving)}</Td>
-            </Tr>
-          ))}
-        </Tbody>
-      </Table>
+      <Line data={chartData} options={chartOptions} />
     );
   };
 
-  const renderMedicalTable = (data: MedicalExpenseData) => {
-    const sortedData = data.data
-      .sort((a, b) => b.year - a.year);
-
-    const formatValue = (value: number | null) => {
-      if (value == null) return 'No data';
-      return `$${value.toLocaleString()}`;
-    };
+  const renderEndowmentChart = (data: EndowmentGivingData) => {
+    const chartData = createChartData(
+      'Endowment and Giving',
+      data.data,
+      ['endowment', 'giving'],
+      ['Endowment', 'Giving']
+    );
 
     return (
-      <Table variant="simple">
-        <Thead>
-          <Tr>
-            <Th>Year</Th>
-            <Th isNumeric>Medical Expenditure</Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {sortedData.map((item) => (
-            <Tr key={item.year}>
-              <Td>{item.year}</Td>
-              <Td isNumeric>{formatValue(item.expenditure)}</Td>
-            </Tr>
-          ))}
-        </Tbody>
-      </Table>
+      <Line data={chartData} options={{
+        ...chartOptions,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: (value: number) => `$${(value / 1000).toFixed(0)}K`
+            }
+          }
+        }
+      }} />
     );
   };
 
-  const renderDoctorateTable = (data: DoctoratePostdocData) => {
-    const sortedData = data.data
-      .sort((a, b) => b.year - a.year);
+  const renderMedicalChart = (data: MedicalExpenseData) => {
+    const chartData = createChartData(
+      'Medical Expenditure',
+      data.data,
+      ['expenditure'],
+      ['Medical Expenditure']
+    );
 
     return (
-      <Table variant="simple">
-        <Thead>
-          <Tr>
-            <Th>Year</Th>
-            <Th isNumeric>Doctorates</Th>
-            <Th isNumeric>Postdocs</Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {sortedData.map((item) => (
-            <Tr key={item.year}>
-              <Td>{item.year}</Td>
-              <Td isNumeric>{item.num_doctorates ?? 'No data'}</Td>
-              <Td isNumeric>{item.num_postdocs ?? 'No data'}</Td>
-            </Tr>
-          ))}
-        </Tbody>
-      </Table>
+      <Line data={chartData} options={{
+        ...chartOptions,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: (value: number) => `$${(value / 1000).toFixed(0)}K`
+            }
+          }
+        }
+      }} />
     );
   };
 
-  const renderResearchTable = (data: ResearchData) => {
-    const sortedData = data.data
-      .sort((a, b) => b.year - a.year);
-
-    const formatValue = (value: number | null) => {
-      if (value == null) return 'No data';
-      return value.toLocaleString();
-    };
+  const renderDoctorateChart = (data: DoctoratePostdocData) => {
+    const chartData = createChartData(
+      'Doctorates and Postdocs',
+      data.data,
+      ['num_doctorates', 'num_postdocs'],
+      ['Doctorates', 'Postdocs']
+    );
 
     return (
-      <Table variant="simple">
-        <Thead>
-          <Tr>
-            <Th>Year</Th>
-            <Th isNumeric>Federal Research</Th>
-            <Th isNumeric>Non-Federal Research</Th>
-            <Th isNumeric>Total Research</Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {sortedData.map((item) => (
-            <Tr key={item.year}>
-              <Td>{item.year}</Td>
-              <Td isNumeric>{formatValue(item.num_federal_research)}</Td>
-              <Td isNumeric>{formatValue(item.num_nonfederal_research)}</Td>
-              <Td isNumeric>{formatValue(item.total_research)}</Td>
-            </Tr>
-          ))}
-        </Tbody>
-      </Table>
+      <Line data={chartData} options={chartOptions} />
+    );
+  };
+
+  const renderResearchChart = (data: ResearchData) => {
+    const chartData = createChartData(
+      'Research Numbers',
+      data.data,
+      ['num_federal_research', 'num_nonfederal_research', 'total_research'],
+      ['Federal Research', 'Non-Federal Research', 'Total Research']
+    );
+
+    return (
+      <Line data={chartData} options={{
+        ...chartOptions,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: (value: number) => value.toLocaleString()
+            }
+          }
+        }
+      }} />
     );
   };
 
@@ -336,14 +324,14 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
   }
 
   return (
-    <Box mt={8}>
-      <Text fontSize="2xl" fontWeight="bold" mb={4}>
+    <Box mt={8} maxWidth="1200px" mx="auto" px={4}>
+      <Text fontSize="2xl" fontWeight="bold" mb={6} textAlign="center">
         MUP Institution Data for {institutionName}
       </Text>
 
       {error && (
-        <Box mb={4} p={4} bg="red.50" borderRadius="md" boxShadow="sm">
-          <Text color="red.500">
+        <Box mb={6} p={4} bg="red.50" borderRadius="lg" boxShadow="md">
+          <Text color="red.500" textAlign="center">
             {error === "No MUP ID found"
               ? `${institutionName} is not part of the MUP dataset`
               : `Error: ${error}`}
@@ -352,45 +340,87 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
       )}
 
       {mupData?.institution_mup_id && (
-        <Box mb={4} p={4} bg="white" borderRadius="md" boxShadow="sm">
+        <Box mb={6} p={4} bg="white" borderRadius="lg" boxShadow="md" textAlign="center">
           <Text>Institution MUP ID: {mupData.institution_mup_id}</Text>
         </Box>
       )}
 
-      {satData && satData.data && satData.data.length > 0 && (
-        <Box mt={4} p={4} bg="white" borderRadius="md" boxShadow="sm">
-          <Text fontSize="xl" mb={4}>SAT Score History</Text>
-          {renderSATTable(satData)}
-        </Box>
-      )}
+      <Box 
+        display="grid" 
+        gridTemplateColumns={{base: "1fr", lg: "repeat(2, 1fr)"}} 
+        gap={6}
+      >
+        {satData && satData.data && satData.data.length > 0 && (
+          <Box 
+            p={6} 
+            bg="white" 
+            borderRadius="lg" 
+            boxShadow="md" 
+            transition="transform 0.2s"
+            _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
+          >
+            <Text fontSize="xl" mb={4} textAlign="center">SAT Score History</Text>
+            {renderSATChart(satData)}
+          </Box>
+        )}
 
-      {endowmentData && endowmentData.data && endowmentData.data.length > 0 && (
-        <Box mt={4} p={4} bg="white" borderRadius="md" boxShadow="sm">
-          <Text fontSize="xl" mb={4}>Endowment and Giving History</Text>
-          {renderEndowmentTable(endowmentData)}
-        </Box>
-      )}
+        {endowmentData && endowmentData.data && endowmentData.data.length > 0 && (
+          <Box 
+            p={6} 
+            bg="white" 
+            borderRadius="lg" 
+            boxShadow="md"
+            transition="transform 0.2s"
+            _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
+          >
+            <Text fontSize="xl" mb={4} textAlign="center">Endowment and Giving History</Text>
+            {renderEndowmentChart(endowmentData)}
+          </Box>
+        )}
 
-      {medicalData && medicalData.data && medicalData.data.length > 0 && (
-        <Box mt={4} p={4} bg="white" borderRadius="md" boxShadow="sm">
-          <Text fontSize="xl" mb={4}>Medical Expenditure History</Text>
-          {renderMedicalTable(medicalData)}
-        </Box>
-      )}
+        {medicalData && medicalData.data && medicalData.data.length > 0 && (
+          <Box 
+            p={6} 
+            bg="white" 
+            borderRadius="lg" 
+            boxShadow="md"
+            transition="transform 0.2s"
+            _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
+          >
+            <Text fontSize="xl" mb={4} textAlign="center">Medical Expenditure History</Text>
+            {renderMedicalChart(medicalData)}
+          </Box>
+        )}
 
-      {doctorateData && doctorateData.data && doctorateData.data.length > 0 && (
-        <Box mt={4} p={4} bg="white" borderRadius="md" boxShadow="sm">
-          <Text fontSize="xl" mb={4}>Doctorates and Postdocs History</Text>
-          {renderDoctorateTable(doctorateData)}
-        </Box>
-      )}
+        {doctorateData && doctorateData.data && doctorateData.data.length > 0 && (
+          <Box 
+            p={6} 
+            bg="white" 
+            borderRadius="lg" 
+            boxShadow="md"
+            transition="transform 0.2s"
+            _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
+          >
+            <Text fontSize="xl" mb={4} textAlign="center">Doctorates and Postdocs History</Text>
+            {renderDoctorateChart(doctorateData)}
+          </Box>
+        )}
 
-      {researchData && researchData.data && researchData.data.length > 0 && (
-        <Box mt={4} p={4} bg="white" borderRadius="md" boxShadow="sm">
-          <Text fontSize="xl" mb={4}>Research Numbers History</Text>
-          {renderResearchTable(researchData)}
-        </Box>
-      )}
+        {researchData && researchData.data && researchData.data.length > 0 && (
+          <Box 
+            p={6} 
+            bg="white" 
+            borderRadius="lg" 
+            boxShadow="md"
+            gridColumn={{base: "1", lg: "1 / -1"}}
+            transition="transform 0.2s"
+            _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
+          >
+            <Text fontSize="xl" mb={4} textAlign="center">Research Numbers History</Text>
+            {renderResearchChart(researchData)}
+          </Box>
+        )}
+      </Box>
     </Box>
   );
 };
