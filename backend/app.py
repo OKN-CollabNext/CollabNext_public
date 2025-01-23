@@ -385,6 +385,7 @@ def get_institution_and_subfield_results(institution, topic):
     edges.append({ 'id': f"""{author_id}-{number}""", 'start': author_id, 'end': number, "label": "numWorks", "start_type": "AUTHOR", "end_type": "NUMBER"})
     edges.append({ 'id': f"""{author_id}-{institution_id}""", 'start': author_id, 'end': institution_id, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
   graph = {"nodes": nodes, "edges": edges}
+  metadata['people_count'] = len(list)
   return {"metadata": metadata, "graph": graph, "list": list}
 
 def get_institution_and_researcher_results(institution, researcher):
