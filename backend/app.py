@@ -10,8 +10,6 @@ import os
 app= Flask(__name__, static_folder='build', static_url_path='/')
 CORS(app)
 
-# Make a change 
-
 ## Creates lists for autofill functionality from the institution and keyword csv files
 with open('institutions.csv', 'r') as file:
     autofill_inst_list = file.read().split(',\n')
@@ -504,9 +502,28 @@ def list_given_institution(ror, name, id):
       topics = a['topics']
       for topic in topics:
         if topic['subfield']['display_name'] in final_subfield_count:
-          final_subfield_count[topic['subfield']['display_name']] = final_subfield_count[topic['subfield']['display_name']] + 1
+          pass
         else:
-          final_subfield_count[topic['subfield']['display_name']] = 1
+          query = f"""
+          SELECT DISTINCT ?author ?name (GROUP_CONCAT(DISTINCT ?work; SEPARATOR=", ") AS ?works) WHERE {"{"}
+          ?institution <http://xmlns.com/foaf/0.1/name> "{name}" .
+          ?author <http://www.w3.org/ns/org#memberOf> ?institution .
+          ?author <http://xmlns.com/foaf/0.1/name> ?name .
+          ?work <http://purl.org/dc/terms/creator> ?author .
+          ?subfield a <https://semopenalex.org/ontology/Subfield> .
+          ?subfield <http://www.w3.org/2004/02/skos/core#prefLabel> "{topic['subfield']['display_name']}" .
+          ?topic <http://www.w3.org/2004/02/skos/core#broader> ?subfield .
+          << ?work <https://semopenalex.org/ontology/hasTopic> ?topic >> ?p ?o .
+          {"}"}
+          GROUP BY ?author ?name
+          """
+          results = query_endpoint(query)
+          final_list = []
+          for a in results:
+            final_list.append((a['name'], a['works'].count(",") + 1))
+          final_list.sort(key=lambda x: x[1], reverse=True)
+          num_people = len(final_list)
+          final_subfield_count[topic['subfield']['display_name']] = num_people
     response = requests.get(f'https://api.openalex.org/authors?per-page=200&filter=last_known_institutions.ror:{ror}&cursor=' + next_page, headers=headers)
     data = response.json()
     authors = data['results']
@@ -548,10 +565,22 @@ def list_given_researcher_institution(id, name, institution):
   topics = data['topics']
   for t in topics:
     subfield = t['subfield']['display_name']
-    if subfield in final_subfield_count:
-      final_subfield_count[subfield] = final_subfield_count[subfield] + t['count']
-    else:
-      final_subfield_count[subfield] = t['count']
+    query = f"""
+    SELECT DISTINCT ?work ?name ?cited_by_count WHERE {"{"}
+    ?author <http://xmlns.com/foaf/0.1/name> "{name}" .
+    ?work <http://purl.org/dc/terms/creator> ?author .
+    << ?work <https://semopenalex.org/ontology/hasTopic> ?topic >> ?p ?o .
+    ?topic <http://www.w3.org/2004/02/skos/core#broader> ?subfield .
+    ?subfield <http://www.w3.org/2004/02/skos/core#prefLabel> "{subfield}" .
+    ?work <http://purl.org/dc/terms/title> ?name .
+    ?work <https://semopenalex.org/ontology/citedByCount> ?cited_by_count .
+    {'}'}
+    """
+    results = query_endpoint(query)
+    work_list = []
+    for a in results:
+      work_list.append((a['work'], a['name'], int(a['cited_by_count'])))
+    final_subfield_count[subfield] = len(work_list)
   sorted_subfields = sorted(final_subfield_count.items(), key=lambda x: x[1], reverse=True)
 
   nodes = []
@@ -592,14 +621,27 @@ def list_given_topic(subfield, id):
     try:
       data = response.json()
       data = data['results'][0]
-      inst_topics = data['topics']
-      count = 0
-      for t in inst_topics:
-        if t['subfield']['display_name'] == subfield:
-          count = count + t['count']
-          total_work_count = total_work_count + t['count']
-      if count > 0:
-        subfield_list.append((institution, count))
+      query = f"""
+      SELECT DISTINCT ?author ?name (GROUP_CONCAT(DISTINCT ?work; SEPARATOR=", ") AS ?works) WHERE {"{"}
+      ?institution <http://xmlns.com/foaf/0.1/name> "{institution}" .
+      ?author <http://www.w3.org/ns/org#memberOf> ?institution .
+      ?author <http://xmlns.com/foaf/0.1/name> ?name .
+      ?work <http://purl.org/dc/terms/creator> ?author .
+      ?subfield a <https://semopenalex.org/ontology/Subfield> .
+      ?subfield <http://www.w3.org/2004/02/skos/core#prefLabel> "{subfield}" .
+      ?topic <http://www.w3.org/2004/02/skos/core#broader> ?subfield .
+      << ?work <https://semopenalex.org/ontology/hasTopic> ?topic >> ?p ?o .
+      {"}"}
+      GROUP BY ?author ?name
+      """
+      results = query_endpoint(query)
+      final_list = []
+      for a in results:
+        final_list.append((a['name'], a['works'].count(",") + 1))
+      final_list.sort(key=lambda x: x[1], reverse=True)
+      num_people = len(final_list)
+      if num_people > 0:
+        subfield_list.append((institution, num_people))
     except:
       continue
 
