@@ -38,15 +38,13 @@ const Search = () => {
 
   // const toast = useToast();
 
+  let latestRequestId = 0;
   const handleToggle = () => {
     setIsNetworkMap(!isNetworkMap);
   };
 
-  useEffect(() => {
-    handleSearch();
-  }, []);
-
   const sendSearchRequest = (search: SearchType) => {
+    const requestId = ++latestRequestId;
     fetch(`${baseUrl}/initial-search`, {
       method: 'POST',
       headers: {
@@ -165,15 +163,19 @@ const Search = () => {
                 topic_clusters: data?.metadata?.topic_clusters,
                 search,
               };
-        setData({
-          ...initialValue,
-          ...dataObj,
-        });
-        setIsLoading(false);
+        if (requestId === latestRequestId) {
+          setData({
+            ...initialValue,
+            ...dataObj,
+          });
+          setIsLoading(false);
+        }
       })
       .catch((error) => {
-        setIsLoading(false);
-        setData(initialValue);
+        if (requestId === latestRequestId) {
+          setData(initialValue);
+          setIsLoading(false);
+        }
         console.log(error);
       });
   };
@@ -227,6 +229,10 @@ const Search = () => {
     }
   };
 
+  useEffect(() => {
+    handleSearch();
+  }, [universityName, institutionType, topicType, researcherType]);
+
   return (
     <div className='main-content'>
       <div className='sidebar'>
@@ -245,7 +251,7 @@ const Search = () => {
           }}
           placeholder='University Name'
           className='textbox'
-          disabled={isLoading}
+          // disabled={isLoading}
         />
         <Suggested suggested={suggestedInstitutions} institutions={true} />
         <input
@@ -263,7 +269,7 @@ const Search = () => {
           list='topics'
           placeholder='Type Topic'
           className='textbox'
-          disabled={isLoading}
+          // disabled={isLoading}
         />
         <Suggested suggested={suggestedTopics} institutions={false} />
         <select
@@ -280,13 +286,13 @@ const Search = () => {
           onChange={(e) => setResearcherType(e.target.value)}
           placeholder='Type Researcher'
           className='textbox'
-          disabled={isLoading}
+          // disabled={isLoading}
         />
         {/* <FormErrorMessage>
             Researcher must be provided when Topic is
           </FormErrorMessage>
         </FormControl> */}
-        <Button
+        {/* <Button
           width='100%'
           marginTop='10px'
           backgroundColor='transparent'
@@ -296,7 +302,7 @@ const Search = () => {
           onClick={() => handleSearch()}
         >
           Search
-        </Button>
+        </Button> */}
         <button className='button' onClick={handleToggle}>
           {isNetworkMap ? 'See List Map' : 'See Network Map'}
         </button>
