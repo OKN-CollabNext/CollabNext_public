@@ -1,4 +1,6 @@
 from flask import Flask, send_from_directory, request, jsonify
+from dotenv import load_dotenv
+import os
 import requests
 from flask_cors import CORS
 import json
@@ -7,14 +9,11 @@ from mysql.connector import Error
 import pandas as pd
 import psycopg2
 
+# Load environment variables
+load_dotenv('.env')
+
 app= Flask(__name__, static_folder='build', static_url_path='/')
 CORS(app)
-
-## Postgres database connection parameters
-HOST = "openalex.postgres.database.azure.com"
-DATABASE = "postgres"
-USER = "postgres"
-PASSWORD = "collabnext1!"
 
 
 def execute_query(query, params):
@@ -24,18 +23,33 @@ def execute_query(query, params):
     """
     try:
         with psycopg2.connect(
-            user=USER,
-            password=PASSWORD,
-            host=HOST,            
-            database=DATABASE,
-            sslmode="disable"
+            user=os.getenv('DB_USER'),
+            password=os.getenv('DB_PASSWORD'),
+            host=os.getenv('DB_HOST'),            
+            database=os.getenv('DB_NAME'),
+            sslmode='disable'       
         ) as connection:
             with connection.cursor() as cursor:
                 cursor.execute(query, params)                
-                return cursor.fetchall()
+                return cursor.fetchall()        
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(e)
         return None
+
+def fetch_last_known_institutions(raw_id):
+    """
+    Make a request to the OpenAlex API to fetch the last known institutions for a given author id.
+    The parameter raw_id is the id in the authors table, which has the format "https://openalex.org/author/1234",
+    but we only need the last part of the id, i.e., "1234".
+    """
+    try:
+        id = raw_id.split('/')[-1]
+        response = requests.get(f"{os.getenv('API')}{id}")
+        data = response.json()
+        return data.get('last_known_institutions', [])
+    except Exception as e:
+        print(f"Error fetching last known institutions for id {id}: {e}")
+        return []
 
 def get_author_ids(author_name):  
     query = """SELECT get_author_id(%s);"""
@@ -628,5 +642,5 @@ def serve(path):
     return send_from_directory(app.static_folder, 'index.html')
 
 ## Main 
-if __name__ =='__main__':
+if __name__ =='__main__':    
   app.run()
