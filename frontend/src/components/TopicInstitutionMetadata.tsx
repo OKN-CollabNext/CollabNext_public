@@ -5,7 +5,7 @@ import { Box, Flex, Text } from '@chakra-ui/react';
 import { ResearchDataInterface } from '../utils/interfaces';
 import TopicClusterGraphComponent from './TopicClusterGraphComponent';
 
-const TopicInstitutionMetadata = ({data}: {data: ResearchDataInterface}) => {
+const TopicInstitutionMetadata = ({data, }: {data: ResearchDataInterface}) => {
   const [showTopicClusterGraph, setTopicClusterGraph] = useState(false);
   const handleTopicClusterClick = () => {
     setTopicClusterGraph(!showTopicClusterGraph)
