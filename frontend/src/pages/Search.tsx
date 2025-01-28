@@ -334,7 +334,7 @@ const Search = () => {
           <div className='network-map'>
             <button className='topButton'>Network Map</button>
             {/* <img src={NetworkMap} alt='Network Map' /> */}
-            <GraphComponent graphData={data?.graph} />
+            <GraphComponent graphData={data?.graph} setInstitution={setUniversityName} setTopic={setTopicType} setResearcher={setResearcherType} />
           </div>
         ) : (
           <div>
