@@ -134,7 +134,9 @@ def search_by_author_topic(author_name, topic_name):
 
 def search_by_topic(topic_name):
     query = """SELECT search_by_topic(%s);"""
+    print("Query sent")
     results = execute_query(query, (topic_name,))
+    print("Query done")
     if results:
         # psycopg2 returns a list of tuples with each tuple representing a row
         # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
@@ -234,9 +236,14 @@ def get_researcher_result(researcher):
   metadata['cited_by_count'] = metadata['num_of_citations']
   metadata['oa_link'] = metadata['openalex_url']
   if metadata['last_known_institution'] is None:
-    last_known_institution = ""
+    institution_object = fetch_last_known_institutions(metadata['oa_link'])[0]
+    last_known_institution = institution_object['display_name']
+    print(institution_object)
+    institution_url = institution_object['id']
   else:
     last_known_institution = metadata['last_known_institution']
+  metadata['current_institution'] = last_known_institution
+  metadata['institution_url'] = institution_url
   nodes = []
   edges = []
   nodes.append({ 'id': last_known_institution, 'label': last_known_institution, 'type': 'INSTITUTION' })
