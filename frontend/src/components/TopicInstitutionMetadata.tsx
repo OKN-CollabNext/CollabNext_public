@@ -107,6 +107,7 @@ const TopicInstitutionMetadata = ({
               </Flex>
             ))}
           </Box>
+          </Box>
       )}
     </Flex>
   );
