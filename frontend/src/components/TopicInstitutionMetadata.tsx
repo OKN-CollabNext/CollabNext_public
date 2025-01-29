@@ -16,11 +16,12 @@ const TopicInstitutionMetadata = ({
   }
 
   const transformTopicClustersToGraph = (topicClusters: string[]) => {
-    const nodes: { id: string; label: string; type: string; }[] = [];
+    const nodes: { id: string; label: string; type: string }[] = [];
+    const edges: { id: number; start: string; end: string }[] = [];
 
-    const topicName = `topic_${data?.topic_name}`;
+    const topicNameId = `topic_${data?.topic_name}`;
     nodes.push({
-      id: topicName,
+      id: topicNameId,
       label: data.topic_name,
       type: 'TOPIC'
     });
@@ -32,9 +33,15 @@ const TopicInstitutionMetadata = ({
         label: topic,
         type: 'SUBFIELD',
       });
+      edges.push({
+        id,
+        start: subfieldNodeId,
+        end: topicNameId,
+      });
     });
     return {
       nodes,
+      edges,
     };
   };
   

@@ -10,7 +10,7 @@ const TopicClusterGraphComponent = ({ graphData }) => {
       return; // Exit early if no data is provided
     }
 
-    const { nodes } = graphData;
+    const { nodes, edges } = graphData;
     const container = graphContainerRef.current;
     const orb = new Orb(container);
 
@@ -41,23 +41,18 @@ const TopicClusterGraphComponent = ({ graphData }) => {
             zIndex: 1,
           };
         }
-
-        if (node.data.type === 'INSTITUTION') {
-          return {
-            ...basicStyle,
-            size: 10,
-            color: '#88CCEE',
-            zIndex: 1,
-          };
-        }
-
+        return basicStyle;
+      },
+      getEdgeStyle() {
         return {
-          ...basicStyle,
+          color: '#999999',
+          colorSelected: '#1d1d1d',
+          width: 0.3,
         };
-      },    
+      },
     });
 
-    orb.data.setup({ nodes });
+    orb.data.setup({ nodes, edges });
 
     orb.view.render(() => {
       orb.view.recenter();
