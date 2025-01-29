@@ -3,6 +3,8 @@ import { Box, Flex, Text } from '@chakra-ui/react';
 import { ResearchDataInterface } from '../utils/interfaces';
 import TopicClusterGraphComponent from './TopicClusterGraphComponent';
 
+import { TransformTopicClustersForOrb } from './TransformTopicCluster.js';
+
 const TopicInstitutionMetadata = ({
   data,
   setResearcher,
@@ -14,36 +16,6 @@ const TopicInstitutionMetadata = ({
   const handleTopicClusterClick = () => {
     setTopicClusterGraph(!showTopicClusterGraph);
   }
-
-  const transformTopicClustersToGraph = (topicClusters: string[]) => {
-    const nodes: { id: string; label: string; type: string }[] = [];
-    const edges: { id: number; start: string; end: string }[] = [];
-
-    const topicNameId = `topic_${data?.topic_name}`;
-    nodes.push({
-      id: topicNameId,
-      label: data.topic_name,
-      type: 'TOPIC'
-    });
-
-    topicClusters.forEach((topic, id) => {
-      const subfieldNodeId = `subfield_${id}`;
-      nodes.push({
-        id: subfieldNodeId,
-        label: topic,
-        type: 'SUBFIELD',
-      });
-      edges.push({
-        id,
-        start: subfieldNodeId,
-        end: topicNameId,
-      });
-    });
-    return {
-      nodes,
-      edges,
-    };
-  };
   
   return (
     <Flex
@@ -84,7 +56,7 @@ const TopicInstitutionMetadata = ({
 
       {showTopicClusterGraph ? (
         <Box mt='1rem' w={{ lg: '70%' }} mx='auto'>
-          <TopicClusterGraphComponent graphData={transformTopicClustersToGraph(data?.topic_clusters)} />
+          <TopicClusterGraphComponent graphData={TransformTopicClustersForOrb(data, data?.topic_clusters)} />
         </Box>
       ) : (
         <Box w={{ lg: '64%' }} mt={{ base: '.9rem', lg: 0 }}>
