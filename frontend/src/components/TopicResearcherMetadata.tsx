@@ -1,10 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import { Box, Flex, Text } from '@chakra-ui/react';
 
 import { ResearchDataInterface } from '../utils/interfaces';
 
+import { TransformTopicClustersForOrb } from './TransformTopicCluster.js';
+import TopicClusterGraphComponent from './TopicClusterGraphComponent';
+
 const TopicResearcherMetadata = ({data}: {data: ResearchDataInterface}) => {
+
+  const [showTopicClusterGraph, setTopicClusterGraph] = useState(false);
+  const handleTopicClusterClick = () => {
+    setTopicClusterGraph(!showTopicClusterGraph);
+  }
+
   return (
     <Flex
       display={{base: 'block', lg: 'flex'}}
@@ -29,13 +38,10 @@ const TopicResearcherMetadata = ({data}: {data: ResearchDataInterface}) => {
         <p>Total {data?.cited_count} citations</p>
         <Box mt='0.4rem'>
           <Text fontSize={'17px'} fontWeight={'600'}>
-            Topic Clusters
+            <a style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={handleTopicClusterClick}>
+                Topic Clusters
+            </a>
           </Text>
-          <Box ml='2rem'>
-            {data?.topic_clusters?.map((cluster) => (
-              <Text mt='0.3rem'>{cluster}</Text>
-            ))}
-          </Box>
         </Box>
         <a target='_blank' rel='noreferrer' href={data?.open_alex_link}>
           View Keyword on OpenAlex
@@ -57,7 +63,12 @@ const TopicResearcherMetadata = ({data}: {data: ResearchDataInterface}) => {
             No of citations
           </Text>
         </Box>
-        <Box mt='.5rem'>
+        {showTopicClusterGraph ? (
+          <Box mt='1rem' w={{ lg: '70%' }} mx='auto'>
+            <TopicClusterGraphComponent graphData={TransformTopicClustersForOrb(data, data?.topic_clusters)} />
+        </Box>
+        ) : (
+          <Box mt='.5rem'>
           {data?.works?.map((topic) => (
             <Flex justifyContent={'space-between'}>
               <Text fontSize='14px' w='72%'>
@@ -69,6 +80,7 @@ const TopicResearcherMetadata = ({data}: {data: ResearchDataInterface}) => {
             </Flex>
           ))}
         </Box>
+        )}
       </Box>
     </Flex>
   );
