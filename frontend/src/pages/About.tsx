@@ -245,7 +245,7 @@ const About = () => {
             fontSize={{base: '12px', lg: '16px'}}
           >
             The design and strategic direction of the project are guided by a
-            collection of
+            collection of 
             <a
               href='https://collabnext.io/team'
               target='_blank'
