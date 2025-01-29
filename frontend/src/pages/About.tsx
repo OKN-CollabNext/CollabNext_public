@@ -253,8 +253,8 @@ const About = () => {
               style={{ color: 'cornsilk', textDecoration: 'underline' }}
             >
               User Stories
-            </a>
-          that address <b>who this tool is for and
+            </a>{' '}
+            that address <b>who this tool is for and
             how they may use it</b>. We are further guided by our{' '}
             <a
               href='https://docs.google.com/document/d/1hzO67WsKVI25g8zicMjxqOSTPuJxeWcr/edit?usp=sharing&ouid=103856344114330658213&rtpof=true&sd=true'
