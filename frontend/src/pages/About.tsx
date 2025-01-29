@@ -247,7 +247,7 @@ const About = () => {
             The design and strategic direction of the project are guided by a
             collection of{' '}
             <a
-              href='https://collabnext.io/team'
+              href='https://docs.google.com/document/d/1hzO67WsKVI25g8zicMjxqOSTPuJxeWcr/edit?usp=sharing&ouid=103856344114330658213&rtpof=true&sd=true'
               target='_blank'
               rel='noreferrer'
               style={{ color: 'cornsilk', textDecoration: 'underline' }}
@@ -257,7 +257,7 @@ const About = () => {
             that address <b>who this tool is for and
             how they may use it</b>. We are further guided by our{' '}
             <a
-              href='https://docs.google.com/document/d/1hzO67WsKVI25g8zicMjxqOSTPuJxeWcr/edit?usp=sharing&ouid=103856344114330658213&rtpof=true&sd=true'
+              href='https://collabnext.io/team'
               target='_blank'
               rel='noreferrer'
               style={{color: 'cornsilk', textDecoration: 'underline'}}
