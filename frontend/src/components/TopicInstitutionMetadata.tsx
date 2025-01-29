@@ -37,7 +37,7 @@ const TopicInstitutionMetadata = ({
       nodes,
     };
   };
-
+  
   return (
     <Flex
       display={{ base: 'block', lg: 'flex' }}
@@ -107,7 +107,6 @@ const TopicInstitutionMetadata = ({
               </Flex>
             ))}
           </Box>
-        </Box>
       )}
     </Flex>
   );
