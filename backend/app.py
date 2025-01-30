@@ -134,9 +134,7 @@ def search_by_author_topic(author_name, topic_name):
 
 def search_by_topic(topic_name):
     query = """SELECT search_by_topic(%s);"""
-    print("Query sent")
     results = execute_query(query, (topic_name,))
-    print("Query done")
     if results:
         # psycopg2 returns a list of tuples with each tuple representing a row
         # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
@@ -304,6 +302,7 @@ def get_subfield_results(topic):
   metadata['cited_by_count'] = data['totals']['total_num_of_citations']
   metadata['researchers'] = data['totals']['total_num_of_authors']
   metadata['oa_link'] = subfield_oa_link
+  metadata['name'] = topic.title()
 
   nodes = []
   edges = []
@@ -329,11 +328,12 @@ def get_researcher_and_subfield_results(researcher, topic):
   for entry in data['subfield_metadata']:
     topic_cluster = entry['topic']
     topic_clusters.append(topic_cluster)
+    subfield_oa_link = entry['subfield_url']
   metadata['topic_name'] = topic
   metadata['topic_clusters'] = topic_clusters
   metadata['work_count'] = data['totals']['total_num_of_works']
   metadata['cited_by_count'] = data['totals']['total_num_of_citations']
-  metadata['topic_oa_link'] = ""
+  metadata['topic_oa_link'] = subfield_oa_link
 
   if data['author_metadata']['orcid'] is None:
     metadata['orcid'] = ''
@@ -342,7 +342,8 @@ def get_researcher_and_subfield_results(researcher, topic):
   metadata['researcher_name'] = researcher
   metadata['researcher_oa_link'] = data['author_metadata']['openalex_url']
   if data['author_metadata']['last_known_institution'] is None:
-    metadata['current_institution'] = ""
+    institution_object = fetch_last_known_institutions(metadata['researcher_oa_link'])[0]
+    metadata['current_institution'] = institution_object['display_name']
   else:
     metadata['current_institution'] = data['author_metadata']['last_known_institution']
   last_known_institution = metadata['current_institution']
@@ -376,12 +377,13 @@ def get_institution_and_subfield_results(institution, topic):
   for entry in data['subfield_metadata']:
     topic_cluster = entry['topic']
     topic_clusters.append(topic_cluster)
+    subfield_oa_link = entry['subfield_url']
   metadata['topic_name'] = topic
   metadata['topic_clusters'] = topic_clusters
   metadata['work_count'] = data['totals']['total_num_of_works']
   metadata['cited_by_count'] = data['totals']['total_num_of_citations']
   metadata['people_count'] = data['totals']['total_num_of_authors']
-  metadata['topic_oa_link'] = ""
+  metadata['topic_oa_link'] = subfield_oa_link
   metadata['topic_name'] = topic
 
   metadata['homepage'] = data['institution_metadata']['url']
