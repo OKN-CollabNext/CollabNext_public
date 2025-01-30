@@ -10,7 +10,7 @@ import {
   useDisclosure,
 } from '@chakra-ui/react';
 
-const GraphComponent = ({graphData}) => {
+const GraphComponent = ({graphData, setInstitution, setTopic, setResearcher}) => {
   const graphContainerRef = useRef(null);
   const loaderOverlayRef = useRef(null);
   // const detailsRef = useRef(null);
@@ -150,8 +150,16 @@ const GraphComponent = ({graphData}) => {
       const nodeData = event.node.data;
       console.log('Selected Node:', nodeData); // Log the selected node to the console
       setSelectedNode(nodeData);
-      nodeData?.type !== 'DOMAIN' && onOpen();
-    }
+      if (nodeData.type === "INSTITUTION") {
+        setInstitution(nodeData.label);
+      }else if (nodeData.type === "TOPIC") {
+        setTopic(nodeData.label);
+      }else if (nodeData.type === "AUTHOR") {
+        setResearcher(nodeData.label)
+      } 
+      }
+      // nodeData?.type !== 'DOMAIN' && onOpen();
+  
 
     function handleEdgeClick(event) {
       const edgeData = event.edge.data;

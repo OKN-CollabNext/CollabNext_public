@@ -4,7 +4,13 @@ import { Box, Flex, Text } from '@chakra-ui/react';
 
 import { ResearchDataInterface } from '../utils/interfaces';
 
-const TopicInstitutionMetadata = ({data}: {data: ResearchDataInterface}) => {
+const TopicInstitutionMetadata = ({
+  data,
+  setResearcher,
+}: {
+  data: ResearchDataInterface;
+  setResearcher: React.Dispatch<React.SetStateAction<string>>;
+}) => {
   return (
     <Flex
       display={{base: 'block', lg: 'flex'}}
@@ -55,7 +61,13 @@ const TopicInstitutionMetadata = ({data}: {data: ResearchDataInterface}) => {
         <Box mt='.5rem'>
           {data?.authors?.map((topic) => (
             <Flex justifyContent={'space-between'}>
-              <Text fontSize='14px' w='72%'>
+              <Text
+                fontSize='14px'
+                w='72%'
+                onClick={() => setResearcher(topic[0])}
+                textDecoration={'underline'}
+                cursor='pointer'
+              >
                 {topic[0]}
               </Text>
               <Text fontSize='14px' w='26%'>
