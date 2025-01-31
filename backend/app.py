@@ -281,7 +281,7 @@ def get_institution_results(institution):
   institution_id = metadata['openalex_url']
   nodes.append({ 'id': institution_id, 'label': institution, 'type': 'INSTITUTION' })
   for entry in data['data']:
-    subfield = entry['topic_name']
+    subfield = entry['topic_subfield']
     number = entry['num_of_authors']
     list.append((subfield, number))
     nodes.append({'id': subfield, 'label': subfield, 'type': "TOPIC"})
