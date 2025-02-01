@@ -1627,9 +1627,7 @@ def get_r_and_d():
         abort(400, description="Missing 'institution_name' in request data")
 
     institution_name = data['institution_name']
-    print("institution_name:", institution_name)
     result = get_institutions_r_and_d(institution_name)
-    print("result:", result)
     if result:
         return jsonify(result)
     else:
