@@ -79,9 +79,32 @@ interface ResearchData {
   }>;
 }
 
+interface FacultyAwardsData {
+  institution_name: string;
+  institution_id: string;
+  data: Array<{
+    nae: number | null;
+    nam: number | null;
+    nas: number | null;
+    num_fac_awards: number | null;
+  }>;
+}
+
 interface YearData {
   year: number;
   [key: string]: any;
+}
+
+interface RAndDData {
+  institution_name: string;
+  institution_id: string;
+  data: Array<{
+    category: string;
+    federal: number | null;
+    percent_federal: number | null;
+    total: number | null;
+    percent_total: number | null;
+  }>;
 }
 
 interface Props {
@@ -96,6 +119,8 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
   const [medicalData, setMedicalData] = useState<MedicalExpenseData | null>(null);
   const [doctorateData, setDoctorateData] = useState<DoctoratePostdocData | null>(null);
   const [researchData, setResearchData] = useState<ResearchData | null>(null);
+  const [facultyAwardsData, setFacultyAwardsData] = useState<FacultyAwardsData | null>(null);
+  const [rAndDData, setRAndDData] = useState<RAndDData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const BASE_URL = process.env.REACT_APP_BASE_URL || "";
@@ -185,6 +210,30 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
           const researchResult = await researchResponse.json();
           setResearchData(researchResult);
         }
+
+        // Fetch Faculty Awards Data
+        const facultyAwardsResponse = await fetch(`${BASE_URL}/mup-faculty-awards`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ institution_name: institutionName }),
+        });
+
+        if (facultyAwardsResponse.ok) {
+          const facultyAwardsResult = await facultyAwardsResponse.json();
+          setFacultyAwardsData(facultyAwardsResult);
+        }
+
+        // Fetch R&D Data
+        const rAndDResponse = await fetch(`${BASE_URL}/mup-r-and-d`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ institution_name: institutionName }),
+        });
+
+        if (rAndDResponse.ok) {
+          const rAndDResult = await rAndDResponse.json();
+          setRAndDData(rAndDResult);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred while fetching data");
       } finally {
@@ -197,11 +246,11 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
     }
   }, [institutionName, BASE_URL]);
 
-  const createChartData = (label: string, data: Array<{year: number, [key: string]: any}>, valueKeys: string[], valueLabels: string[]) => {
+  const createChartData = (label: string, data: Array<{year: number, [key: string]: any}>, valueKeys: string[], valueLabels: string[], xAxis?: string) => {
     const sortedData = [...data].sort((a, b) => a.year - b.year);
     
     return {
-      labels: sortedData.map(item => item.year),
+      labels: sortedData.map(item => item[xAxis || 'year']),
       datasets: valueKeys.map((key, index) => ({
         label: valueLabels[index],
         data: sortedData.map(item => item[key]),
@@ -335,16 +384,76 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
   };
 
   const renderSATChart = (data: SATData) => {
-    const chartData = createChartData(
-      'SAT Scores',
-      data.data,
-      ['sat'],
-      ['SAT Score']
-    );
+    // Filter out null values and sort by year
+    const validData = data.data
+      .filter(d => d.sat !== null)
+      .sort((a, b) => a.year - b.year);
+
+    const chartData = {
+      labels: validData.map(d => d.year),
+      datasets: [{
+        label: 'SAT Score',
+        data: validData.map(d => d.sat),
+        borderColor: '#003057',
+        tension: 0.1,
+        fill: false,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        spanGaps: true,
+      }]
+    };
+
+    const satOptions = {
+      ...chartOptions,
+      scales: {
+        x: {
+          type: 'category' as const,
+          display: true,
+          title: {
+            display: true,
+            text: 'Year',
+            font: {
+              size: 14,
+              weight: 'bold',
+            },
+          },
+          ticks: {
+            font: {
+              family: "'Inter', sans-serif",
+            },
+          },
+        },
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: 'rgba(0, 0, 0, 0.05)',
+          },
+          ticks: {
+            font: {
+              family: "'Inter', sans-serif",
+            },
+          },
+        },
+      },
+      plugins: {
+        ...chartOptions.plugins,
+        tooltip: {
+          ...chartOptions.plugins.tooltip,
+          callbacks: {
+            title: function(tooltipItems: any) {
+              return tooltipItems[0].label;
+            },
+            label: function(context: any) {
+              return `SAT Score: ${context.raw}`;
+            }
+          }
+        }
+      }
+    };
 
     return (
       <div style={{ height: '100%', width: '100%', position: 'relative' }}>
-        <Line data={chartData} options={chartOptions} />
+        <Line data={chartData} options={satOptions} />
       </div>
     );
   };
@@ -500,6 +609,143 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
     );
   };
 
+  const renderFacultyAwardsChart = (data: FacultyAwardsData) => {
+    const chartData = createChartData(
+      'Faculty Awards',
+      data.data,
+      ['nae', 'nam', 'nas', 'num_fac_awards'],
+      ['National Academy of Engineering', 'National Academy of Medicine', 'National Academy of Sciences', 'Total Faculty Awards']
+    );
+
+    const facultyOptions = {
+      ...chartOptions,
+      scales: {
+        x: {
+          type: 'category',
+          display: true,
+          title: {
+            display: true,
+            text: 'Year',
+            font: {
+              size: 14,
+              weight: 'bold',
+            },
+          },
+          ticks: {
+            font: {
+              family: "'Inter', sans-serif",
+            },
+          },
+        },
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: 'rgba(0, 0, 0, 0.05)',
+          },
+          ticks: {
+            font: {
+              family: "'Inter', sans-serif",
+            },
+            stepSize: 1,
+          },
+        },
+      },
+      plugins: {
+        ...chartOptions.plugins,
+        tooltip: {
+          ...chartOptions.plugins.tooltip,
+          callbacks: {
+            label: function(context: any) {
+              const value = context.raw;
+              if (typeof value === 'number') {
+                return `${context.dataset.label}: ${value}`;
+              }
+              return context.dataset.label;
+            }
+          }
+        }
+      }
+    };
+
+    return (
+      <div style={{ height: '100%', width: '100%', position: 'relative' }}>
+        <Line data={chartData} options={facultyOptions} />
+      </div>
+    );
+  };
+
+  const renderRAndDChart = (data: RAndDData) => {
+    const filteredData = data.data.filter(d => d.category !== '"sum"').map(d => ({
+      ...d,
+      category: d.category.replace(/"/g, '').split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ')
+    }));
+    
+    const chartData = createChartData(
+      'R&D Numbers',
+      filteredData,
+      ['federal', 'total'],
+      ['Federal Numbers', 'Total Numbers'],
+      'category'
+    );
+
+    const rAndDOptions = {
+      ...chartOptions,
+      scales: {
+        x: {
+          type: 'category',
+          display: true,
+          title: {
+            display: true,
+            text: 'Category',
+            font: {
+              size: 14,
+              weight: 'bold',
+            },
+          },
+          ticks: {
+            font: {
+              family: "'Inter', sans-serif",
+            },
+          },
+        },
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: 'rgba(0, 0, 0, 0.05)',
+          },
+          ticks: {
+            font: {
+              family: "'Inter', sans-serif",
+            },
+          },
+        },
+      },
+      plugins: {
+        ...chartOptions.plugins,
+        tooltip: {
+          ...chartOptions.plugins.tooltip,
+          callbacks: {
+            label: function(context: any) {
+              const value = context.raw;
+              const percent = context.dataset.label === 'Federal Numbers' 
+                ? filteredData[context.dataIndex].percent_federal
+                : filteredData[context.dataIndex].percent_total;
+              return `${context.dataset.label}: ${value.toLocaleString()} (${(percent * 100).toFixed(1)}%)`;
+            }
+          }
+        }
+      }
+    };
+
+    return (
+      <div style={{ height: '100%', width: '100%', position: 'relative' }}>
+        <Line data={chartData} options={rAndDOptions} />
+      </div>
+    );
+  };
+
   const renderYearSummary = (year: number) => {
     if (!year) return null;
 
@@ -599,7 +845,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
           {institutionName}
         </Text>
         <Text fontSize="lg" color="gray.600">
-          MUP Institution Data Analysis
+          MUP Institution Data
         </Text>
       </Box>
 
@@ -681,7 +927,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
               textAlign="center"
               color="gray.700"
             >
-              SAT Score History
+              SAT Score by Year
             </Text>
             {renderSATChart(satData)}
           </Box>
@@ -706,7 +952,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
               textAlign="center"
               color="gray.700"
             >
-              Endowment and Giving History
+              Endowment and Giving by Year
             </Text>
             {renderEndowmentChart(endowmentData)}
           </Box>
@@ -731,7 +977,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
               textAlign="center"
               color="gray.700"
             >
-              Medical Expenditure History
+              Medical Expenditure by Year
             </Text>
             {renderMedicalChart(medicalData)}
           </Box>
@@ -756,7 +1002,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
               textAlign="center"
               color="gray.700"
             >
-              Doctorates and Postdocs History
+              Doctorates and Postdocs Numbers by Year
             </Text>
             {renderDoctorateChart(doctorateData)}
           </Box>
@@ -782,9 +1028,60 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
               textAlign="center"
               color="gray.700"
             >
-              Research Numbers History
+              Research Numbers by Year
             </Text>
             {renderResearchChart(researchData)}
+          </Box>
+        )}
+
+        {facultyAwardsData && facultyAwardsData.data && facultyAwardsData.data.length > 0 && (
+          <Box 
+            p={6} 
+            bg="white" 
+            borderRadius="xl" 
+            boxShadow="sm"
+            transition="all 0.3s"
+            _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
+            height="400px"
+            position="relative"
+            overflow="hidden"
+          >
+            <Text 
+              fontSize="xl" 
+              fontWeight="semibold" 
+              mb={4} 
+              textAlign="center"
+              color="gray.700"
+            >
+              Faculty Awards by Year
+            </Text>
+            {renderFacultyAwardsChart(facultyAwardsData)}
+          </Box>
+        )}
+
+        {rAndDData && rAndDData.data && rAndDData.data.length > 0 && (
+          <Box 
+            p={6} 
+            bg="white" 
+            borderRadius="xl" 
+            boxShadow="sm"
+            gridColumn={{base: "1", lg: "1 / -1"}}
+            transition="all 0.3s"
+            _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
+            height="500px"
+            position="relative"
+            overflow="hidden"
+          >
+            <Text 
+              fontSize="xl" 
+              fontWeight="semibold" 
+              mb={4} 
+              textAlign="center"
+              color="gray.700"
+            >
+              R&D Numbers by Category
+            </Text>
+            {renderRAndDChart(rAndDData)}
           </Box>
         )}
       </Box>

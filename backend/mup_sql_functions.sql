@@ -147,3 +147,52 @@ BEGIN
     );
 END;
 $$ LANGUAGE plpgsql;
+
+-- Get the institution's faculty awards data across years
+CREATE OR REPLACE FUNCTION get_institutions_faculty_awards(
+    institution_id TEXT
+)
+RETURNS JSONB AS $$
+BEGIN
+    RETURN jsonb_build_object(
+        'data', (
+            SELECT jsonb_agg(row_to_json(data))
+            FROM (
+                SELECT
+                    year,
+                    nae,
+                    nam,
+                    nas,
+                    num_fac_awards
+                FROM mup.institutions_faculty_awards_data
+                WHERE openalex_id = institution_id
+                ORDER BY year
+            ) AS data
+        )
+    );
+END;
+$$ LANGUAGE plpgsql;
+
+-- Get the institution's R&D numbers across different categories
+CREATE OR REPLACE FUNCTION get_institutions_r_and_d(
+    institution_id TEXT
+)
+RETURNS JSONB AS $$
+BEGIN
+    RETURN jsonb_build_object(
+        'data', (
+            SELECT jsonb_agg(row_to_json(data))
+            FROM (
+                SELECT
+                    category,
+                    federal,
+                    percent_federal,
+                    total,
+                    percent_total
+                FROM mup.institutions_r_and_d as ird
+                WHERE ird.institution_id = get_institutions_r_and_d.institution_id
+            ) AS data
+        )
+    );
+END;
+$$ LANGUAGE plpgsql;

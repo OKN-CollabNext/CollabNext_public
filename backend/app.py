@@ -1575,6 +1575,66 @@ def get_mup_id():
     else:
         return jsonify({"error": "No MUP ID found"}), 404
 
+def get_institutions_faculty_awards(institution_name):
+    """Returns {institution_name: String, institution_id: String, data: a list of dictionaries containing 'nae', 'nam', 'nas', 'num_fac_awards', and 'year'}"""
+    institution_id = get_institution_id(institution_name)
+    if not institution_id:
+        return None
+
+    institution_id = institution_id['institution_id']
+    query = """SELECT get_institutions_faculty_awards(%s);"""
+    results = execute_query(query, (institution_id,))
+    if results:
+        # Add the institution name and id to the result
+        results[0][0]['institution_name'] = institution_name
+        results[0][0]['institution_id'] = institution_id
+        return results[0][0]
+    return None
+
+@app.route('/mup-faculty-awards', methods=['POST'])
+def get_faculty_awards():
+    data = request.json
+    if not data or 'institution_name' not in data:
+        abort(400, description="Missing 'institution_name' in request data")
+
+    institution_name = data['institution_name']
+    result = get_institutions_faculty_awards(institution_name)
+    if result:
+        return jsonify(result)
+    else:
+        return jsonify({"error": "No faculty awards found"}), 404
+    
+def get_institutions_r_and_d(institution_name):
+    """Returns {institution_name: String, institution_id: String, data: a list of dictionaries containing 'category', 'federal', 'percent_federal', 'total', and 'percent_total'}"""
+    institution_id = get_institution_id(institution_name)
+    if not institution_id:
+        return None
+
+    institution_id = institution_id['institution_id']
+    query = """SELECT get_institutions_r_and_d(%s);"""
+    results = execute_query(query, (institution_id,))
+    if results:
+        # Add the institution name and id to the result
+        results[0][0]['institution_name'] = institution_name
+        results[0][0]['institution_id'] = institution_id
+        return results[0][0]
+    return None
+
+@app.route('/mup-r-and-d', methods=['POST'])
+def get_r_and_d():
+    data = request.json
+    if not data or 'institution_name' not in data:
+        abort(400, description="Missing 'institution_name' in request data")
+
+    institution_name = data['institution_name']
+    print("institution_name:", institution_name)
+    result = get_institutions_r_and_d(institution_name)
+    print("result:", result)
+    if result:
+        return jsonify(result)
+    else:
+        return jsonify({"error": "No R&D numbers found"}), 404
+
 ## Main 
 if __name__ =='__main__':
   app.run()
