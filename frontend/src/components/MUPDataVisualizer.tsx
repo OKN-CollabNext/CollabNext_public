@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Box, Text, Spinner, Table, Thead, Tbody, Tr, Th, Td, Select, HStack, Button, Tooltip as ChakraTooltip } from "@chakra-ui/react";
+import { Box, Text, Spinner, Table, Thead, Tbody, Tr, Th, Td, Select, HStack, Button, Tooltip as ChakraTooltip, Flex } from "@chakra-ui/react";
 import {
   Chart,
   CategoryScale,
@@ -12,7 +12,7 @@ import {
 } from 'chart.js/auto';
 import { Line } from 'react-chartjs-2';
 import zoomPlugin from 'chartjs-plugin-zoom';
-import { FiZoomOut } from 'react-icons/fi';
+import { FiZoomOut, FiInfo } from 'react-icons/fi';
 
 Chart.register(
   CategoryScale,
@@ -110,6 +110,34 @@ interface RAndDData {
 interface Props {
   institutionName: string;
 }
+
+const ChartHeader = ({ title, description }: { title: string, description: string }) => (
+  <Flex 
+    fontSize="xl" 
+    fontWeight="semibold" 
+    mb={4} 
+    textAlign="center"
+    color="gray.700"
+    justifyContent="center"
+    alignItems="center"
+    gap={2}
+  >
+    {title}
+    <ChakraTooltip 
+      label={description} 
+      placement="top" 
+      hasArrow
+      bg="gray.700"
+      color="white"
+      p={2}
+      borderRadius="md"
+    >
+      <Box as="span" cursor="help">
+        <FiInfo size={16} />
+      </Box>
+    </ChakraTooltip>
+  </Flex>
+);
 
 const MUPDataVisualizer = ({ institutionName }: Props) => {
   const [loading, setLoading] = useState(true);
@@ -942,15 +970,10 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
           position="relative"
           overflow="hidden"
         >
-          <Text 
-            fontSize="xl" 
-            fontWeight="semibold" 
-            mb={4} 
-            textAlign="center"
-            color="gray.700"
-          >
-            SAT Score by Year
-          </Text>
+          <ChartHeader 
+            title="SAT Score by Year"
+            description="Shows the average SAT scores of admitted students over time."
+          />
           {renderChartWithError(
             satData && satData.data && satData.data.length > 0 ? renderSATChart(satData) : null,
             'sat',
@@ -969,15 +992,10 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
           position="relative"
           overflow="hidden"
         >
-          <Text 
-            fontSize="xl" 
-            fontWeight="semibold" 
-            mb={4} 
-            textAlign="center"
-            color="gray.700"
-          >
-            Endowment and Giving by Year
-          </Text>
+          <ChartHeader 
+            title="Endowment and Giving by Year"
+            description="Shows the institution's endowment value and annual giving over time."
+          />
           {renderChartWithError(
             endowmentData && endowmentData.data && endowmentData.data.length > 0 ? renderEndowmentChart(endowmentData) : null,
             'endowment',
@@ -996,15 +1014,10 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
           position="relative"
           overflow="hidden"
         >
-          <Text 
-            fontSize="xl" 
-            fontWeight="semibold" 
-            mb={4} 
-            textAlign="center"
-            color="gray.700"
-          >
-            Medical Expenditure by Year
-          </Text>
+          <ChartHeader 
+            title="Medical Expenditure by Year"
+            description="Shows the institution's medical expenses over time."
+          />
           {renderChartWithError(
             medicalData && medicalData.data && medicalData.data.length > 0 ? renderMedicalChart(medicalData) : null,
             'medical',
@@ -1023,15 +1036,10 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
           position="relative"
           overflow="hidden"
         >
-          <Text 
-            fontSize="xl" 
-            fontWeight="semibold" 
-            mb={4} 
-            textAlign="center"
-            color="gray.700"
-          >
-            Doctorates and Postdocs Numbers by Year
-          </Text>
+          <ChartHeader 
+            title="Doctorates and Postdocs Numbers by Year"
+            description="Shows the number of doctorates and postdocs awarded over time."
+          />
           {renderChartWithError(
             doctorateData && doctorateData.data && doctorateData.data.length > 0 ? renderDoctorateChart(doctorateData) : null,
             'doctorate',
@@ -1050,15 +1058,10 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
           position="relative"
           overflow="hidden"
         >
-          <Text 
-            fontSize="xl" 
-            fontWeight="semibold" 
-            mb={4} 
-            textAlign="center"
-            color="gray.700"
-          >
-            Research Numbers by Year
-          </Text>
+          <ChartHeader 
+            title="Research Numbers by Year"
+            description="Shows the number of research projects over time."
+          />
           {renderChartWithError(
             researchData && researchData.data && researchData.data.length > 0 ? renderResearchChart(researchData) : null,
             'research',
@@ -1077,15 +1080,10 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
           position="relative"
           overflow="hidden"
         >
-          <Text 
-            fontSize="xl" 
-            fontWeight="semibold" 
-            mb={4} 
-            textAlign="center"
-            color="gray.700"
-          >
-            Faculty Awards by Year
-          </Text>
+          <ChartHeader 
+            title="Faculty Awards by Year"
+            description="Shows the number of prestigious faculty awards (NAE, NAM, NAS) received."
+          />
           {renderChartWithError(
             facultyAwardsData && facultyAwardsData.data && facultyAwardsData.data.length > 0 ? renderFacultyAwardsChart(facultyAwardsData) : null,
             'faculty',
@@ -1104,15 +1102,10 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
           position="relative"
           overflow="hidden"
         >
-          <Text 
-            fontSize="xl" 
-            fontWeight="semibold" 
-            mb={4} 
-            textAlign="center"
-            color="gray.700"
-          >
-            R&D Numbers by Category
-          </Text>
+          <ChartHeader 
+            title="R&D Numbers by Category"
+            description="Shows the breakdown of research and development numbers by category."
+          />
           {renderChartWithError(
             rAndDData && rAndDData.data && rAndDData.data.length > 0 ? renderRAndDChart(rAndDData) : null,
             'rAndD',
