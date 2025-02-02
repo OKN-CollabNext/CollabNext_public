@@ -123,6 +123,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
   const [rAndDData, setRAndDData] = useState<RAndDData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [fetchErrors, setFetchErrors] = useState<{[key: string]: string}>({});
   const BASE_URL = process.env.REACT_APP_BASE_URL || "";
 
   useEffect(() => {
@@ -135,107 +136,91 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
           throw new Error("BASE_URL is not defined");
         }
 
-        // Fetch MUP Data
-        const mupResponse = await fetch(`${BASE_URL}/get-mup-id`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        const mupIdResponse = await fetch(`${BASE_URL}/get-mup-id`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ institution_name: institutionName }),
         });
+        const mupIdData = await mupIdResponse.json();
+        
+        const mupId = mupIdData.institution_mup_id;
 
-        if (mupResponse.ok) {
-          const mupResult = await mupResponse.json();
-          setMupData(mupResult);
-        } else {
-          setError("Failed to fetch MUP data");
-        }
+        const fetchPromises = [
+          fetch(`${BASE_URL}/mup-sat-scores`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ institution_name: institutionName }),
+          }).then(res => res.json()).catch(() => {
+            setFetchErrors(prev => ({...prev, sat: "SAT score data not available for this institution"}));
+            return null;
+          }),
 
-        // Fetch SAT Data
-        const satResponse = await fetch(`${BASE_URL}/mup-sat-scores`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ institution_name: institutionName }),
-        });
+          fetch(`${BASE_URL}/endowments-and-givings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ institution_name: institutionName }),
+          }).then(res => res.json()).catch(() => {
+            setFetchErrors(prev => ({...prev, endowment: "Endowment data not available for this institution"}));
+            return null;
+          }),
 
-        if (satResponse.ok) {
-          const satResult = await satResponse.json();
-          setSatData(satResult);
-        } else {
-          setError("Failed to fetch SAT data");
-        }
+          mupId ? fetch(`${BASE_URL}/institution_medical_expenses`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ institution_name: institutionName }),
+          }).then(res => res.json()).catch(() => {
+            setFetchErrors(prev => ({...prev, medical: "Medical expense data not available for this institution"}));
+            return null;
+          }) : Promise.resolve(null),
 
-        // Fetch Endowments/Givings Data
-        const endowmentResponse = await fetch(`${BASE_URL}/endowments-and-givings`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ institution_name: institutionName }),
-        });
+          fetch(`${BASE_URL}/institution_doctorates_and_postdocs`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ institution_name: institutionName }),
+          }).then(res => res.json()).catch(() => {
+            setFetchErrors(prev => ({...prev, doctorate: "Doctorate/Postdoc data not available for this institution"}));
+            return null;
+          }),
 
-        if (endowmentResponse.ok) {
-          const endowmentResult = await endowmentResponse.json();
-          setEndowmentData(endowmentResult);
-        }
+          fetch(`${BASE_URL}/institution_num_of_researches`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ institution_name: institutionName }),
+          }).then(res => res.json()).catch(() => {
+            setFetchErrors(prev => ({...prev, research: "Research data not available for this institution"}));
+            return null;
+          }),
 
-        // Fetch Medical Expenses Data
-        const medicalResponse = await fetch(`${BASE_URL}/institution_medical_expenses`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ institution_name: institutionName }),
-        });
+          fetch(`${BASE_URL}/mup-faculty-awards`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ institution_name: institutionName }),
+          }).then(res => res.json()).catch(() => {
+            setFetchErrors(prev => ({...prev, faculty: "Faculty awards data not available for this institution"}));
+            return null;
+          }),
 
-        if (medicalResponse.ok) {
-          const medicalResult = await medicalResponse.json();
-          setMedicalData(medicalResult);
-        }
+          fetch(`${BASE_URL}/mup-r-and-d`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ institution_name: institutionName }),
+          }).then(res => res.json()).catch(() => {
+            setFetchErrors(prev => ({...prev, rAndD: "R&D data not available for this institution"}));
+            return null;
+          }),
+        ];
 
-        // Fetch Doctorates and Postdocs Data
-        const doctorateResponse = await fetch(`${BASE_URL}/institution_doctorates_and_postdocs`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ institution_name: institutionName }),
-        });
+        const [satData, endowmentData, medicalData, doctorateData, researchData, facultyAwardsData, rAndDData] = await Promise.all(fetchPromises);
 
-        if (doctorateResponse.ok) {
-          const doctorateResult = await doctorateResponse.json();
-          setDoctorateData(doctorateResult);
-        }
-
-        // Fetch Research Numbers Data
-        const researchResponse = await fetch(`${BASE_URL}/institution_num_of_researches`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ institution_name: institutionName }),
-        });
-
-        if (researchResponse.ok) {
-          const researchResult = await researchResponse.json();
-          setResearchData(researchResult);
-        }
-
-        // Fetch Faculty Awards Data
-        const facultyAwardsResponse = await fetch(`${BASE_URL}/mup-faculty-awards`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ institution_name: institutionName }),
-        });
-
-        if (facultyAwardsResponse.ok) {
-          const facultyAwardsResult = await facultyAwardsResponse.json();
-          setFacultyAwardsData(facultyAwardsResult);
-        }
-
-        // Fetch R&D Data
-        const rAndDResponse = await fetch(`${BASE_URL}/mup-r-and-d`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ institution_name: institutionName }),
-        });
-
-        if (rAndDResponse.ok) {
-          const rAndDResult = await rAndDResponse.json();
-          setRAndDData(rAndDResult);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred while fetching data");
+        if (satData && !satData.error) setSatData(satData);
+        if (endowmentData && !endowmentData.error) setEndowmentData(endowmentData);
+        if (medicalData && !medicalData.error) setMedicalData(medicalData);
+        if (doctorateData && !doctorateData.error) setDoctorateData(doctorateData);
+        if (researchData && !researchData.error) setResearchData(researchData);
+        if (facultyAwardsData && !facultyAwardsData.error) setFacultyAwardsData(facultyAwardsData);
+        if (rAndDData && !rAndDData.error) setRAndDData(rAndDData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
@@ -255,7 +240,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
         label: valueLabels[index],
         data: sortedData.map(item => item[key]),
         borderColor: [
-          '#003057',  // Primary blue
+          '#003057',  // Blue
           '#DD6B20',  // Orange
           '#38A169',  // Green
           '#805AD5',  // Purple
@@ -825,6 +810,44 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
     );
   };
 
+  const renderChartWithError = (chartData: any, errorKey: string, title: string) => {
+    if (fetchErrors[errorKey]) {
+      return (
+        <Box
+          height="100%"
+          width="100%"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          textAlign="center"
+          p={4}
+        >
+          <Text color="gray.500">
+            {fetchErrors[errorKey]}
+          </Text>
+        </Box>
+      );
+    }
+    
+    if (!chartData) {
+      return (
+        <Box
+          height="100%"
+          width="100%"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          textAlign="center"
+          p={4}
+        >
+          <Text color="gray.500">No data available</Text>
+        </Box>
+      );
+    }
+
+    return chartData;
+  };
+
   if (loading) {
     return <Spinner />;
   }
@@ -908,182 +931,194 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
         gap={8}
         mt={8}
       >
-        {satData && satData.data && satData.data.length > 0 && (
-          <Box 
-            p={6} 
-            bg="white" 
-            borderRadius="xl" 
-            boxShadow="sm"
-            transition="all 0.3s"
-            _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
-            height="400px"
-            position="relative"
-            overflow="hidden"
+        <Box 
+          p={6} 
+          bg="white" 
+          borderRadius="xl" 
+          boxShadow="sm"
+          transition="all 0.3s"
+          _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
+          height="400px"
+          position="relative"
+          overflow="hidden"
+        >
+          <Text 
+            fontSize="xl" 
+            fontWeight="semibold" 
+            mb={4} 
+            textAlign="center"
+            color="gray.700"
           >
-            <Text 
-              fontSize="xl" 
-              fontWeight="semibold" 
-              mb={4} 
-              textAlign="center"
-              color="gray.700"
-            >
-              SAT Score by Year
-            </Text>
-            {renderSATChart(satData)}
-          </Box>
-        )}
+            SAT Score by Year
+          </Text>
+          {renderChartWithError(
+            satData && satData.data && satData.data.length > 0 ? renderSATChart(satData) : null,
+            'sat',
+            'SAT Score by Year'
+          )}
+        </Box>
 
-        {endowmentData && endowmentData.data && endowmentData.data.length > 0 && (
-          <Box 
-            p={6} 
-            bg="white" 
-            borderRadius="xl" 
-            boxShadow="sm"
-            transition="all 0.3s"
-            _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
-            height="400px"
-            position="relative"
-            overflow="hidden"
+        <Box 
+          p={6} 
+          bg="white" 
+          borderRadius="xl" 
+          boxShadow="sm"
+          transition="all 0.3s"
+          _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
+          height="400px"
+          position="relative"
+          overflow="hidden"
+        >
+          <Text 
+            fontSize="xl" 
+            fontWeight="semibold" 
+            mb={4} 
+            textAlign="center"
+            color="gray.700"
           >
-            <Text 
-              fontSize="xl" 
-              fontWeight="semibold" 
-              mb={4} 
-              textAlign="center"
-              color="gray.700"
-            >
-              Endowment and Giving by Year
-            </Text>
-            {renderEndowmentChart(endowmentData)}
-          </Box>
-        )}
+            Endowment and Giving by Year
+          </Text>
+          {renderChartWithError(
+            endowmentData && endowmentData.data && endowmentData.data.length > 0 ? renderEndowmentChart(endowmentData) : null,
+            'endowment',
+            'Endowment and Giving by Year'
+          )}
+        </Box>
 
-        {medicalData && medicalData.data && medicalData.data.length > 0 && (
-          <Box 
-            p={6} 
-            bg="white" 
-            borderRadius="xl" 
-            boxShadow="sm"
-            transition="all 0.3s"
-            _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
-            height="400px"
-            position="relative"
-            overflow="hidden"
+        <Box 
+          p={6} 
+          bg="white" 
+          borderRadius="xl" 
+          boxShadow="sm"
+          transition="all 0.3s"
+          _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
+          height="400px"
+          position="relative"
+          overflow="hidden"
+        >
+          <Text 
+            fontSize="xl" 
+            fontWeight="semibold" 
+            mb={4} 
+            textAlign="center"
+            color="gray.700"
           >
-            <Text 
-              fontSize="xl" 
-              fontWeight="semibold" 
-              mb={4} 
-              textAlign="center"
-              color="gray.700"
-            >
-              Medical Expenditure by Year
-            </Text>
-            {renderMedicalChart(medicalData)}
-          </Box>
-        )}
+            Medical Expenditure by Year
+          </Text>
+          {renderChartWithError(
+            medicalData && medicalData.data && medicalData.data.length > 0 ? renderMedicalChart(medicalData) : null,
+            'medical',
+            'Medical Expenditure by Year'
+          )}
+        </Box>
 
-        {doctorateData && doctorateData.data && doctorateData.data.length > 0 && (
-          <Box 
-            p={6} 
-            bg="white" 
-            borderRadius="xl" 
-            boxShadow="sm"
-            transition="all 0.3s"
-            _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
-            height="400px"
-            position="relative"
-            overflow="hidden"
+        <Box 
+          p={6} 
+          bg="white" 
+          borderRadius="xl" 
+          boxShadow="sm"
+          transition="all 0.3s"
+          _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
+          height="400px"
+          position="relative"
+          overflow="hidden"
+        >
+          <Text 
+            fontSize="xl" 
+            fontWeight="semibold" 
+            mb={4} 
+            textAlign="center"
+            color="gray.700"
           >
-            <Text 
-              fontSize="xl" 
-              fontWeight="semibold" 
-              mb={4} 
-              textAlign="center"
-              color="gray.700"
-            >
-              Doctorates and Postdocs Numbers by Year
-            </Text>
-            {renderDoctorateChart(doctorateData)}
-          </Box>
-        )}
+            Doctorates and Postdocs Numbers by Year
+          </Text>
+          {renderChartWithError(
+            doctorateData && doctorateData.data && doctorateData.data.length > 0 ? renderDoctorateChart(doctorateData) : null,
+            'doctorate',
+            'Doctorates and Postdocs Numbers by Year'
+          )}
+        </Box>
 
-        {researchData && researchData.data && researchData.data.length > 0 && (
-          <Box 
-            p={6} 
-            bg="white" 
-            borderRadius="xl" 
-            boxShadow="sm"
-            gridColumn={{base: "1", lg: "1 / -1"}}
-            transition="all 0.3s"
-            _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
-            height="400px"
-            position="relative"
-            overflow="hidden"
+        <Box 
+          p={6} 
+          bg="white" 
+          borderRadius="xl" 
+          boxShadow="sm"
+          transition="all 0.3s"
+          _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
+          height="400px"
+          position="relative"
+          overflow="hidden"
+        >
+          <Text 
+            fontSize="xl" 
+            fontWeight="semibold" 
+            mb={4} 
+            textAlign="center"
+            color="gray.700"
           >
-            <Text 
-              fontSize="xl" 
-              fontWeight="semibold" 
-              mb={4} 
-              textAlign="center"
-              color="gray.700"
-            >
-              Research Numbers by Year
-            </Text>
-            {renderResearchChart(researchData)}
-          </Box>
-        )}
+            Research Numbers by Year
+          </Text>
+          {renderChartWithError(
+            researchData && researchData.data && researchData.data.length > 0 ? renderResearchChart(researchData) : null,
+            'research',
+            'Research Numbers by Year'
+          )}
+        </Box>
 
-        {facultyAwardsData && facultyAwardsData.data && facultyAwardsData.data.length > 0 && (
-          <Box 
-            p={6} 
-            bg="white" 
-            borderRadius="xl" 
-            boxShadow="sm"
-            transition="all 0.3s"
-            _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
-            height="400px"
-            position="relative"
-            overflow="hidden"
+        <Box 
+          p={6} 
+          bg="white" 
+          borderRadius="xl" 
+          boxShadow="sm"
+          transition="all 0.3s"
+          _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
+          height="400px"
+          position="relative"
+          overflow="hidden"
+        >
+          <Text 
+            fontSize="xl" 
+            fontWeight="semibold" 
+            mb={4} 
+            textAlign="center"
+            color="gray.700"
           >
-            <Text 
-              fontSize="xl" 
-              fontWeight="semibold" 
-              mb={4} 
-              textAlign="center"
-              color="gray.700"
-            >
-              Faculty Awards by Year
-            </Text>
-            {renderFacultyAwardsChart(facultyAwardsData)}
-          </Box>
-        )}
+            Faculty Awards by Year
+          </Text>
+          {renderChartWithError(
+            facultyAwardsData && facultyAwardsData.data && facultyAwardsData.data.length > 0 ? renderFacultyAwardsChart(facultyAwardsData) : null,
+            'faculty',
+            'Faculty Awards by Year'
+          )}
+        </Box>
 
-        {rAndDData && rAndDData.data && rAndDData.data.length > 0 && (
-          <Box 
-            p={6} 
-            bg="white" 
-            borderRadius="xl" 
-            boxShadow="sm"
-            gridColumn={{base: "1", lg: "1 / -1"}}
-            transition="all 0.3s"
-            _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
-            height="500px"
-            position="relative"
-            overflow="hidden"
+        <Box 
+          p={6} 
+          bg="white" 
+          borderRadius="xl" 
+          boxShadow="sm"
+          transition="all 0.3s"
+          _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
+          height="500px"
+          position="relative"
+          overflow="hidden"
+        >
+          <Text 
+            fontSize="xl" 
+            fontWeight="semibold" 
+            mb={4} 
+            textAlign="center"
+            color="gray.700"
           >
-            <Text 
-              fontSize="xl" 
-              fontWeight="semibold" 
-              mb={4} 
-              textAlign="center"
-              color="gray.700"
-            >
-              R&D Numbers by Category
-            </Text>
-            {renderRAndDChart(rAndDData)}
-          </Box>
-        )}
+            R&D Numbers by Category
+          </Text>
+          {renderChartWithError(
+            rAndDData && rAndDData.data && rAndDData.data.length > 0 ? renderRAndDChart(rAndDData) : null,
+            'rAndD',
+            'R&D Numbers by Category'
+          )}
+        </Box>
       </Box>
     </Box>
   );
