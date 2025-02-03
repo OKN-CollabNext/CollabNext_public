@@ -6,8 +6,10 @@ import { ResearchDataInterface } from '../utils/interfaces';
 
 const InstitutionResearcherMetaData = ({
   data,
+  setTopic,
 }: {
   data: ResearchDataInterface;
+  setTopic: React.Dispatch<React.SetStateAction<string>>;
 }) => {
   return (
     <Flex
@@ -65,7 +67,13 @@ const InstitutionResearcherMetaData = ({
         <Box mt='.5rem'>
           {data?.topics?.map((topic) => (
             <Flex justifyContent={'space-between'}>
-              <Text fontSize='14px' w='72%'>
+              <Text
+                fontSize='14px'
+                w='72%'
+                onClick={() => setTopic(topic[0])}
+                textDecoration={'underline'}
+                cursor='pointer'
+              >
                 {topic[0]}
               </Text>
               <Text fontSize='14px' w='26%'>

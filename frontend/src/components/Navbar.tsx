@@ -7,9 +7,9 @@ const Navbar = () => {
   return (
     <Flex
       px='3rem'
-      py='1.9rem'
       justifyContent={'space-between'}
       alignItems={'center'}
+      height='20vh'
     >
       <Link to='/'>
         <Flex alignItems={'center'}>
@@ -36,7 +36,7 @@ const Navbar = () => {
           {text: 'Home', href: '/'},
           {text: 'About Us', href: '/about'},
           {text: 'Team', href: '/team'},
-          { text: 'Data Sources', href: '/data' },
+          {text: 'Data Sources', href: '/data'},
           {text: 'Technology', href: '/technology'},
         ].map(({text, href}) => (
           <Text key={text} mr='2.5rem' color='#000000'>
@@ -44,9 +44,7 @@ const Navbar = () => {
           </Text>
         ))}
       </Flex>
-      <Text fontSize='20px' color='#000000'>
-
-      </Text>
+      <Text fontSize='20px' color='#000000'></Text>
     </Flex>
   );
 };

@@ -181,9 +181,14 @@ if not SUBFIELDS:
       autofill_topics_list = fil.read().split('\n')
 
 
-@app.route('/')
-def index():
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def index(path):
   return send_from_directory(app.static_folder, 'index.html')
+
+@app.errorhandler(404)
+def not_found(e):
+    return send_from_directory(app.static_folder, 'index.html')
 
 @app.route('/initial-search', methods=['POST'])
 def initial_search():
@@ -279,7 +284,7 @@ def get_institution_results(institution):
   institution_id = metadata['openalex_url']
   nodes.append({ 'id': institution_id, 'label': institution, 'type': 'INSTITUTION' })
   for entry in data['data']:
-    subfield = entry['topic_name']
+    subfield = entry['topic_subfield']
     number = entry['num_of_authors']
     list.append((subfield, number))
     nodes.append({'id': subfield, 'label': subfield, 'type': "TOPIC"})
@@ -661,8 +666,9 @@ def search_topic_space():
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
     return send_from_directory(app.static_folder, 'index.html')
 
-## Main 
-if __name__ =='__main__':    
-  app.run()
+if __name__ == '__main__':
+    app.run()
