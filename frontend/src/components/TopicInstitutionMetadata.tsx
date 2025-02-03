@@ -4,7 +4,13 @@ import { Box, Flex, Text } from '@chakra-ui/react';
 
 import { ResearchDataInterface } from '../utils/interfaces';
 
-const TopicInstitutionMetadata = ({data}: {data: ResearchDataInterface}) => {
+const TopicInstitutionMetadata = ({
+  data,
+  setResearcher,
+}: {
+  data: ResearchDataInterface;
+  setResearcher: React.Dispatch<React.SetStateAction<string>>;
+}) => {
   return (
     <Flex
       display={{base: 'block', lg: 'flex'}}
@@ -26,7 +32,7 @@ const TopicInstitutionMetadata = ({data}: {data: ResearchDataInterface}) => {
           View Institution on OpenAlex
         </a>
         <a target='_blank' rel='noreferrer' href={data?.topic_open_alex_link}>
-          View Topic on OpenAlex
+          View Keyword on OpenAlex
         </a>
         <a target='_blank' rel='noreferrer' href={data?.ror_link}>
           RORID -{' '}
@@ -45,30 +51,30 @@ const TopicInstitutionMetadata = ({data}: {data: ResearchDataInterface}) => {
       </Box>
       <Box w={{lg: '64%'}} mt={{base: '.9rem', lg: 0}}>
         <Box display={'flex'} justifyContent={'space-between'}>
-          <Box w='72%'>
-            <Text fontSize={'18px'} fontWeight={600}>
-              Person
-            </Text>
-            <Box mt='.5rem'>
-              {data?.authors?.map((topic) => (
-                <Text key={topic[0]} fontSize={'14px'}>
-                  {topic[0]}
-                </Text>
-              ))}
-            </Box>
-          </Box>
-          <Box w='26%'>
-            <Text fontSize={'18px'} fontWeight={600}>
-              No of works
-            </Text>
-            <Box mt='.5rem'>
-              {data?.authors?.map((topic) => (
-                <Text key={topic[0]} fontSize={'14px'}>
-                  {topic[1]}
-                </Text>
-              ))}
-            </Box>
-          </Box>
+          <Text fontSize={'18px'} fontWeight={600} w='72%'>
+            Person
+          </Text>
+          <Text fontSize={'18px'} fontWeight={600} w='26%'>
+            No of works
+          </Text>
+        </Box>
+        <Box mt='.5rem'>
+          {data?.authors?.map((topic) => (
+            <Flex justifyContent={'space-between'}>
+              <Text
+                fontSize='14px'
+                w='72%'
+                onClick={() => setResearcher(topic[0])}
+                textDecoration={'underline'}
+                cursor='pointer'
+              >
+                {topic[0]}
+              </Text>
+              <Text fontSize='14px' w='26%'>
+                {topic[1]}
+              </Text>
+            </Flex>
+          ))}
         </Box>
       </Box>
     </Flex>

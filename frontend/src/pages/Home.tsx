@@ -1,21 +1,22 @@
-import {Field, Form, Formik} from 'formik';
-import React, {useState} from 'react';
-import {useNavigate} from 'react-router-dom';
+import { Field, Form, Formik } from 'formik';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import * as Yup from 'yup';
 
 import {
-  Box,
-  Button,
-  Flex,
-  FormControl,
-  FormErrorMessage,
-  Input,
-  Select,
-  SimpleGrid,
-  Text,
+	Box,
+	Button,
+	Flex,
+	FormControl,
+	FormErrorMessage,
+	Input,
+	Select,
+	SimpleGrid,
+	Text,
 } from '@chakra-ui/react';
 
-import {baseUrl} from '../utils/constants';
+import Suggested from '../components/Suggested';
+import { baseUrl, handleAutofill } from '../utils/constants';
 
 const validateSchema = Yup.object().shape({
   institution: Yup.string().notRequired(),
@@ -23,6 +24,8 @@ const validateSchema = Yup.object().shape({
   topic: Yup.string().notRequired(),
   researcher: Yup.string().notRequired(),
 });
+
+const DESCRIPTION_TEXT = "CollabNext is part of the the Prototype Open Knowledge Network. We are developing a knowledge graph with entities consisting of people, organizations, and research topics. We are adopting an intentional design approach, initially prioritizing HBCUs and emerging researchers in a deliberate effort to counterbalance the Matthew effect, a naturally accumulated advantage of well-resourced research organizations.";
 
 const initialValues = {
   institution: '',
@@ -37,58 +40,35 @@ const Home = () => {
   const [suggestedTopics, setSuggestedTopics] = useState([]);
   // const toast = useToast();
 
-  const handleChange = (text: string, topic: boolean) => {
-    fetch(
-      !topic
-        ? `${baseUrl}/autofill-institutions`
-        : `${baseUrl}/autofill-topics`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(
-          topic
-            ? {
-                topic: text,
-              }
-            : {
-                institution: text,
-              },
-        ),
-      },
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        console.log(data);
-        if (topic) {
-          setSuggestedTopics(data?.possible_searches);
-        } else {
-          setSuggestedInstitutions(data?.possible_searches);
-        }
-        // setIsLoading(false);
-      })
-      .catch((error) => {
-        // setIsLoading(false);
-        if (topic) {
-          setSuggestedTopics([]);
-        } else {
-          setSuggestedInstitutions([]);
-        }
-        console.log(error);
-      });
-  };
   console.log(suggestedTopics);
   return (
     <Box w={{lg: '700px'}} mx='auto' mt='1.5rem'>
+      <Box
+        background='linear-gradient(180deg, #003057 0%, rgba(0, 0, 0, 0.5) 100%)'
+        borderRadius={{lg: '6px'}}
+        px={{base: '1.5rem', lg: '2.5rem'}}
+        py={{base: '1.5rem', lg: '2rem'}}
+      >
+        <Text
+          fontFamily='DM Sans'
+          fontSize={{base: '12px', lg: '16px'}}
+          color='#FFFFFF'
+          lineHeight='1.6'
+        >
+          {DESCRIPTION_TEXT}
+        </Text>
+      </Box>
+      
       <Text
         pl={{base: '1rem', lg: 0}}
         fontFamily='DM Sans'
         fontSize={{lg: '22px'}}
         color='#000000'
+        mt='2rem'
       >
         What are you searching for?
       </Text>
+
       <Box
         background='linear-gradient(180deg, #003057 0%, rgba(0, 0, 0, 0.5) 100%)'
         borderRadius={{lg: '6px'}}
@@ -128,7 +108,7 @@ const Home = () => {
                 spacing={{base: 7, lg: '90px'}}
               >
                 {[
-                  {text: 'Organization', key: 'institution'},
+                  {text: 'Organization (eg. University)', key: 'institution'},
                   {text: 'Type', key: 'type'},
                 ].map(({text, key}) => (
                   <Box key={text}>
@@ -137,7 +117,7 @@ const Home = () => {
                         <FormControl
                           isInvalid={form.errors[key] && form.touched[key]}
                         >
-                          {text === 'Organization' ? (
+                          {text === 'Organization (eg. University)' ? (
                             <>
                               <Input
                                 variant={'flushed'}
@@ -150,21 +130,18 @@ const Home = () => {
                                 {...field}
                                 onChange={(e) => {
                                   field.onChange(e);
-                                  handleChange(field.value, false);
+                                  handleAutofill(
+                                    field.value,
+                                    false,
+                                    setSuggestedTopics,
+                                    setSuggestedInstitutions,
+                                  );
                                 }}
                               />
-                              <datalist id='institutions'>
-                                {suggestedInstitutions?.map(
-                                  (institution: string) => (
-                                    <option
-                                      key={institution}
-                                      value={institution}
-                                    >
-                                      {institution}
-                                    </option>
-                                  ),
-                                )}
-                              </datalist>
+                              <Suggested
+                                suggested={suggestedInstitutions}
+                                institutions={true}
+                              />
                             </>
                           ) : (
                             <Select
@@ -225,18 +202,20 @@ const Home = () => {
                               key === 'topic'
                                 ? (e) => {
                                     field.onChange(e);
-                                    handleChange(field.value, true);
+                                    handleAutofill(
+                                      field.value,
+                                      true,
+                                      setSuggestedTopics,
+                                      setSuggestedInstitutions,
+                                    );
                                   }
                                 : field.onChange
                             }
                           />
-                          <datalist id='topics'>
-                            {suggestedTopics?.map((topic: string) => (
-                              <option key={topic} value={topic}>
-                                {topic}
-                              </option>
-                            ))}
-                          </datalist>
+                          <Suggested
+                            suggested={suggestedTopics}
+                            institutions={false}
+                          />
                           <FormErrorMessage>
                             {form.errors[key]}
                           </FormErrorMessage>

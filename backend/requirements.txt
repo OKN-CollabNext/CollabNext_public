@@ -1,4 +1,5 @@
 Flask==2.2.2
+Flask-Cors
 gunicorn
 Werkzeug==2.2.2
 requests

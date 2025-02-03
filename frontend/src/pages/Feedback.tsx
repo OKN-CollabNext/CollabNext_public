@@ -2,7 +2,7 @@ import '../styles/Feedback.css';
 
 const Feedback = () => {
     const feedbackURL =
-    "https://gatech.co1.qualtrics.com/jfe/form/SV_eQg5UdlkzoAWH66";
+    "https://forms.gle/SCbUGNo72ewYhZFy6";
 
     const feedbackHandler = () => {
     window.open(feedbackURL);

@@ -4,7 +4,13 @@ import { Box, Flex, Text } from '@chakra-ui/react';
 
 import { ResearchDataInterface } from '../utils/interfaces';
 
-const ResearcherMetadata = ({data}: {data: ResearchDataInterface}) => {
+const ResearcherMetadata = ({
+  data,
+  setTopic,
+}: {
+  data: ResearchDataInterface;
+  setTopic: React.Dispatch<React.SetStateAction<string>>;
+}) => {
   return (
     <Flex
       display={{base: 'block', lg: 'flex'}}
@@ -34,30 +40,30 @@ const ResearcherMetadata = ({data}: {data: ResearchDataInterface}) => {
       </Box>
       <Box w={{lg: '64%'}} mt={{base: '.9rem', lg: 0}}>
         <Box display={'flex'} justifyContent={'space-between'}>
-          <Box w='72%'>
-            <Text fontSize={'18px'} fontWeight={600}>
-              Topic
-            </Text>
-            <Box mt='.5rem'>
-              {data?.topics?.map((topic) => (
-                <Text key={topic[0]} fontSize={'14px'}>
-                  {topic[0]}
-                </Text>
-              ))}
-            </Box>
-          </Box>
-          <Box w='26%'>
-            <Text fontSize={'18px'} fontWeight={600}>
-              No of works
-            </Text>
-            <Box mt='.5rem'>
-              {data?.topics?.map((topic) => (
-                <Text key={topic[0]} fontSize={'14px'}>
-                  {topic[1]}
-                </Text>
-              ))}
-            </Box>
-          </Box>
+          <Text fontSize={'18px'} fontWeight={600} w='72%'>
+            Topic
+          </Text>
+          <Text fontSize={'18px'} fontWeight={600} w='26%'>
+            No of works
+          </Text>
+        </Box>
+        <Box mt='.5rem'>
+          {data?.topics?.map((topic) => (
+            <Flex justifyContent={'space-between'}>
+              <Text
+                fontSize='14px'
+                w='72%'
+                onClick={() => setTopic(topic[0])}
+                textDecoration={'underline'}
+                cursor='pointer'
+              >
+                {topic[0]}
+              </Text>
+              <Text fontSize='14px' w='26%'>
+                {topic[1]}
+              </Text>
+            </Flex>
+          ))}
         </Box>
       </Box>
     </Flex>

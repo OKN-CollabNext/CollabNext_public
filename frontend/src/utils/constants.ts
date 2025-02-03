@@ -107,3 +107,48 @@ export const initialValue = {
   researcher_open_alex_link: '',
   topic_open_alex_link: '',
 };
+
+export const handleAutofill = (
+  text: string,
+  topic: boolean,
+  setSuggestedTopics: React.Dispatch<React.SetStateAction<never[]>>,
+  setSuggestedInstitutions: React.Dispatch<React.SetStateAction<never[]>>,
+) => {
+  fetch(
+    !topic ? `${baseUrl}/autofill-institutions` : `${baseUrl}/autofill-topics`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(
+        topic
+          ? {
+              topic: text,
+            }
+          : {
+              institution: text,
+            },
+      ),
+    },
+  )
+    .then((res) => res.json())
+    .then((data) => {
+      console.log(data);
+      if (topic) {
+        setSuggestedTopics(data?.possible_searches);
+      } else {
+        setSuggestedInstitutions(data?.possible_searches);
+      }
+      // setIsLoading(false);
+    })
+    .catch((error) => {
+      // setIsLoading(false);
+      if (topic) {
+        setSuggestedTopics([]);
+      } else {
+        setSuggestedInstitutions([]);
+      }
+      console.log(error);
+    });
+};

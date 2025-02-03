@@ -12,10 +12,11 @@ import GraphComponent from '../components/GraphComponent';
 import InstitutionMetadata from '../components/InstitutionMetadata';
 import InstitutionResearcherMetaData from '../components/InstitutionResearcherMetaData';
 import ResearcherMetadata from '../components/ResearcherMetadata';
+import Suggested from '../components/Suggested';
 import TopicInstitutionMetadata from '../components/TopicInstitutionMetadata';
 import TopicMetadata from '../components/TopicMetadata';
 import TopicResearcherMetadata from '../components/TopicResearcherMetadata';
-import { baseUrl, initialValue } from '../utils/constants';
+import { baseUrl, handleAutofill, initialValue } from '../utils/constants';
 import { ResearchDataInterface, SearchType } from '../utils/interfaces';
 
 const Search = () => {
@@ -32,18 +33,18 @@ const Search = () => {
   const [researcherType, setResearcherType] = useState(researcher || '');
   const [data, setData] = useState<ResearchDataInterface>(initialValue);
   const [isLoading, setIsLoading] = useState(false);
+  const [suggestedInstitutions, setSuggestedInstitutions] = useState([]);
+  const [suggestedTopics, setSuggestedTopics] = useState([]);
 
   // const toast = useToast();
 
+  let latestRequestId = 0;
   const handleToggle = () => {
     setIsNetworkMap(!isNetworkMap);
   };
 
-  useEffect(() => {
-    handleSearch();
-  }, []);
-
   const sendSearchRequest = (search: SearchType) => {
+    const requestId = ++latestRequestId;
     fetch(`${baseUrl}/initial-search`, {
       method: 'POST',
       headers: {
@@ -162,15 +163,19 @@ const Search = () => {
                 topic_clusters: data?.metadata?.topic_clusters,
                 search,
               };
-        setData({
-          ...initialValue,
-          ...dataObj,
-        });
-        setIsLoading(false);
+        if (requestId === latestRequestId) {
+          setData({
+            ...initialValue,
+            ...dataObj,
+          });
+          setIsLoading(false);
+        }
       })
       .catch((error) => {
-        setIsLoading(false);
-        setData(initialValue);
+        if (requestId === latestRequestId) {
+          setData(initialValue);
+          setIsLoading(false);
+        }
         console.log(error);
       });
   };
@@ -224,25 +229,49 @@ const Search = () => {
     }
   };
 
+  useEffect(() => {
+    handleSearch();
+  }, [universityName, institutionType, topicType, researcherType]);
+
   return (
     <div className='main-content'>
       <div className='sidebar'>
         <input
           type='text'
           value={universityName}
-          onChange={(e) => setUniversityName(e.target.value)}
+          list='institutions'
+          onChange={(e) => {
+            setUniversityName(e.target.value);
+            handleAutofill(
+              e.target.value,
+              false,
+              setSuggestedTopics,
+              setSuggestedInstitutions,
+            );
+          }}
           placeholder='University Name'
           className='textbox'
-          disabled={isLoading}
+          // disabled={isLoading}
         />
+        <Suggested suggested={suggestedInstitutions} institutions={true} />
         <input
           type='text'
           value={topicType}
-          onChange={(e) => setTopicType(e.target.value)}
+          onChange={(e) => {
+            setTopicType(e.target.value);
+            handleAutofill(
+              e.target.value,
+              true,
+              setSuggestedTopics,
+              setSuggestedInstitutions,
+            );
+          }}
+          list='topics'
           placeholder='Type Topic'
           className='textbox'
-          disabled={isLoading}
+          // disabled={isLoading}
         />
+        <Suggested suggested={suggestedTopics} institutions={false} />
         <select
           value={institutionType}
           onChange={(e) => setInstitutionType(e.target.value)}
@@ -257,13 +286,13 @@ const Search = () => {
           onChange={(e) => setResearcherType(e.target.value)}
           placeholder='Type Researcher'
           className='textbox'
-          disabled={isLoading}
+          // disabled={isLoading}
         />
         {/* <FormErrorMessage>
             Researcher must be provided when Topic is
           </FormErrorMessage>
         </FormControl> */}
-        <Button
+        {/* <Button
           width='100%'
           marginTop='10px'
           backgroundColor='transparent'
@@ -273,7 +302,7 @@ const Search = () => {
           onClick={() => handleSearch()}
         >
           Search
-        </Button>
+        </Button> */}
         <button className='button' onClick={handleToggle}>
           {isNetworkMap ? 'See List Map' : 'See Network Map'}
         </button>
@@ -305,22 +334,28 @@ const Search = () => {
           <div className='network-map'>
             <button className='topButton'>Network Map</button>
             {/* <img src={NetworkMap} alt='Network Map' /> */}
-            <GraphComponent graphData={data?.graph} />
+            <GraphComponent graphData={data?.graph} setInstitution={setUniversityName} setTopic={setTopicType} setResearcher={setResearcherType} />
           </div>
         ) : (
           <div>
             {data?.search === 'institution' ? (
-              <InstitutionMetadata data={data} />
+              <InstitutionMetadata data={data} setTopic={setTopicType} />
             ) : data?.search === 'topic' ? (
-              <TopicMetadata data={data} />
+              <TopicMetadata data={data} setInstitution={setUniversityName} />
             ) : data?.search === 'researcher' ? (
-              <ResearcherMetadata data={data} />
+              <ResearcherMetadata data={data} setTopic={setTopicType} />
             ) : data?.search === 'researcher-institution' ? (
-              <InstitutionResearcherMetaData data={data} />
+              <InstitutionResearcherMetaData
+                data={data}
+                setTopic={setTopicType}
+              />
             ) : data?.search === 'topic-researcher' ? (
               <TopicResearcherMetadata data={data} />
             ) : data?.search === 'topic-institution' ? (
-              <TopicInstitutionMetadata data={data} />
+              <TopicInstitutionMetadata
+                data={data}
+                setResearcher={setResearcherType}
+              />
             ) : (
               <AllThreeMetadata data={data} />
             )}

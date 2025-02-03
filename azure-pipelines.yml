@@ -8,7 +8,7 @@ trigger:
 
 variables:
   # Azure Resource Manager connection created during pipeline creation
-  azureServiceConnectionId: '7b5b2d6d-2278-4baf-8f4b-649ba1c862c3'
+  azureServiceConnectionId: 'nsf-cloudbank-azure-connection'
 
   # Web app name
   webAppName: 'collabnext'
@@ -54,7 +54,7 @@ stages:
       inputs:
         workingDir: '$(System.DefaultWorkingDirectory)/frontend'
         command: 'custom'
-        customCommand: 'build'
+        customCommand: 'run build:production'
     - task: UsePythonVersion@0
       inputs:
         versionSpec: '$(pythonVersion)'
@@ -64,7 +64,9 @@ stages:
         source antenv/bin/activate
         python -m pip install --upgrade pip
         pip install setup
-        pip install -r requirements.txt
+        pip install -r $(System.DefaultWorkingDirectory)/backend/requirements.txt
+        rm -rf $(System.DefaultWorkingDirectory)/backend/build
+        mkdir $(System.DefaultWorkingDirectory)/backend/build
         cp -r $(System.DefaultWorkingDirectory)/frontend/build/* $(System.DefaultWorkingDirectory)/backend/build
       workingDirectory: $(System.DefaultWorkingDirectory)/backend
       displayName: "Install requirements"
@@ -76,7 +78,7 @@ stages:
         archiveType: zip
         archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
         replaceExistingArchive: true
-
+    
     - upload: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
       displayName: 'Upload package'
       artifact: drop

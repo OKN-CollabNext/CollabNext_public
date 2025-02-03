@@ -38,7 +38,7 @@ const TopicResearcherMetadata = ({data}: {data: ResearchDataInterface}) => {
           </Box>
         </Box>
         <a target='_blank' rel='noreferrer' href={data?.open_alex_link}>
-          View Topic on OpenAlex
+          View Keyword on OpenAlex
         </a>
         <a
           target='_blank'
@@ -50,30 +50,24 @@ const TopicResearcherMetadata = ({data}: {data: ResearchDataInterface}) => {
       </Box>
       <Box w={{lg: '64%'}} mt={{base: '.9rem', lg: 0}}>
         <Box display={'flex'} justifyContent={'space-between'}>
-          <Box w='72%'>
-            <Text fontSize={'18px'} fontWeight={600}>
-              Work
-            </Text>
-            <Box mt='.5rem'>
-              {data?.works?.map((topic) => (
-                <Text key={topic[0]} fontSize={'14px'}>
-                  {topic[0]}
-                </Text>
-              ))}
-            </Box>
-          </Box>
-          <Box w='26%'>
-            <Text fontSize={'18px'} fontWeight={600}>
-              No of citations
-            </Text>
-            <Box mt='.5rem'>
-              {data?.works?.map((topic) => (
-                <Text key={topic[0]} fontSize={'14px'}>
-                  {topic[1]}
-                </Text>
-              ))}
-            </Box>
-          </Box>
+          <Text fontSize={'18px'} fontWeight={600} w='72%'>
+            Work
+          </Text>
+          <Text fontSize={'18px'} fontWeight={600} w='26%'>
+            No of citations
+          </Text>
+        </Box>
+        <Box mt='.5rem'>
+          {data?.works?.map((topic) => (
+            <Flex justifyContent={'space-between'}>
+              <Text fontSize='14px' w='72%'>
+                {topic[0]}
+              </Text>
+              <Text fontSize='14px' w='26%'>
+                {topic[1]}
+              </Text>
+            </Flex>
+          ))}
         </Box>
       </Box>
     </Flex>

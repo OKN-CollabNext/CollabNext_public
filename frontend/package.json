@@ -22,6 +22,7 @@
     "cytoscape": "^3.2.19",
     "cytoscape-dagre": "^2.5.0",
     "cytoscape-klay": "^3.1.4",
+    "env-cmd": "^10.1.0",
     "formik": "^2.4.6",
     "framer-motion": "^11.2.10",
     "hamburger-react": "^2.5.1",
@@ -42,7 +43,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "build:production": "env-cmd -f .env.production react-scripts build"
   },
   "eslintConfig": {
     "extends": [
