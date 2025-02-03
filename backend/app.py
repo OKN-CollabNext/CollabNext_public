@@ -6,6 +6,7 @@ import mysql.connector
 from mysql.connector import Error
 import pandas as pd
 import psycopg2
+import os
 
 
 # Fill in for MUP
@@ -28,9 +29,14 @@ if not SUBFIELDS:
       autofill_topics_list = fil.read().split('\n')
 
 
-@app.route('/')
-def index():
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def index(path):
   return send_from_directory(app.static_folder, 'index.html')
+
+@app.errorhandler(404)
+def not_found(e):
+    return send_from_directory(app.static_folder, 'index.html')
 
 @app.route('/initial-search', methods=['POST'])
 def initial_search():
@@ -1560,6 +1566,8 @@ def combine_graphs(graph1, graph2):
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
     return send_from_directory(app.static_folder, 'index.html')
 
 @app.route('/get-mup-id', methods=['POST'])
