@@ -224,6 +224,8 @@ def initial_search():
 
 def get_researcher_result(researcher):
   data = search_by_author(researcher)
+  if data == None:
+    return {"metadata": None, "graph": None, "list": None}
   list = []
   metadata = data['author_metadata']
 
@@ -236,7 +238,6 @@ def get_researcher_result(researcher):
   if metadata['last_known_institution'] is None:
     institution_object = fetch_last_known_institutions(metadata['oa_link'])[0]
     last_known_institution = institution_object['display_name']
-    print(institution_object)
     institution_url = institution_object['id']
   else:
     last_known_institution = metadata['last_known_institution']
@@ -261,6 +262,8 @@ def get_researcher_result(researcher):
 
 def get_institution_results(institution):
   data = search_by_institution(institution)
+  if data == None:
+    return {"metadata": None, "graph": None, "list": None}
   list = []
   metadata = data['institution_metadata']
   
@@ -289,6 +292,8 @@ def get_institution_results(institution):
 
 def get_subfield_results(topic):
   data = search_by_topic(topic)
+  if data == None:
+    return {"metadata": None, "graph": None, "list": None}
   list = []
   metadata = {}
 
@@ -321,6 +326,8 @@ def get_subfield_results(topic):
 
 def get_researcher_and_subfield_results(researcher, topic):
   data = search_by_author_topic(researcher, topic)
+  if data == None:
+    return {"metadata": None, "graph": None, "list": None}
   list = []
   metadata = {}
   
@@ -370,6 +377,8 @@ def get_researcher_and_subfield_results(researcher, topic):
 
 def get_institution_and_subfield_results(institution, topic):
   data = search_by_institution_topic(institution, topic)
+  if data == None:
+    return {"metadata": None, "graph": None, "list": None}
   list = []
   metadata = {}
 
@@ -413,6 +422,8 @@ def get_institution_and_subfield_results(institution, topic):
 
 def get_institution_and_researcher_results(institution, researcher):
   data = search_by_author_institution(researcher, institution)
+  if data == None:
+    return {"metadata": None, "graph": None, "list": None}
   list = []
   metadata = {}
 
@@ -452,6 +463,8 @@ def get_institution_and_researcher_results(institution, researcher):
 
 def get_institution_researcher_subfield_results(institution, researcher, topic):
   data = search_by_author_institution_topic(researcher, institution, topic)
+  if data == None:
+    return {"metadata": None, "graph": None, "list": None}
   list = []
   metadata = {}
 
