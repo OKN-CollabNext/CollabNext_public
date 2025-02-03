@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Box, Text, Spinner, Table, Thead, Tbody, Tr, Th, Td, Select, HStack, Button, Tooltip as ChakraTooltip, Flex } from "@chakra-ui/react";
+import { Box, Text, Spinner, Select, HStack, Button, Tooltip as ChakraTooltip, Flex } from "@chakra-ui/react";
 import {
   Chart,
   CategoryScale,
@@ -24,11 +24,6 @@ Chart.register(
   Legend,
   zoomPlugin
 );
-
-interface MUPData {
-  institution_name: string;
-  institution_mup_id?: string;
-}
 
 interface SATData {
   institution_name: string;
@@ -141,7 +136,6 @@ const ChartHeader = ({ title, description }: { title: string, description: strin
 
 const MUPDataVisualizer = ({ institutionName }: Props) => {
   const [loading, setLoading] = useState(true);
-  const [mupData, setMupData] = useState<MUPData | null>(null);
   const [satData, setSatData] = useState<SATData | null>(null);
   const [endowmentData, setEndowmentData] = useState<EndowmentGivingData | null>(null);
   const [medicalData, setMedicalData] = useState<MedicalExpenseData | null>(null);
@@ -259,16 +253,16 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
     }
   }, [institutionName, BASE_URL]);
 
-  const createChartData = (label: string, data: Array<{year: number, [key: string]: any}>, valueKeys: string[], valueLabels: string[], xAxis?: string) => {
-    const sortedData = [...data].sort((a, b) => a.year - b.year);
+  const createChartData = (label: string, data: Array<{[key: string]: any}>, valueKeys: string[], valueLabels: string[], xAxis: string = 'year') => {
+    const sortedData = [...data].sort((a, b) => a[xAxis] - b[xAxis]);
     
     return {
-      labels: sortedData.map(item => item[xAxis || 'year']),
+      labels: sortedData.map(item => item[xAxis]),
       datasets: valueKeys.map((key, index) => ({
         label: valueLabels[index],
         data: sortedData.map(item => item[key]),
         borderColor: [
-          '#003057',  // Blue
+          '#003057',  // Primary blue
           '#DD6B20',  // Orange
           '#38A169',  // Green
           '#805AD5',  // Purple
@@ -318,7 +312,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
         },
       },
       tooltip: {
-        mode: 'index',
+        mode: 'index' as const,
         intersect: false,
         backgroundColor: 'rgba(255, 255, 255, 0.95)',
         titleColor: '#1A202C',
@@ -333,7 +327,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
         titleFont: {
           size: 14,
           family: "'Inter', sans-serif",
-          weight: 'bold',
+          weight: 'bold' as const,
         },
         callbacks: {
           title: (tooltipItems: any) => {
@@ -344,7 +338,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
       zoom: {
         pan: {
           enabled: true,
-          mode: 'x',
+          mode: 'x' as const,
         },
         zoom: {
           wheel: {
@@ -353,20 +347,20 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
           pinch: {
             enabled: true,
           },
-          mode: 'x',
+          mode: 'x' as const,
         },
       },
     },
     scales: {
       x: {
-        type: 'linear',
+        type: 'linear' as const,
         display: true,
         title: {
           display: true,
           text: 'Year',
           font: {
             size: 14,
-            weight: 'bold',
+            weight: 'bold' as const,
           },
         },
         ticks: {
@@ -374,8 +368,8 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
           font: {
             family: "'Inter', sans-serif",
           },
-          callback: function(value: number) {
-            return Math.floor(value);
+          callback: function(tickValue: string | number) {
+            return `$${(Number(tickValue) / 1000).toFixed(0)}K`;
           },
         },
         grid: {
@@ -427,7 +421,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
             text: 'Year',
             font: {
               size: 14,
-              weight: 'bold',
+              weight: 'bold' as const,
             },
           },
           ticks: {
@@ -487,7 +481,9 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
           ...chartOptions.scales.y,
           ticks: {
             ...chartOptions.scales.y.ticks,
-            callback: (value: number) => `$${(value / 1000).toFixed(0)}K`,
+            callback: function(tickValue: string | number) {
+              return `$${(Number(tickValue) / 1000).toFixed(0)}K`;
+            },
           },
         },
       },
@@ -512,14 +508,14 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
       ...chartOptions,
       scales: {
         x: {
-          type: 'category',
+          type: 'category' as const,
           display: true,
           title: {
             display: true,
             text: 'Year',
             font: {
               size: 14,
-              weight: 'bold',
+              weight: 'bold' as const,
             },
           },
           ticks: {
@@ -534,7 +530,9 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
             color: 'rgba(0, 0, 0, 0.05)',
           },
           ticks: {
-            callback: (value: number) => `$${(value / 1000).toFixed(1)}K`,
+            callback: function(tickValue: string | number) {
+              return `$${(Number(tickValue) / 1000).toFixed(1)}K`;
+            },
           },
         },
       },
@@ -572,14 +570,14 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
       ...chartOptions,
       scales: {
         x: {
-          type: 'category',
+          type: 'category' as const,
           display: true,
           title: {
             display: true,
             text: 'Year',
             font: {
               size: 14,
-              weight: 'bold',
+              weight: 'bold' as const,
             },
           },
           ticks: {
@@ -594,7 +592,9 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
             color: 'rgba(0, 0, 0, 0.05)',
           },
           ticks: {
-            callback: (value: number) => `$${(value / 1000).toFixed(1)}K`,
+            callback: function(tickValue: string | number) {
+              return `$${(Number(tickValue) / 1000).toFixed(1)}K`;
+            },
           },
         },
       },
@@ -634,14 +634,14 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
       ...chartOptions,
       scales: {
         x: {
-          type: 'category',
+          type: 'category' as const,
           display: true,
           title: {
             display: true,
             text: 'Year',
             font: {
               size: 14,
-              weight: 'bold',
+              weight: 'bold' as const,
             },
           },
           ticks: {
@@ -707,14 +707,14 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
       ...chartOptions,
       scales: {
         x: {
-          type: 'category',
+          type: 'category' as const,
           display: true,
           title: {
             display: true,
             text: 'Category',
             font: {
               size: 14,
-              weight: 'bold',
+              weight: 'bold' as const,
             },
           },
           ticks: {
@@ -745,7 +745,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
               const percent = context.dataset.label === 'Federal Numbers' 
                 ? filteredData[context.dataIndex].percent_federal
                 : filteredData[context.dataIndex].percent_total;
-              return `${context.dataset.label}: ${value.toLocaleString()} (${(percent * 100).toFixed(1)}%)`;
+              return `${context.dataset.label}: ${value.toLocaleString()} (${((percent || 0) * 100).toFixed(1)}%)`;
             }
           }
         }
