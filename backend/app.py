@@ -108,7 +108,8 @@ def get_institution_metadata(institution):
   ?people <http://www.w3.org/ns/org#memberOf> ?institution .
   {'}'} GROUP BY ?ror ?workscount ?citedcount ?homepage ?institution
   """
-  results = query_endpoint(query)
+  endpoint_url = "https://semopenalex.org/sparql"
+  results = query_SPARQL_endpoint(endpoint_url, query)
   ror = results[0]['ror']
   works_count = results[0]['workscount']
   cited_count = results[0]['citedcount']
@@ -164,7 +165,8 @@ def get_author_metadata(author):
     ?current_institution <http://xmlns.com/foaf/0.1/name> ?current_institution_name .
     {'}'}
   """
-  results = query_endpoint(query)
+  endpoint_url = "https://semopenalex.org/sparql"
+  results = query_SPARQL_endpoint(endpoint_url, query)
   cited_by_count = results[0]['cite_count']
   orcid = results[0]['orcid'] if 'orcid' in results[0] else ''
   work_count = results[0]['works_count']
@@ -272,17 +274,38 @@ def get_institution_and_topic_and_researcher_metadata(institution, topic, resear
 
   return {"institution_name": institution, "topic_name": topic, "researcher_name": researcher, "topic_oa_link": topic_oa, "institution_oa_link": institution_oa, "homepage": institution_url, "orcid": orcid, "topic_clusters": topic_cluster, "researcher_oa_link": researcher_oa, "work_count": work_count, "cited_by_count": cited_by_count, 'ror': ror}
 
-def query_endpoint(query):
+
+def query_SQL_endpoint(connection, query):
   """
-  Queries the SemOpenAlex endpoint.
+  Queries the endpoint to execute the SQL query.
 
   Arguments:
+  connection : connection object representing the MySQL database connection 
+  query : string representing the SQL query
+
+  Returns:
+  return_value : returns the information as a list of tuples
+  """
+
+  cursor = connection.cursor()
+  try:
+      cursor.execute(query)
+      result = cursor.fetchall()
+      return result
+  except Error as e:
+      print(f"The error '{e}' occurred")
+
+def query_SPARQL_endpoint(endpoint_url, query):
+  """
+  Queries the endpoint to execute the SPARQL query.
+
+  Arguments:
+  endpoint_url : string representing the endpoint url
   query : string representing the SPARQL query
 
   Returns:
   return_value : returns the information as a list of dictionaries
   """
-  endpoint_url = "https://semopenalex.org/sparql"
   response = requests.post(endpoint_url, data={"query": query}, headers={'Accept': 'application/json'})
   return_value = []
   data = response.json()
@@ -409,16 +432,6 @@ def create_connection(host_name, user_name, user_password, db_name):
 
   return connection
 
-def execute_read_query(connection, query):
-  """Execute a read query from sql database and return the results."""
-  cursor = connection.cursor()
-  try:
-      cursor.execute(query)
-      result = cursor.fetchall()
-      return result
-  except Error as e:
-      print(f"The error '{e}' occurred")
-
 def is_HBCU(id):
   """
   Checks the sql database to determine if the id corresponds to an HBCU, as OpenAlex does not contain this information.
@@ -431,12 +444,10 @@ def is_HBCU(id):
   """
   connection = create_connection('openalexalpha.mysql.database.azure.com', 'openalexreader', 'collabnext2024reader!', 'openalex')
   id = id.replace('https://openalex.org/institutions/', "")
-  query = f"""SELECT HBCU FROM institutions_filtered WHERE id = "{id}";"""
-  result = execute_read_query(connection, query)
-  if result == [(1,)]:
-    return True
-  else:
-    return False
+
+  query = f"""SELECT HBCU, display_name FROM institutions_filtered WHERE id = "{id}";"""
+  result = query_SQL_endpoint(connection, query)
+  return result == [(1,)]    
 
 @app.route('/autofill-institutions', methods=['POST'])
 def autofill_institutions():
@@ -651,7 +662,8 @@ def list_given_researcher_topic(subfield, researcher, institution, subfield_id, 
   ?work <https://semopenalex.org/ontology/citedByCount> ?cited_by_count .
   {'}'}
   """
-  results = query_endpoint(query)
+  endpoint_url = "https://semopenalex.org/sparql"
+  results = query_SPARQL_endpoint(endpoint_url, query)
   work_list = []
   for a in results:
     work_list.append((a['work'], a['name'], int(a['cited_by_count'])))
@@ -711,7 +723,8 @@ def list_given_institution_topic(institution, institution_id, subfield, subfield
   {"}"}
   GROUP BY ?author ?name
   """
-  results = query_endpoint(query)
+  endpoint_url = "https://semopenalex.org/sparql"
+  results = query_SPARQL_endpoint(endpoint_url, query)
   works_list = []
   final_list = []
   work_count = 0
@@ -801,7 +814,8 @@ def get_topics_from_keyword(keyword):
     ?topic <http://www.w3.org/2004/02/skos/core#prefLabel> ?topicName
     {'}'}
   """
-  results = query_endpoint(query)
+  endpoint_url = "https://semopenalex.org/sparql"
+  results = query_SPARQL_endpoint(endpoint_url, query)
   topic_list = []
   for a in results:
     topic_list.append(a['topicName'])
@@ -825,7 +839,8 @@ def get_keywords_from_topics(topic):
     ?keyword <http://www.w3.org/2004/02/skos/core#prefLabel> ?keywordName
     {'}'}
   """
-  results = query_endpoint(query)
+  endpoint_url = "https://semopenalex.org/sparql"
+  results = query_SPARQL_endpoint(endpoint_url, query)
   keyword_list = []
   for a in results:
     keyword_list.append(a['keywordName'])
@@ -1019,7 +1034,8 @@ def get_work_info(keyword, researcher, keyword_id, researcher_id, all_institutio
   ?work <https://semopenalex.org/ontology/citedByCount> ?cited_by_count .
   {'}'}
   """
-  results = query_endpoint(query)
+  endpoint_url = "https://semopenalex.org/sparql"
+  results = query_SPARQL_endpoint(endpoint_url, query)
   work_list = []
   for a in results:
     work_list.append((a['work'], a['name'], int(a['cited_by_count'])))
@@ -1090,7 +1106,8 @@ def get_institution_topic_info(institution, institution_id, topic, topic_id):
   }
   GROUP BY ?author ?name
   """
-  results = query_endpoint(query)
+  endpoint_url = "https://semopenalex.org/sparql"
+  results = query_SPARQL_endpoint(endpoint_url, query)
   works_list = []
   final_list = []
   work_count = 0
@@ -1118,7 +1135,7 @@ def get_institution_topic_info(institution, institution_id, topic, topic_id):
 ## Old functions which did not return data to exact specifications ##
 
 def get_topic_metadata(topic):
-  query = f"""
+  query1 = f"""
     PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 
     SELECT DISTINCT ?works_count ?cited_by_count ?note ?topic
@@ -1139,17 +1156,18 @@ def get_topic_metadata(topic):
     ?institution <http://xmlns.com/foaf/0.1/name> ?institutionName .
     {'}'}LIMIT 10
   """
-  results = query_endpoint(query)
-  works_count = results[0]['works_count']
-  cited_by_count = results[0]['cited_by_count']
-  description = results[0]['note']
-  oa_link = results[0]['topic']
+  endpoint_url = "https://semopenalex.org/sparql"
+  results1 = query_SPARQL_endpoint(endpoint_url, query1)
+  works_count = results1[0]['works_count']
+  cited_by_count = results1[0]['cited_by_count']
+  description = results1[0]['note']
+  oa_link = results1[0]['topic']
   oa_link = oa_link.replace('semopenalex', 'openalex').replace('topic', 'topics')
 
   nodes = []
   edges = []
   nodes.append({ 'id': oa_link, 'label': topic, 'type': 'TOPIC' })
-  results2 = query_endpoint(query2)
+  results2 = query_SPARQL_endpoint(endpoint_url, query2)
   for inst in results2:
     name = inst['institutionName']
     institution_id = inst['institution']
@@ -1180,7 +1198,8 @@ def get_works(author, topic, institution):
         ?work dct:title ?name .
       {'}'}
       """
-      results = query_endpoint(query)
+      endpoint_url = "https://semopenalex.org/sparql"
+      results = query_SPARQL_endpoint(endpoint_url, query)
       titles = []
       if results == []:
         return {"titles": titles}, {"nodes": [], "edges": []}
@@ -1225,7 +1244,8 @@ def get_works(author, topic, institution):
         ?work dct:title ?name .
       {'}'}
       """
-      results = query_endpoint(query)
+      endpoint_url = "https://semopenalex.org/sparql"
+      results = query_SPARQL_endpoint(endpoint_url, query)
       titles = []
       if results == []:
         return {"titles": titles}, {"nodes": [], "edges": []}
@@ -1271,7 +1291,8 @@ def get_topics(author, institution):
         ?topic skos:prefLabel ?name .
       {'}'}GROUP BY ?name ?author ?institution ?topic
       """
-      results = query_endpoint(query)
+      endpoint_url = "https://semopenalex.org/sparql"
+      results = query_SPARQL_endpoint(endpoint_url, query)
       topics = []
       for entry in results:
          topic_name = entry['name']
@@ -1322,7 +1343,8 @@ def get_authors(institution, topic):
         ?work <http://purl.org/dc/terms/title> ?workTitle .
       {'}'}LIMIT 10
       """
-      results = query_endpoint(query)
+      endpoint_url = "https://semopenalex.org/sparql"
+      results = query_SPARQL_endpoint(endpoint_url, query)
       authors = []
       connecting_works = {}
       if results == []:
