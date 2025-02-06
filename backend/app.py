@@ -640,17 +640,17 @@ def get_institution_researcher_subfield_results(institution, researcher, topic):
   graph = {"nodes": nodes, "edges": edges}
   return {"metadata": metadata, "graph": graph, "list":list}
 
-def query_endpoint(query):
+def query_SPARQL_endpoint(endpoint_url, query):
   """
-  Queries the SemOpenAlex endpoint.
+  Queries the endpoint to execute the SPARQL query.
 
   Arguments:
+  endpoint_url : string representing the endpoint url
   query : string representing the SPARQL query
 
   Returns:
   return_value : returns the information as a list of dictionaries
   """
-  endpoint_url = "https://semopenalex.org/sparql"
   response = requests.post(endpoint_url, data={"query": query}, headers={'Accept': 'application/json'})
   return_value = []
   data = response.json()
@@ -1105,6 +1105,26 @@ def get_institution_and_topic_and_researcher_metadata_sparql(institution, topic,
 
   return {"institution_name": institution, "topic_name": topic, "researcher_name": researcher, "topic_oa_link": topic_oa, "institution_oa_link": institution_oa, "homepage": institution_url, "orcid": orcid, "topic_clusters": topic_cluster, "researcher_oa_link": researcher_oa, "work_count": work_count, "cited_by_count": cited_by_count, 'ror': ror}
 
+def query_SQL_endpoint(connection, query):
+  """
+  Queries the endpoint to execute the SQL query.
+
+  Arguments:
+  connection : connection object representing the MySQL database connection 
+  query : string representing the SQL query
+
+  Returns:
+  return_value : returns the information as a list of tuples
+  """
+
+  cursor = connection.cursor()
+  try:
+      cursor.execute(query)
+      result = cursor.fetchall()
+      return result
+  except Error as e:
+      print(f"The error '{e}' occurred")
+
 @app.route('/autofill-institutions', methods=['POST'])
 def autofill_institutions():
   """
@@ -1263,16 +1283,6 @@ def create_connection(host_name, user_name, user_password, db_name):
 
   return connection
 
-def execute_read_query(connection, query):
-  """Execute a read query from sql database and return the results."""
-  cursor = connection.cursor()
-  try:
-      cursor.execute(query)
-      result = cursor.fetchall()
-      return result
-  except Error as e:
-      print(f"The error '{e}' occurred")
-
 def is_HBCU(id):
   """
   Checks the sql database to determine if the id corresponds to an HBCU, as OpenAlex does not contain this information.
@@ -1286,7 +1296,7 @@ def is_HBCU(id):
   connection = create_connection('openalexalpha.mysql.database.azure.com', 'openalexreader', 'collabnext2024reader!', 'openalex')
   id = id.replace('https://openalex.org/institutions/', "")
   query = f"""SELECT HBCU FROM institutions_filtered WHERE id = "{id}";"""
-  result = execute_read_query(connection, query)
+  result = query_SQL_endpoint(connection, query)
   if result == [(1,)]:
     return True
   else:
