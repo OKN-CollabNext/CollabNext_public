@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import { Box, Flex, Text } from '@chakra-ui/react';
 
 import { ResearchDataInterface } from '../utils/interfaces';
+
+import { TransformTopicClustersForOrb } from './TransformTopicCluster.js';
+import TopicClusterGraphComponent from './TopicClusterGraphComponent';
 
 const TopicMetadata = ({
   data,
@@ -11,6 +14,10 @@ const TopicMetadata = ({
   data: ResearchDataInterface;
   setInstitution: React.Dispatch<React.SetStateAction<string>>;
 }) => {
+  const [showTopicClusterGraph, setTopicClusterGraph] = useState(false);
+  const handleTopicClusterClick = () => {
+    setTopicClusterGraph(!showTopicClusterGraph);
+  }
   return (
     <Flex
       display={{base: 'block', lg: 'flex'}}
@@ -23,13 +30,10 @@ const TopicMetadata = ({
         <h2>{data?.topic_name}</h2>
         <Box mt='0.4rem'>
           <Text fontSize={'17px'} fontWeight={'600'}>
-            Topic Clusters
+            <a style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={handleTopicClusterClick}>
+              Topic Clusters
+            </a>
           </Text>
-          <Box ml='2rem'>
-            {data?.topic_clusters?.map((cluster) => (
-              <Text mt='0.3rem'>{cluster}</Text>
-            ))}
-          </Box>
         </Box>
         <p>Total {data?.author_count} authors</p>
         <p>Total {data?.works_count} works</p>
@@ -47,7 +51,12 @@ const TopicMetadata = ({
             No of people
           </Text>
         </Box>
-        <Box mt='.5rem'>
+        {showTopicClusterGraph ? (
+          <Box mt='1rem' w={{ lg: '70%' }} mx='auto'>
+            <TopicClusterGraphComponent graphData={TransformTopicClustersForOrb(data, data?.topic_clusters)} />
+          </Box>
+        ) : (
+          <Box mt='.5rem'>
           {data?.organizations?.map((topic) => (
             <Flex justifyContent={'space-between'}>
               <Text
@@ -65,6 +74,7 @@ const TopicMetadata = ({
             </Flex>
           ))}
         </Box>
+        )}
       </Box>
     </Flex>
   );
