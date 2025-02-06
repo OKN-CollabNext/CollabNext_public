@@ -23,7 +23,7 @@ Initiates a search given various parameters: `organization`, `researcher`, `type
 <summary>Example Request</summary>
 
 POST /initial-search HTTP/1.1
-Host: https://your-production-url.com
+Host: https://collabnext.io
 Content-Type: application/json
 
 {
@@ -73,7 +73,7 @@ Returns a default graph with curated nodes and edges (used for initial display).
 <summary>Example Request</summary>
 
 POST /get-default-graph HTTP/1.1
-Host: https://your-production-url.com
+Host: https://collabnext.io
 Content-Type: application/json
 
 {}
@@ -106,7 +106,7 @@ Returns a default graph of high-level topics (domains in OpenAlex).
 <summary>Example Request</summary>
 
 POST /get-topic-space-default-graph HTTP/1.1
-Host: https://your-production-url.com
+Host: https://collabnext.io
 Content-Type: application/json
 
 {}
@@ -137,7 +137,7 @@ Given a **topic** string, returns a subgraph from `topic_default.json`, represen
 <summary>Example Request</summary>
 
 POST /search-topic-space HTTP/1.1
-Host: https://your-production-url.com
+Host: https://collabnext.io
 Content-Type: application/json
 
 {
@@ -173,7 +173,7 @@ Given an institution substring, returns a list of matching institution names (fo
 <summary>Example Request</summary>
 
 POST /autofill-institutions HTTP/1.1
-Host: https://your-production-url.com
+Host: https://collabnext.io
 Content-Type: application/json
 
 {
@@ -202,7 +202,7 @@ Given a topic substring, returns a list of matching topics or subfields (for aut
 <summary>Example Request</summmary>
 
 POST /autofill-topics HTTP/1.1
-Host: https://your-production-url.com
+Host: https://collabnext.io
 Content-Type: application/json
 
 {
