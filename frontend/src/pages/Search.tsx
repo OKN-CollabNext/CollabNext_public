@@ -50,9 +50,6 @@ const Search = () => {
     setInstitutions(newInstitutions);
   };
 
-  console.log("value of suggestedInstitutions", suggestedInstitutions);
-  console.log("value of setsuggestedinstitutions: ", setSuggestedInstitutions);
-
   const addInstitution = () => {
     if (setInstitutions.length < 3) {
       setInstitutions([...institutions, '']);
@@ -260,21 +257,24 @@ const Search = () => {
                   type='text'
                   value={org}
                   onChange={(e) => {
-                    // TODO: Fix the suggestion issue
-                    updateInstitution(index, e.target.value); 
+                    updateInstitution(index, e.target.value);
                     handleAutofill(
                       e.target.value,
                       false,
                       setSuggestedTopics,
-                      setSuggestedInstitutions,
+                      setSuggestedInstitutions
                     );
                   }}
+                  list='institutions'
                   placeholder='University Name'
                 />
-                <Suggested suggested={suggestedInstitutions} institutions={true} />
+                <Suggested
+                  suggested={suggestedInstitutions}
+                  institutions={true}
+                />
               </div>
             ))}
-              <input
+            <input
               type='text'
               value={researcherType}
               onChange={(e) => setResearcherType(e.target.value)}
@@ -298,7 +298,7 @@ const Search = () => {
                   e.target.value,
                   true,
                   setSuggestedTopics,
-                  setSuggestedInstitutions,
+                  setSuggestedInstitutions
                 );
               }}
               list='topics'
@@ -339,15 +339,15 @@ const Search = () => {
                   Add Org
                 </Button>
                 <Button
-                  size="sm"
-                  fontWeight={"500"}
+                  size='sm'
+                  fontWeight={'500'}
                   onClick={() => document.getElementById('csvUpload')?.click()}
                 >
                   Upload Org
                   <input
-                    type="file"
-                    id="csvUpload"
-                    accept=".csv"
+                    type='file'
+                    id='csvUpload'
+                    accept='.csv'
                     style={{ display: 'none' }}
                   />
                 </Button>
@@ -356,16 +356,10 @@ const Search = () => {
 
             <Box mt={20}>
               <Flex gap={5} justifyContent='center'>
-                <Button
-                  size='sm'
-                  fontWeight={'500'}
-                >
+                <Button size='sm' fontWeight={'500'}>
                   Add Person
                 </Button>
-                <Button
-                  size="sm"
-                  fontWeight={"500"}
-                >
+                <Button size='sm' fontWeight={'500'}>
                   Upload Person
                 </Button>
               </Flex>
@@ -394,9 +388,9 @@ const Search = () => {
       <div className='content'>
         {isLoading ? (
           <Box
-            w={{lg: '500px'}}
+            w={{ lg: '500px' }}
             justifyContent={'center'}
-            height={{base: '190px', lg: '340px'}}
+            height={{ base: '190px', lg: '340px' }}
             display={'flex'}
             alignItems='center'
           >
@@ -411,14 +405,23 @@ const Search = () => {
             />
           </Box>
         ) : !data?.graph ? (
-          <Box fontSize={{lg: '20px'}} ml={{lg: '4rem'}} fontWeight={'bold'}>
+          <Box
+            fontSize={{ lg: '20px' }}
+            ml={{ lg: '4rem' }}
+            fontWeight={'bold'}
+          >
             No result
           </Box>
         ) : isNetworkMap ? (
           <div className='network-map'>
             <button className='topButton'>Network Map</button>
             {/* <img src={NetworkMap} alt='Network Map' /> */}
-            <GraphComponent graphData={data?.graph} setInstitution={setUniversityName} setTopic={setTopicType} setResearcher={setResearcherType} />
+            <GraphComponent
+              graphData={data?.graph}
+              setInstitution={setUniversityName}
+              setTopic={setTopicType}
+              setResearcher={setResearcherType}
+            />
           </div>
         ) : (
           <div>
