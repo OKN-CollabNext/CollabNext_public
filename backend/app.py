@@ -66,6 +66,8 @@ def get_institution_id(institution_name):
     if results:
         # psycopg2 returns a list of tuples with each tuple representing a row
         # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
+        if results[0][0] == {}:
+          return None
         return results[0][0]['institution_id']
     return None
 
@@ -78,6 +80,8 @@ def search_by_author_institution_topic(author_name, institution_name, topic_name
     author_id = author_ids[0]['author_id']
 
     institution_id = get_institution_id(institution_name)
+    if institution_id is None:
+      return None
 
     query = """SELECT search_by_author_institution_topic(%s, %s, %s);"""
     results = execute_query(query, (author_id, institution_id, topic_name))
@@ -96,6 +100,8 @@ def search_by_author_institution(author_name, institution_name):
     author_id = author_ids[0]['author_id']
 
     institution_id = get_institution_id(institution_name)
+    if institution_id is None:
+      return None
 
     query = """SELECT search_by_author_institution(%s, %s);"""
     results = execute_query(query, (author_id, institution_id))
@@ -107,6 +113,8 @@ def search_by_author_institution(author_name, institution_name):
 
 def search_by_institution_topic(institution_name, topic_name):
     institution_id = get_institution_id(institution_name)
+    if institution_id is None:
+      return None
 
     query = """SELECT search_by_institution_topic(%s, %s);"""
     results = execute_query(query, (institution_id, topic_name))
@@ -143,6 +151,8 @@ def search_by_topic(topic_name):
 
 def search_by_institution(institution_name):
     institution_id = get_institution_id(institution_name)
+    if institution_id is None:
+      return None
 
     query = """SELECT search_by_institution(%s);"""
     results = execute_query(query, (institution_id,))
@@ -228,9 +238,23 @@ def initial_search():
   return results
 
 def get_researcher_result(researcher):
+  """
+  Gets the results when user only inputs a researcher
+  Uses database to get result, defaults to SPARQL if researcher is not in database
+
+  Returns:
+  metadata : the metadata for the search
+  graph : the graph for the search in the form {nodes: [], edges: []}
+  list : the list view for the search
+  (in form of a dictionary)
+  """
   data = search_by_author(researcher)
   if data == None:
-    return {"metadata": None, "graph": None, "list": None}
+    print("Using SPARQL...")
+    data = get_author_metadata_sparql(researcher)
+    topic_list, graph = list_given_researcher_institution(data['oa_link'], data['name'], data['current_institution'])
+    results = {"metadata": data, "graph": graph, "list": topic_list}
+    return results
   list = []
   metadata = data['author_metadata']
 
@@ -266,9 +290,23 @@ def get_researcher_result(researcher):
   return {"metadata": metadata, "graph": graph, "list": list}
 
 def get_institution_results(institution):
+  """
+  Gets the results when user only inputs an institution
+  Uses database to get result, defaults to SPARQL if institution is not in database
+
+  Returns:
+  metadata : the metadata for the search
+  graph : the graph for the search in the form {nodes: [], edges: []}
+  list : the list view for the search
+  (in form of a dictionary)
+  """
   data = search_by_institution(institution)
   if data == None:
-    return {"metadata": None, "graph": None, "list": None}
+    print("Using SPARQL...")
+    data = get_institution_metadata_sparql(institution)
+    topic_list, graph = list_given_institution(data['ror'], data['name'], data['oa_link'])
+    results = {"metadata": data, "graph": graph, "list": topic_list}
+    return results
   list = []
   metadata = data['institution_metadata']
   
@@ -296,8 +334,27 @@ def get_institution_results(institution):
   return {"metadata": metadata, "graph": graph, "list": list}
 
 def get_subfield_results(topic):
+  """
+  Gets the results when user only inputs a subfield
+  Uses database to get result
+  Shouldn't need to default to SPARQL because the database has all subfields already
+  Code to get SPARQL results is still here, but commented out
+
+  Returns:
+  metadata : the metadata for the search
+  graph : the graph for the search in the form {nodes: [], edges: []}
+  list : the list view for the search
+  (in form of a dictionary)
+  """
   data = search_by_topic(topic)
   if data == None:
+    """
+    ## Get results from subfields with OpenAlex, but shouldn't be necessary because DB has all subfields already.
+    data = get_subfield_metadata(topic)
+    topic_list, graph, extra_metadata = list_given_topic(topic, data['oa_link'])
+    data['work_count'] = extra_metadata['work_count']
+    results = {"metadata": data, "graph": graph, "list": topic_list}
+    """
     return {"metadata": None, "graph": None, "list": None}
   list = []
   metadata = {}
@@ -330,9 +387,25 @@ def get_subfield_results(topic):
   return {"metadata": metadata, "graph": graph, "list": list}
 
 def get_researcher_and_subfield_results(researcher, topic):
+  """
+  Gets the results when user inputs a researcher and subfield
+  Uses database to get result, defaults to SPARQL if researcher is not in database
+
+  Returns:
+  metadata : the metadata for the search
+  graph : the graph for the search in the form {nodes: [], edges: []}
+  list : the list view for the search
+  (in form of a dictionary)
+  """
   data = search_by_author_topic(researcher, topic)
   if data == None:
-    return {"metadata": None, "graph": None, "list": None}
+    print("Using SPARQL...")
+    data = get_topic_and_researcher_metadata_sparql(topic, researcher)
+    work_list, graph, extra_metadata = list_given_researcher_topic(topic, researcher, data['current_institution'], data['topic_oa_link'], data['researcher_oa_link'], data['institution_oa_link'])
+    data['work_count'] = extra_metadata['work_count']
+    data['cited_by_count'] = extra_metadata['cited_by_count']
+    results = {"metadata": data, "graph": graph, "list": work_list}
+    return results
   list = []
   metadata = {}
   
@@ -381,9 +454,25 @@ def get_researcher_and_subfield_results(researcher, topic):
   return {"metadata": metadata, "graph": graph, "list": list}
 
 def get_institution_and_subfield_results(institution, topic):
+  """
+  Gets the results when user inputs an institution and subfield
+  Uses database to get result, defaults to SPARQL if institution is not in database
+
+  Returns:
+  metadata : the metadata for the search
+  graph : the graph for the search in the form {nodes: [], edges: []}
+  list : the list view for the search
+  (in form of a dictionary)
+  """
   data = search_by_institution_topic(institution, topic)
   if data == None:
-    return {"metadata": None, "graph": None, "list": None}
+    print("Using SPARQL...")
+    data = get_institution_and_topic_metadata_sparql(institution, topic)
+    topic_list, graph, extra_metadata = list_given_institution_topic(institution, data['institution_oa_link'], topic, data['topic_oa_link'])
+    data['work_count'] = extra_metadata['work_count']
+    data['people_count'] = extra_metadata['num_people']
+    results = {"metadata": data, "graph": graph, "list": topic_list}
+    return results
   list = []
   metadata = {}
 
@@ -426,9 +515,23 @@ def get_institution_and_subfield_results(institution, topic):
   return {"metadata": metadata, "graph": graph, "list": list}
 
 def get_institution_and_researcher_results(institution, researcher):
+  """
+  Gets the results when user inputs an institution and researcher
+  Uses database to get result, defaults to SPARQL if institution or researcher is not in database
+
+  Returns:
+  metadata : the metadata for the search
+  graph : the graph for the search in the form {nodes: [], edges: []}
+  list : the list view for the search
+  (in form of a dictionary)
+  """
   data = search_by_author_institution(researcher, institution)
   if data == None:
-    return {"metadata": None, "graph": None, "list": None}
+    print("Using SPARQL...")
+    data = get_researcher_and_institution_metadata_sparql(researcher, institution)
+    topic_list, graph = list_given_researcher_institution(data['researcher_oa_link'], researcher, institution)
+    results = {"metadata": data, "graph": graph, "list": topic_list}
+    return results
   list = []
   metadata = {}
 
@@ -467,9 +570,25 @@ def get_institution_and_researcher_results(institution, researcher):
   return {"metadata": metadata, "graph": graph, "list": list}
 
 def get_institution_researcher_subfield_results(institution, researcher, topic):
+  """
+  Gets the results when user inputs an institution, researcher, and subfield
+  Uses database to get result, defaults to SPARQL if institution or researcher is not in database
+
+  Returns:
+  metadata : the metadata for the search
+  graph : the graph for the search in the form {nodes: [], edges: []}
+  list : the list view for the search
+  (in form of a dictionary)
+  """
   data = search_by_author_institution_topic(researcher, institution, topic)
   if data == None:
-    return {"metadata": None, "graph": None, "list": None}
+    print("Using SPARQL...")
+    data = get_institution_and_topic_and_researcher_metadata_sparql(institution, topic, researcher)
+    work_list, graph, extra_metadata = list_given_researcher_topic(topic, researcher, institution, data['topic_oa_link'], data['researcher_oa_link'], data['institution_oa_link'])
+    data['work_count'] = extra_metadata['work_count']
+    data['cited_by_count'] = extra_metadata['cited_by_count']
+    results = {"metadata": data, "graph": graph, "list": work_list}
+    return results
   list = []
   metadata = {}
 
@@ -518,6 +637,472 @@ def get_institution_researcher_subfield_results(institution, researcher, topic):
     edges.append({ 'id': f"""{work_name}-{number}""", 'start': work_name, 'end': number, "label": "citedBy", "start_type": "WORK", "end_type": "NUMBER"})
   graph = {"nodes": nodes, "edges": edges}
   return {"metadata": metadata, "graph": graph, "list":list}
+
+def query_endpoint(query):
+  """
+  Queries the SemOpenAlex endpoint.
+
+  Arguments:
+  query : string representing the SPARQL query
+
+  Returns:
+  return_value : returns the information as a list of dictionaries
+  """
+  endpoint_url = "https://semopenalex.org/sparql"
+  response = requests.post(endpoint_url, data={"query": query}, headers={'Accept': 'application/json'})
+  return_value = []
+  data = response.json()
+  for entry in data['results']['bindings']:
+    my_dict = {}
+    for e in entry:
+      my_dict[e] = entry[e]['value']
+    return_value.append(my_dict)
+  return return_value
+
+def get_institution_metadata_sparql(institution):
+  """
+  Given an institution, queries the SemOpenAlex endpoint to retrieve metadata on the institution
+
+  Returns:
+  metadata : information on the institution as a dictionary with the following keys:
+    institution, ror, works_count, cited_count, homepage, author_count, oa_link, hbcu
+  """
+
+  query = f"""
+  SELECT ?ror ?workscount ?citedcount ?homepage ?institution (COUNT(distinct ?people) as ?peoplecount)
+  WHERE {'{'}
+  ?institution <http://xmlns.com/foaf/0.1/name> "{institution}" .
+  ?institution <https://semopenalex.org/ontology/ror> ?ror .
+  ?institution <https://semopenalex.org/ontology/worksCount> ?workscount .
+  ?institution <https://semopenalex.org/ontology/citedByCount> ?citedcount .
+  ?institution <http://xmlns.com/foaf/0.1/homepage> ?homepage .
+  ?people <http://www.w3.org/ns/org#memberOf> ?institution .
+  {'}'} GROUP BY ?ror ?workscount ?citedcount ?homepage ?institution
+  """
+  results = query_endpoint(query)
+  ror = results[0]['ror']
+  works_count = results[0]['workscount']
+  cited_count = results[0]['citedcount']
+  homepage = results[0]['homepage']
+  author_count = results[0]['peoplecount']
+  oa_link = results[0]['institution']
+  oa_link = oa_link.replace('semopenalex', 'openalex').replace('institution', 'institutions')
+  hbcu = is_HBCU(oa_link)
+  return {"name": institution, "ror": ror, "works_count": works_count, "cited_count": cited_count, "homepage": homepage, "author_count": author_count, 'oa_link': oa_link, "hbcu": hbcu}
+
+def list_given_institution(ror, name, id):
+  """
+  Uses OpenAlex to determine the subfields which a given institution study.
+  Must iterate through all authors related to the institution and determine what topics OA attributes to them.
+
+  Parameters:
+  ror : ror of institution
+  name : name of institution
+  id : id of institution
+
+  Returns:
+  sorted_subfields : the subfields which OpenAlex attributes to a given institution
+  graph : a graphical representation of the sorted_subfields.
+  """
+  final_subfield_count = {}
+  headers = {'Accept': 'application/json'}
+  response = requests.get(f'https://api.openalex.org/authors?per-page=200&filter=last_known_institutions.ror:{ror}&cursor=*', headers=headers)
+  data = response.json()
+  authors = data['results']
+  next_page = data['meta']['next_cursor']
+  while next_page is not None:
+    for a in authors:
+      topics = a['topics']
+      for topic in topics:
+        if topic['subfield']['display_name'] in final_subfield_count:
+          final_subfield_count[topic['subfield']['display_name']] = final_subfield_count[topic['subfield']['display_name']] + 1
+        else:
+          final_subfield_count[topic['subfield']['display_name']] = 1
+    response = requests.get(f'https://api.openalex.org/authors?per-page=200&filter=last_known_institutions.ror:{ror}&cursor=' + next_page, headers=headers)
+    data = response.json()
+    authors = data['results']
+    next_page = data['meta']['next_cursor']
+  sorted_subfields = sorted([(k, v) for k, v in final_subfield_count.items() if v > 5], key=lambda x: x[1], reverse=True)
+
+  nodes = []
+  edges = []
+  nodes.append({ 'id': id, 'label': name, 'type': 'INSTITUTION' })
+  for subfield, number in sorted_subfields:
+    nodes.append({'id': subfield, 'label': subfield, 'type': "TOPIC"})
+    number_id = subfield + ":" + str(number)
+    nodes.append({'id': number_id, 'label': number, 'type': "NUMBER"})
+    edges.append({ 'id': f"""{id}-{subfield}""", 'start': id, 'end': subfield, "label": "researches", "start_type": "INSTITUTION", "end_type": "TOPIC"})
+    edges.append({ 'id': f"""{subfield}-{number_id}""", 'start': subfield, 'end': number_id, "label": "number", "start_type": "TOPIC", "end_type": "NUMBER"})
+  graph = {"nodes": nodes, "edges": edges}
+
+  return sorted_subfields, graph
+
+def get_author_metadata_sparql(author):
+  """
+  Given an author, queries the SemOpenAlex endpoint to retrieve metadata on the author
+
+  Returns:
+  metadata : information on the author as a dictionary with the following keys:
+    name, cited_by_count, orcid, work_count, current_institution, oa_link, institution_url
+  """
+
+  query = f"""
+    SELECT ?cite_count ?orcid ?works_count ?current_institution_name ?author ?current_institution
+    WHERE {'{'}
+    ?author <http://xmlns.com/foaf/0.1/name> "{author}" .
+    ?author <https://semopenalex.org/ontology/citedByCount> ?cite_count .
+    OPTIONAL {"{"}?author <https://dbpedia.org/ontology/orcidId> ?orcid .{"}"}
+    ?author <https://semopenalex.org/ontology/worksCount> ?works_count .
+    ?author <http://www.w3.org/ns/org#memberOf> ?current_institution .
+    ?current_institution <http://xmlns.com/foaf/0.1/name> ?current_institution_name .
+    {'}'}
+  """
+  results = query_endpoint(query)
+  cited_by_count = results[0]['cite_count']
+  orcid = results[0]['orcid'] if 'orcid' in results[0] else ''
+  work_count = results[0]['works_count']
+  current_institution = results[0]['current_institution_name']
+  oa_link = results[0]['author']
+  oa_link = oa_link.replace('semopenalex', 'openalex').replace('author', 'authors')
+  institution_link = results[0]['current_institution'].replace('semopenalex', 'openalex').replace('institution', 'institutions')
+
+  return {"name": author, "cited_by_count": cited_by_count, "orcid": orcid, "work_count": work_count, "current_institution": current_institution, "oa_link": oa_link, "institution_url": institution_link}
+
+def get_researcher_and_institution_metadata_sparql(researcher, institution):
+  """
+  Given an institution and researcher, collects the metadata for the 2 and returns as one dictionary.
+
+  Returns:
+  metadata : information on the institution and researcher as a dictionary with the following keys:
+    institution_name, researcher_name, homepage, institution_oa_link, researcher_oa_link, orcid, work_count, cited_by_count, ror
+  """
+
+  researcher_data = get_author_metadata_sparql(researcher)
+  institution_data = get_institution_metadata_sparql(institution)
+
+  institution_name = institution
+  researcher_name = researcher
+  institution_url = institution_data['homepage']
+  institution_oa = institution_data['oa_link']
+  researcher_oa = researcher_data['oa_link']
+  orcid = researcher_data['orcid']
+  work_count = researcher_data['work_count']
+  cited_by_count = researcher_data['cited_by_count']
+  ror = institution_data['ror']
+
+  return {"institution_name": institution_name, "researcher_name": researcher_name, "homepage": institution_url, "institution_oa_link": institution_oa, "researcher_oa_link": researcher_oa, "orcid": orcid, "work_count": work_count, "cited_by_count": cited_by_count, "ror": ror}
+
+def list_given_researcher_institution(id, name, institution):
+  """
+  When an user searches for a researcher only or a researcher and institution.
+  Checks OpenAlex for what topics are attributed to the author.
+
+  Parameters:
+  institution : id of author's institution
+  name : name of author
+  id : id of author
+
+  Returns:
+  sorted_subfields : the subfields which OpenAlex attributes to a given author
+  graph : a graphical representation of the sorted_subfields.
+  """
+  final_subfield_count = {}
+  headers = {'Accept': 'application/json'}
+  search_id = id.replace('https://openalex.org/authors/', '')
+  response = requests.get(f'https://api.openalex.org/authors/{search_id}', headers=headers)
+  data = response.json()
+  topics = data['topics']
+  for t in topics:
+    subfield = t['subfield']['display_name']
+    if subfield in final_subfield_count:
+      final_subfield_count[subfield] = final_subfield_count[subfield] + t['count']
+    else:
+      final_subfield_count[subfield] = t['count']
+  sorted_subfields = sorted(final_subfield_count.items(), key=lambda x: x[1], reverse=True)
+
+  nodes = []
+  edges = []
+  nodes.append({ 'id': institution, 'label': institution, 'type': 'INSTITUTION' })
+  edges.append({ 'id': f"""{id}-{institution}""", 'start': id, 'end': institution, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
+  nodes.append({ 'id': id, 'label': name, "type": "AUTHOR"})
+  for s, number in sorted_subfields:
+    nodes.append({'id': s, 'label': s, 'type': "TOPIC"})
+    number_id = s + ":" + str(number)
+    nodes.append({'id': number_id, 'label': number, 'type': "NUMBER"})
+    edges.append({ 'id': f"""{id}-{s}""", 'start': id, 'end': s, "label": "researches", "start_type": "AUTHOR", "end_type": "TOPIC"})
+    edges.append({ 'id': f"""{s}-{number_id}""", 'start': s, 'end': number_id, "label": "number", "start_type": "TOPIC", "end_type": "NUMBER"})
+  graph = {"nodes": nodes, "edges": edges}
+
+  return sorted_subfields, graph
+
+def get_subfield_metadata_sparql(subfield):
+  """
+  Given a subfield, queries the OpenAlex endpoint to retrieve metadata on the subfield
+  Doesn't query SemOpenAlex because the necessary data is faster to retrieve from OpenAlex, but this may change
+  in the future.
+
+  Researchers does not work as expected at the moment.
+
+  Returns:
+  metadata : information on the subfield as a dictionary with the following keys:
+    name, topic_clusters, cited_by_count, work_count, researchers, oa_link
+  """
+  print(f"https://api.openalex.org/subfields?filter=display_name.search:{subfield}")
+  headers = {'Accept': 'application/json'}
+  response = requests.get(f'https://api.openalex.org/subfields?filter=display_name.search:{subfield}', headers=headers)
+  data = response.json()['results'][0]
+  oa_link = data['id']
+  cited_by_count = data['cited_by_count']
+  work_count = data['works_count']
+  topic_clusters = []
+  for topic in data['topics']:
+    topic_clusters.append(topic['display_name'])
+  researchers = 0
+  return {"name": subfield, "topic_clusters": topic_clusters, "cited_by_count": cited_by_count, "work_count": work_count, "researchers": researchers, "oa_link": oa_link}
+
+def list_given_topic(subfield, id):
+  """
+  When an user searches for a topic only.
+  Searches through each HBCU and partner institution and returns which institutions research the subfield.
+
+  Parameters:
+  subfield : name of subfield searched
+  id : id of the subfield
+
+  Returns:
+  subfield_list : the subfields which OpenAlex attributes to a given institution
+  graph : a graphical representation of subfield_list.
+  """
+  headers = {'Accept': 'application/json'}
+  subfield_list = []
+  extra_metadata = {}
+  total_work_count = 0
+
+  for institution in autofill_inst_list:
+    response = requests.get(f'https://api.openalex.org/institutions?select=display_name,topics&filter=display_name.search:{institution}', headers=headers)
+    try:
+      data = response.json()
+      data = data['results'][0]
+      inst_topics = data['topics']
+      count = 0
+      for t in inst_topics:
+        if t['subfield']['display_name'] == subfield:
+          count = count + t['count']
+          total_work_count = total_work_count + t['count']
+      if count > 0:
+        subfield_list.append((institution, count))
+    except:
+      continue
+
+  subfield_list.sort(key=lambda x: x[1], reverse=True)
+  extra_metadata['work_count'] = total_work_count
+
+  nodes = []
+  edges = []
+  nodes.append({ 'id': id, 'label': subfield, 'type': 'TOPIC' })
+  for i, c in subfield_list:
+    if not c == 0:
+      nodes.append({ 'id': i, 'label': i, 'type': 'INSTITUTION' })
+      nodes.append({'id': c, 'label': c, 'type': "NUMBER"})
+      edges.append({ 'id': f"""{i}-{id}""", 'start': i, 'end': id, "label": "researches", "start_type": "INSTITUTION", "end_type": "TOPIC"})
+      edges.append({ 'id': f"""{i}-{c}""", 'start': i, 'end': c, "label": "number", "start_type": "INSTITUTION", "end_type": "NUMBER"})
+  graph = {"nodes": nodes, "edges": edges}
+  return subfield_list, graph, extra_metadata
+
+def get_institution_and_topic_metadata_sparql(institution, topic):
+  """
+  Given a topic and institution, collects the metadata for the 2 and returns as one dictionary.
+
+  Returns:
+  metadata : information on the topic and institution as a dictionary with the following keys:
+    institution_name, topic_name, work_count, cited_by_count, ror, topic_clusters, people_count, topic_oa_link, institution_oa_link, homepage
+  """
+
+  institution_data = get_institution_metadata_sparql(institution)
+  topic_data = get_subfield_metadata_sparql(topic)
+
+  institution_name = institution
+  subfield_name = topic
+  ror = institution_data['ror']
+  topic_cluster = topic_data['topic_clusters']
+  topic_oa = topic_data['oa_link']
+  institution_oa = institution_data['oa_link']
+  institution_url = institution_data['homepage']
+  work_count = institution_data['works_count']
+  cited_by_count = institution_data['cited_count']
+  people_count = institution_data['author_count']
+  return {"institution_name": institution_name, "topic_name": subfield_name, "work_count": work_count, "cited_by_count": cited_by_count, "ror": ror, "topic_clusters": topic_cluster, "people_count": people_count, "topic_oa_link": topic_oa, "institution_oa_link": institution_oa, "homepage": institution_url}
+
+def list_given_institution_topic(institution, institution_id, subfield, subfield_id):
+  """
+  When an user searches for an institution and topic
+  Uses a SemOpenAlex query to retrieve authors who work at the given institution and have published
+  papers relating to the provided subfield.
+  Collects the names of the authors and the number of works.
+
+  Parameters:
+  institution : name of institution
+  institudion_id : OpenAlex id for institution
+  subfield : name of subfield
+  subfield_id : OpenAlex id for subfield
+
+  Returns:
+  final_list : List of works by the author with the given subfield.
+  graph : a graphical representation of final_list.
+  extra_metadata : some extra metadata, specifically the work_count and cited_by_count for this specific topic.
+  """
+
+  query = f"""
+  SELECT DISTINCT ?author ?name (GROUP_CONCAT(DISTINCT ?work; SEPARATOR=", ") AS ?works) WHERE {"{"}
+  ?institution <http://xmlns.com/foaf/0.1/name> "{institution}" .
+  ?author <http://www.w3.org/ns/org#memberOf> ?institution .
+  ?author <http://xmlns.com/foaf/0.1/name> ?name .
+  ?work <http://purl.org/dc/terms/creator> ?author .
+  ?subfield a <https://semopenalex.org/ontology/Subfield> .
+  ?subfield <http://www.w3.org/2004/02/skos/core#prefLabel> "{subfield}" .
+  ?topic <http://www.w3.org/2004/02/skos/core#broader> ?subfield .
+  << ?work <https://semopenalex.org/ontology/hasTopic> ?topic >> ?p ?o .
+  {"}"}
+  GROUP BY ?author ?name
+  """
+  results = query_endpoint(query)
+  works_list = []
+  final_list = []
+  work_count = 0
+  for a in results:
+    works_list.append((a['author'], a['name'], a['works'].count(",") + 1))
+    final_list.append((a['name'], a['works'].count(",") + 1))
+    work_count = work_count + a['works'].count(",") + 1
+  # Limits to authors with more than 3 works if at least 5 of these authors exist
+  final_list_check = sorted([(k, v) for k, v in final_list if v > 3], key=lambda x: x[1], reverse=True)
+  final_list.sort(key=lambda x: x[1], reverse=True)
+  num_people = len(final_list)
+  """
+  if len(final_list_check) >= 5:
+    final_list = final_list_check
+  """
+
+  nodes = []
+  edges = []
+  nodes.append({ 'id': subfield_id, 'label': subfield, 'type': 'TOPIC' })
+  nodes.append({ 'id': institution_id, 'label': institution, 'type': 'INSTITUTION' })
+  edges.append({ 'id': f"""{institution_id}-{subfield_id}""", 'start': institution_id, 'end': subfield_id, "label": "researches", "start_type": "INSTITUTION", "end_type": "TOPIC"})
+  for a in works_list:
+    author_name = a[1]
+    author_id = a[0]
+    num_works = a[2]
+    nodes.append({ 'id': author_id, 'label': author_name, 'type': 'AUTHOR' })
+    nodes.append({ 'id': num_works, 'label': num_works, 'type': 'NUMBER' })
+    edges.append({ 'id': f"""{author_id}-{num_works}""", 'start': author_id, 'end': num_works, "label": "numWorks", "start_type": "AUTHOR", "end_type": "NUMBER"})
+    edges.append({ 'id': f"""{author_id}-{institution_id}""", 'start': author_id, 'end': institution_id, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
+  return final_list, {"nodes": nodes, "edges": edges}, {"num_people": num_people, "work_count": work_count}
+
+def get_topic_and_researcher_metadata_sparql(topic, researcher):
+  """
+  Given a topic and researcher, collects the metadata for the 2 and returns as one dictionary.
+
+  Returns:
+  metadata : information on the topic and researcher as a dictionary with the following keys:
+    researcher_name, topic_name, orcid, current_institution, work_count, cited_by_count, topic_clusters, researcher_oa_link, topic_oa_link
+  """
+
+  researcher_data = get_author_metadata_sparql(researcher)
+  topic_data = get_subfield_metadata_sparql(topic)
+
+  researcher_name = researcher
+  subfield_name = topic
+  orcid = researcher_data['orcid']
+  current_org = researcher_data['current_institution']
+  work_count = researcher_data['work_count']
+  cited_by_count = researcher_data['cited_by_count']
+  topic_cluster = topic_data['topic_clusters']
+  researcher_oa = researcher_data['oa_link']
+  topic_oa = topic_data['oa_link']
+  institution_oa = researcher_data['institution_url']
+  return {"researcher_name": researcher_name, "topic_name": subfield_name, "orcid": orcid, "current_institution": current_org, "work_count": work_count, "cited_by_count": cited_by_count, "topic_clusters": topic_cluster, "researcher_oa_link": researcher_oa, "topic_oa_link": topic_oa, "institution_oa_link": institution_oa}
+
+def list_given_researcher_topic(subfield, researcher, institution, subfield_id, researcher_id, institution_id):
+  """
+  When an user searches for a researcher and topic or all three.
+  Uses SemOpenAlex to retrieve the works of the researcher which relate to the subfield
+  Uses OpenAlex to get all institutions (if all_institutions is False)
+
+  Parameters:
+  subfield : name of subfield searched
+  researcher : name of researcher
+  subfield_id : OpenAlex ID for subfield
+  researcher_id : OpenAlex ID for researcher
+  all_institutions = True : Do we include all of the author's past institutions, or only the one the user searched for
+
+  Returns:
+  final_work_list : List of works by the author with the given subfield.
+  graph : a graphical representation of final_work_list.
+  extra_metadata : some extra metadata, specifically the work_count and cited_by_count for this specific subfield.
+  """
+
+  query = f"""
+  SELECT DISTINCT ?work ?name ?cited_by_count WHERE {"{"}
+  ?author <http://xmlns.com/foaf/0.1/name> "{researcher}" .
+  ?work <http://purl.org/dc/terms/creator> ?author .
+  << ?work <https://semopenalex.org/ontology/hasTopic> ?topic >> ?p ?o .
+  ?topic <http://www.w3.org/2004/02/skos/core#broader> ?subfield .
+  ?subfield <http://www.w3.org/2004/02/skos/core#prefLabel> "{subfield}" .
+  ?work <http://purl.org/dc/terms/title> ?name .
+  ?work <https://semopenalex.org/ontology/citedByCount> ?cited_by_count .
+  {'}'}
+  """
+  results = query_endpoint(query)
+  work_list = []
+  for a in results:
+    work_list.append((a['work'], a['name'], int(a['cited_by_count'])))
+  final_work_list = []
+  for a in work_list:
+    final_work_list.append((a[1], a[2]))
+  final_work_list.sort(key=lambda x: x[1], reverse=True)
+
+  nodes = []
+  edges = []
+  print(institution_id, institution)
+  nodes.append({ 'id': institution_id, 'label': institution, 'type': 'INSTITUTION' })
+  edges.append({ 'id': f"""{researcher_id}-{institution_id}""", 'start': researcher_id, 'end': institution_id, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
+  nodes.append({ 'id': researcher_id, 'label': researcher, 'type': 'AUTHOR' })
+  nodes.append({ 'id': subfield_id, 'label': subfield, 'type': 'TOPIC' })
+  edges.append({ 'id': f"""{researcher_id}-{subfield_id}""", 'start': researcher_id, 'end': subfield_id, "label": "researches", "start_type": "AUTHOR", "end_type": "TOPIC"})
+  cited_by_count = 0
+  for id, w, c in work_list:
+    cited_by_count = cited_by_count + c
+    if not c == 0:
+      nodes.append({ 'id': id, 'label': w, 'type': 'WORK' })
+      nodes.append({'id': c, 'label': c, 'type': "NUMBER"})
+      edges.append({ 'id': f"""{researcher_id}-{id}""", 'start': researcher_id, 'end': id, "label": "authored", "start_type": "AUTHOR", "end_type": "WORK"})
+      edges.append({ 'id': f"""{id}-{c}""", 'start': id, 'end': c, "label": "citedBy", "start_type": "WORK", "end_type": "NUMBER"})
+  graph = {"nodes": nodes, "edges": edges}
+  return final_work_list, graph, {"work_count": len(final_work_list), "cited_by_count": cited_by_count}
+
+def get_institution_and_topic_and_researcher_metadata_sparql(institution, topic, researcher):
+  """
+  Given an institution, topic, and researcher, collects the metadata for the 3 and returns as one dictionary.
+
+  Returns:
+  metadata : information on the institution, topic, and researcher as a dictionary with the following keys:
+    institution_name, topic_name, researcher_name, topic_oa_link, institution_oa_link, homepage, orcid, topic_clusters, researcher_oa_link, work_count, cited_by_count, ror
+  """
+
+  institution_data = get_institution_metadata_sparql(institution)
+  topic_data = get_subfield_metadata_sparql(topic)
+  researcher_data = get_author_metadata_sparql(researcher)
+
+  institution_url = institution_data['homepage']
+  orcid = researcher_data['orcid']
+  work_count = researcher_data['work_count']
+  cited_by_count = researcher_data['cited_by_count']
+  topic_cluster = topic_data['topic_clusters']
+  topic_oa = topic_data['oa_link']
+  institution_oa = institution_data['oa_link']
+  researcher_oa = researcher_data['oa_link']
+  ror = institution_data['ror']
+
+  return {"institution_name": institution, "topic_name": topic, "researcher_name": researcher, "topic_oa_link": topic_oa, "institution_oa_link": institution_oa, "homepage": institution_url, "orcid": orcid, "topic_clusters": topic_cluster, "researcher_oa_link": researcher_oa, "work_count": work_count, "cited_by_count": cited_by_count, 'ror': ror}
 
 @app.route('/autofill-institutions', methods=['POST'])
 def autofill_institutions():
@@ -662,6 +1247,51 @@ def search_topic_space():
         edges.append(a)
   final_graph = {"nodes": nodes, "edges": edges}
   return {'graph': final_graph}
+
+def create_connection(host_name, user_name, user_password, db_name):
+  """Create a sql database connection and return the connection object."""
+  connection = None
+  try:
+      connection = mysql.connector.connect(
+          host=host_name,
+          user=user_name,
+          passwd=user_password,
+          database=db_name
+      )
+      print("Connection to MySQL DB successful")
+  except Error as e:
+      print(f"The error '{e}' occurred")
+
+  return connection
+
+def execute_read_query(connection, query):
+  """Execute a read query from sql database and return the results."""
+  cursor = connection.cursor()
+  try:
+      cursor.execute(query)
+      result = cursor.fetchall()
+      return result
+  except Error as e:
+      print(f"The error '{e}' occurred")
+
+def is_HBCU(id):
+  """
+  Checks the sql database to determine if the id corresponds to an HBCU, as OpenAlex does not contain this information.
+
+  Parameters:
+  id : OpenAlex id of an institution
+
+  Returns:
+  True is the openalex id corresponds to an HBCU, false otherwise.
+  """
+  connection = create_connection('openalexalpha.mysql.database.azure.com', 'openalexreader', 'collabnext2024reader!', 'openalex')
+  id = id.replace('https://openalex.org/institutions/', "")
+  query = f"""SELECT HBCU FROM institutions_filtered WHERE id = "{id}";"""
+  result = execute_read_query(connection, query)
+  if result == [(1,)]:
+    return True
+  else:
+    return False
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
