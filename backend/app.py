@@ -7,6 +7,8 @@ from mysql.connector import Error
 import pandas as pd
 import os
 
+# Global variable for the SPARQL endpoint
+SEMOPENALEX_SPARQL_ENDPOINT = "https://semopenalex.org/sparql"
 app= Flask(__name__, static_folder='build', static_url_path='/')
 CORS(app)
 
@@ -108,8 +110,7 @@ def get_institution_metadata(institution):
   ?people <http://www.w3.org/ns/org#memberOf> ?institution .
   {'}'} GROUP BY ?ror ?workscount ?citedcount ?homepage ?institution
   """
-  endpoint_url = "https://semopenalex.org/sparql"
-  results = query_SPARQL_endpoint(endpoint_url, query)
+  results = query_SPARQL_endpoint(SEMOPENALEX_SPARQL_ENDPOINT, query)
   ror = results[0]['ror']
   works_count = results[0]['workscount']
   cited_count = results[0]['citedcount']
@@ -165,8 +166,7 @@ def get_author_metadata(author):
     ?current_institution <http://xmlns.com/foaf/0.1/name> ?current_institution_name .
     {'}'}
   """
-  endpoint_url = "https://semopenalex.org/sparql"
-  results = query_SPARQL_endpoint(endpoint_url, query)
+  results = query_SPARQL_endpoint(SEMOPENALEX_SPARQL_ENDPOINT, query)
   cited_by_count = results[0]['cite_count']
   orcid = results[0]['orcid'] if 'orcid' in results[0] else ''
   work_count = results[0]['works_count']
@@ -662,8 +662,7 @@ def list_given_researcher_topic(subfield, researcher, institution, subfield_id, 
   ?work <https://semopenalex.org/ontology/citedByCount> ?cited_by_count .
   {'}'}
   """
-  endpoint_url = "https://semopenalex.org/sparql"
-  results = query_SPARQL_endpoint(endpoint_url, query)
+  results = query_SPARQL_endpoint(SEMOPENALEX_SPARQL_ENDPOINT, query)
   work_list = []
   for a in results:
     work_list.append((a['work'], a['name'], int(a['cited_by_count'])))
@@ -723,8 +722,7 @@ def list_given_institution_topic(institution, institution_id, subfield, subfield
   {"}"}
   GROUP BY ?author ?name
   """
-  endpoint_url = "https://semopenalex.org/sparql"
-  results = query_SPARQL_endpoint(endpoint_url, query)
+  results = query_SPARQL_endpoint(SEMOPENALEX_SPARQL_ENDPOINT, query)
   works_list = []
   final_list = []
   work_count = 0
@@ -814,8 +812,7 @@ def get_topics_from_keyword(keyword):
     ?topic <http://www.w3.org/2004/02/skos/core#prefLabel> ?topicName
     {'}'}
   """
-  endpoint_url = "https://semopenalex.org/sparql"
-  results = query_SPARQL_endpoint(endpoint_url, query)
+  results = query_SPARQL_endpoint(SEMOPENALEX_SPARQL_ENDPOINT, query)
   topic_list = []
   for a in results:
     topic_list.append(a['topicName'])
@@ -839,8 +836,7 @@ def get_keywords_from_topics(topic):
     ?keyword <http://www.w3.org/2004/02/skos/core#prefLabel> ?keywordName
     {'}'}
   """
-  endpoint_url = "https://semopenalex.org/sparql"
-  results = query_SPARQL_endpoint(endpoint_url, query)
+  results = query_SPARQL_endpoint(SEMOPENALEX_SPARQL_ENDPOINT, query)
   keyword_list = []
   for a in results:
     keyword_list.append(a['keywordName'])
@@ -1034,8 +1030,7 @@ def get_work_info(keyword, researcher, keyword_id, researcher_id, all_institutio
   ?work <https://semopenalex.org/ontology/citedByCount> ?cited_by_count .
   {'}'}
   """
-  endpoint_url = "https://semopenalex.org/sparql"
-  results = query_SPARQL_endpoint(endpoint_url, query)
+  results = query_SPARQL_endpoint(SEMOPENALEX_SPARQL_ENDPOINT, query)
   work_list = []
   for a in results:
     work_list.append((a['work'], a['name'], int(a['cited_by_count'])))
@@ -1106,8 +1101,7 @@ def get_institution_topic_info(institution, institution_id, topic, topic_id):
   }
   GROUP BY ?author ?name
   """
-  endpoint_url = "https://semopenalex.org/sparql"
-  results = query_SPARQL_endpoint(endpoint_url, query)
+  results = query_SPARQL_endpoint(SEMOPENALEX_SPARQL_ENDPOINT, query)
   works_list = []
   final_list = []
   work_count = 0
@@ -1156,8 +1150,7 @@ def get_topic_metadata(topic):
     ?institution <http://xmlns.com/foaf/0.1/name> ?institutionName .
     {'}'}LIMIT 10
   """
-  endpoint_url = "https://semopenalex.org/sparql"
-  results1 = query_SPARQL_endpoint(endpoint_url, query1)
+  results1 = query_SPARQL_endpoint(SEMOPENALEX_SPARQL_ENDPOINT, query1)
   works_count = results1[0]['works_count']
   cited_by_count = results1[0]['cited_by_count']
   description = results1[0]['note']
@@ -1198,8 +1191,7 @@ def get_works(author, topic, institution):
         ?work dct:title ?name .
       {'}'}
       """
-      endpoint_url = "https://semopenalex.org/sparql"
-      results = query_SPARQL_endpoint(endpoint_url, query)
+      results = query_SPARQL_endpoint(SEMOPENALEX_SPARQL_ENDPOINT, query)
       titles = []
       if results == []:
         return {"titles": titles}, {"nodes": [], "edges": []}
@@ -1244,8 +1236,7 @@ def get_works(author, topic, institution):
         ?work dct:title ?name .
       {'}'}
       """
-      endpoint_url = "https://semopenalex.org/sparql"
-      results = query_SPARQL_endpoint(endpoint_url, query)
+      results = query_SPARQL_endpoint(SEMOPENALEX_SPARQL_ENDPOINT, query)
       titles = []
       if results == []:
         return {"titles": titles}, {"nodes": [], "edges": []}
@@ -1291,8 +1282,7 @@ def get_topics(author, institution):
         ?topic skos:prefLabel ?name .
       {'}'}GROUP BY ?name ?author ?institution ?topic
       """
-      endpoint_url = "https://semopenalex.org/sparql"
-      results = query_SPARQL_endpoint(endpoint_url, query)
+      results = query_SPARQL_endpoint(SEMOPENALEX_SPARQL_ENDPOINT, query)
       topics = []
       for entry in results:
          topic_name = entry['name']
@@ -1343,8 +1333,7 @@ def get_authors(institution, topic):
         ?work <http://purl.org/dc/terms/title> ?workTitle .
       {'}'}LIMIT 10
       """
-      endpoint_url = "https://semopenalex.org/sparql"
-      results = query_SPARQL_endpoint(endpoint_url, query)
+      results = query_SPARQL_endpoint(SEMOPENALEX_SPARQL_ENDPOINT, query)
       authors = []
       connecting_works = {}
       if results == []:
