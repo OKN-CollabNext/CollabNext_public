@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Circles } from 'react-loader-spinner';
 import { useSearchParams } from 'react-router-dom';
 
-import { Box, Button } from '@chakra-ui/react';
+import { Box, Button, Flex } from '@chakra-ui/react';
 
 import AllThreeMetadata from '../components/AllThreeMetadata';
 // import CytoscapeComponent from 'react-cytoscapejs';
@@ -37,10 +37,26 @@ const Search = () => {
   const [suggestedTopics, setSuggestedTopics] = useState([]);
 
   // const toast = useToast();
+  const [institutions, setInstitutions] = useState([institution || '']);
 
   let latestRequestId = 0;
   const handleToggle = () => {
     setIsNetworkMap(!isNetworkMap);
+  };
+
+  const updateInstitution = (index: number, value: any) => {
+    const newInstitutions = [...institutions];
+    newInstitutions[index] = value;
+    setInstitutions(newInstitutions);
+  };
+
+  console.log("value of suggestedInstitutions", suggestedInstitutions);
+  console.log("value of setsuggestedinstitutions: ", setSuggestedInstitutions);
+
+  const addInstitution = () => {
+    if (setInstitutions.length < 3) {
+      setInstitutions([...institutions, '']);
+    }
   };
 
   const sendSearchRequest = (search: SearchType) => {
@@ -84,7 +100,7 @@ const Search = () => {
                 author_count: data?.metadata?.researchers,
                 works_count: data?.metadata?.work_count,
                 open_alex_link: data?.metadata?.oa_link,
-                organizations: data?.list,
+                institutions: data?.list,
                 search,
               }
             : search === 'researcher'
@@ -236,63 +252,67 @@ const Search = () => {
   return (
     <div className='main-content'>
       <div className='sidebar'>
-        <input
-          type='text'
-          value={universityName}
-          list='institutions'
-          onChange={(e) => {
-            setUniversityName(e.target.value);
-            handleAutofill(
-              e.target.value,
-              false,
-              setSuggestedTopics,
-              setSuggestedInstitutions,
-            );
-          }}
-          placeholder='University Name'
-          className='textbox'
-          // disabled={isLoading}
-        />
-        <Suggested suggested={suggestedInstitutions} institutions={true} />
-        <input
-          type='text'
-          value={topicType}
-          onChange={(e) => {
-            setTopicType(e.target.value);
-            handleAutofill(
-              e.target.value,
-              true,
-              setSuggestedTopics,
-              setSuggestedInstitutions,
-            );
-          }}
-          list='topics'
-          placeholder='Type Topic'
-          className='textbox'
-          // disabled={isLoading}
-        />
-        <Suggested suggested={suggestedTopics} institutions={false} />
-        <select
-          value={institutionType}
-          onChange={(e) => setInstitutionType(e.target.value)}
-          className='dropdown'
-        >
-          <option value='Education'>HBCU</option>
-        </select>
-        {/* <FormControl isInvalid={topicType && !researcherType ? true : false}> */}
-        <input
-          type='text'
-          value={researcherType}
-          onChange={(e) => setResearcherType(e.target.value)}
-          placeholder='Type Researcher'
-          className='textbox'
-          // disabled={isLoading}
-        />
-        {/* <FormErrorMessage>
+        <Flex direction={{ base: 'column', lg: 'row' }} gap={{ lg: '1rem' }}>
+          <Box flex={2}>
+            {institutions.map((org, index) => (
+              <div key={index}>
+                <input
+                  type='text'
+                  value={org}
+                  onChange={(e) => {
+                    // TODO: Fix the suggestion issue
+                    updateInstitution(index, e.target.value); 
+                    handleAutofill(
+                      e.target.value,
+                      false,
+                      setSuggestedTopics,
+                      setSuggestedInstitutions,
+                    );
+                  }}
+                  placeholder='University Name'
+                />
+                <Suggested suggested={suggestedInstitutions} institutions={true} />
+              </div>
+            ))}
+              <input
+              type='text'
+              value={researcherType}
+              onChange={(e) => setResearcherType(e.target.value)}
+              placeholder='Type Researcher'
+              className='textbox'
+              // disabled={isLoading}
+            />
+            <select
+              value={institutionType}
+              onChange={(e) => setInstitutionType(e.target.value)}
+              className='dropdown'
+            >
+              <option value='Education'>HBCU</option>
+            </select>
+            <input
+              type='text'
+              value={topicType}
+              onChange={(e) => {
+                setTopicType(e.target.value);
+                handleAutofill(
+                  e.target.value,
+                  true,
+                  setSuggestedTopics,
+                  setSuggestedInstitutions,
+                );
+              }}
+              list='topics'
+              placeholder='Type Topic'
+              className='textbox'
+              // disabled={isLoading}
+            />
+            <Suggested suggested={suggestedTopics} institutions={false} />
+            {/* <FormControl isInvalid={topicType && !researcherType ? true : false}> */}
+            {/* <FormErrorMessage>
             Researcher must be provided when Topic is
           </FormErrorMessage>
         </FormControl> */}
-        {/* <Button
+            {/* <Button
           width='100%'
           marginTop='10px'
           backgroundColor='transparent'
@@ -303,10 +323,74 @@ const Search = () => {
         >
           Search
         </Button> */}
-        <button className='button' onClick={handleToggle}>
-          {isNetworkMap ? 'See List Map' : 'See Network Map'}
-        </button>
+            <button className='button' onClick={handleToggle}>
+              {isNetworkMap ? 'See List Map' : 'See Network Map'}
+            </button>
+          </Box>
+          <Box flex={1}>
+            <Box mb={25} mt={{ lg: 5 }}>
+              <Flex gap={5} justifyContent='center'>
+                <Button
+                  size='sm'
+                  fontWeight={'500'}
+                  onClick={addInstitution}
+                  isDisabled={institutions.length >= 3}
+                >
+                  Add Org
+                </Button>
+                <Button
+                  size="sm"
+                  fontWeight={"500"}
+                  onClick={() => document.getElementById('csvUpload')?.click()}
+                >
+                  Upload Org
+                  <input
+                    type="file"
+                    id="csvUpload"
+                    accept=".csv"
+                    style={{ display: 'none' }}
+                  />
+                </Button>
+              </Flex>
+            </Box>
+
+            <Box mt={20}>
+              <Flex gap={5} justifyContent='center'>
+                <Button
+                  size='sm'
+                  fontWeight={'500'}
+                >
+                  Add Person
+                </Button>
+                <Button
+                  size="sm"
+                  fontWeight={"500"}
+                >
+                  Upload Person
+                </Button>
+              </Flex>
+            </Box>
+
+            <Box mt={20}>
+              <Flex justifyContent='center'>
+                <Button
+                  width={{ base: '165px', lg: '205px' }}
+                  height='41px'
+                  background='#000000'
+                  borderRadius={{ base: '4px', lg: '6px' }}
+                  fontSize={{ base: '13px', lg: '18px' }}
+                  color='#FFFFFF'
+                  fontWeight={'500'}
+                  type='submit'
+                >
+                  Search
+                </Button>
+              </Flex>
+            </Box>
+          </Box>
+        </Flex>
       </div>
+
       <div className='content'>
         {isLoading ? (
           <Box
