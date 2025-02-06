@@ -12,6 +12,8 @@ import psycopg2
 # Load environment variables
 load_dotenv('.env')
 
+# Global variable for the SPARQL endpoint
+SEMOPENALEX_SPARQL_ENDPOINT = "https://semopenalex.org/sparql"
 app= Flask(__name__, static_folder='build', static_url_path='/')
 CORS(app)
 
@@ -679,7 +681,7 @@ def get_institution_metadata_sparql(institution):
   ?people <http://www.w3.org/ns/org#memberOf> ?institution .
   {'}'} GROUP BY ?ror ?workscount ?citedcount ?homepage ?institution
   """
-  results = query_endpoint(query)
+  results = query_SPARQL_endpoint(SEMOPENALEX_SPARQL_ENDPOINT, query)
   ror = results[0]['ror']
   works_count = results[0]['workscount']
   cited_count = results[0]['citedcount']
@@ -757,7 +759,7 @@ def get_author_metadata_sparql(author):
     ?current_institution <http://xmlns.com/foaf/0.1/name> ?current_institution_name .
     {'}'}
   """
-  results = query_endpoint(query)
+  results = query_SPARQL_endpoint(SEMOPENALEX_SPARQL_ENDPOINT, query)
   cited_by_count = results[0]['cite_count']
   orcid = results[0]['orcid'] if 'orcid' in results[0] else ''
   work_count = results[0]['works_count']
@@ -917,7 +919,6 @@ def get_institution_and_topic_metadata_sparql(institution, topic):
   metadata : information on the topic and institution as a dictionary with the following keys:
     institution_name, topic_name, work_count, cited_by_count, ror, topic_clusters, people_count, topic_oa_link, institution_oa_link, homepage
   """
-
   institution_data = get_institution_metadata_sparql(institution)
   topic_data = get_subfield_metadata_sparql(topic)
 
@@ -965,7 +966,7 @@ def list_given_institution_topic(institution, institution_id, subfield, subfield
   {"}"}
   GROUP BY ?author ?name
   """
-  results = query_endpoint(query)
+  results = query_SPARQL_endpoint(SEMOPENALEX_SPARQL_ENDPOINT, query)
   works_list = []
   final_list = []
   work_count = 0
@@ -1051,7 +1052,7 @@ def list_given_researcher_topic(subfield, researcher, institution, subfield_id, 
   ?work <https://semopenalex.org/ontology/citedByCount> ?cited_by_count .
   {'}'}
   """
-  results = query_endpoint(query)
+  results = query_SPARQL_endpoint(SEMOPENALEX_SPARQL_ENDPOINT, query)
   work_list = []
   for a in results:
     work_list.append((a['work'], a['name'], int(a['cited_by_count'])))
@@ -1198,7 +1199,6 @@ def get_topic_space():
   Returns:
   graph : returns a dictionary with one entry, the graph. The graph is in the same form as all others ({"nodes": [], "edges": []})
   """
-
   nodes= [{ "id": 1, 'label': "Physical Sciences", 'type': 'DOMAIN'}, { "id": 2, 'label': "Life Sciences", 'type': 'DOMAIN'}, { "id": 3, 'label': "Social Sciences", 'type': 'DOMAIN'}, { "id": 4, 'label': "Health Sciences", 'type': 'DOMAIN'}]
   edges = []
   graph = {"nodes": nodes, "edges": edges}
@@ -1215,7 +1215,6 @@ def search_topic_space():
   Returns:
   graph : the graph for the search in the form {nodes: [], edges: []}
   """
-
   search = request.json.get('topic')
   with open('topic_default.json', 'r') as file:
     graph = json.load(file)
