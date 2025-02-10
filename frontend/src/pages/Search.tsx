@@ -1,10 +1,18 @@
 import '../styles/Search.css';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Circles } from 'react-loader-spinner';
 import { useSearchParams } from 'react-router-dom';
 
-import { Box, Button } from '@chakra-ui/react';
+import {
+	Box,
+	Button,
+	Checkbox,
+	Flex,
+	Input,
+	list,
+	Text,
+} from '@chakra-ui/react';
 
 import AllThreeMetadata from '../components/AllThreeMetadata';
 // import CytoscapeComponent from 'react-cytoscapejs';
@@ -26,21 +34,27 @@ const Search = () => {
   const type = searchParams.get('type');
   const topic = searchParams.get('topic');
   const researcher = searchParams.get('researcher');
-  const [isNetworkMap, setIsNetworkMap] = useState(false);
+  const [isNetworkMap, setIsNetworkMap] = useState('list');
   const [universityName, setUniversityName] = useState(institution || '');
+  const [universityName2, setUniversityName2] = useState('');
   const [topicType, setTopicType] = useState(topic || '');
   const [institutionType, setInstitutionType] = useState(type || 'Education');
   const [researcherType, setResearcherType] = useState(researcher || '');
+  const [researcherType2, setResearcherType2] = useState('');
   const [data, setData] = useState<ResearchDataInterface>(initialValue);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAddOrgChecked, setIsAddOrgChecked] = useState(false);
+  const [orgList, setOrgList] = useState<File | null>(null);
+  const [isAddPersonChecked, setIsAddPersonChecked] = useState(false);
+  const [personList, setPersonList] = useState<File | null>(null);
   const [suggestedInstitutions, setSuggestedInstitutions] = useState([]);
   const [suggestedTopics, setSuggestedTopics] = useState([]);
 
   // const toast = useToast();
 
   let latestRequestId = 0;
-  const handleToggle = () => {
-    setIsNetworkMap(!isNetworkMap);
+  const handleToggle = (value: string) => {
+    setIsNetworkMap(value);
   };
 
   const sendSearchRequest = (search: SearchType) => {
@@ -218,7 +232,7 @@ const Search = () => {
             ...initialValue,
             graph: data?.graph,
           });
-          setIsNetworkMap(true);
+          setIsNetworkMap('graph');
           setIsLoading(false);
         })
         .catch((error) => {
@@ -229,70 +243,140 @@ const Search = () => {
     }
   };
 
+  const orgInputRef = useRef<HTMLInputElement>(null);
+  const personInputRef = useRef<HTMLInputElement>(null);
+
+  const handleListClick = (ref: React.RefObject<HTMLInputElement>) => {
+    ref?.current?.click();
+  };
+
+  const handleListChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setList: React.Dispatch<React.SetStateAction<File | null>>,
+  ) => {
+    if (e.target.files) {
+      const file = e.target.files[0];
+      console.log(file);
+      if (file && file.name.endsWith('.csv')) {
+        setList(file);
+      } else if (file) {
+        alert('Please select a valid CSV file.');
+      }
+    }
+  };
+
   useEffect(() => {
     handleSearch();
   }, [universityName, institutionType, topicType, researcherType]);
 
   return (
-    <div className='main-content'>
-      <div className='sidebar'>
-        <input
-          type='text'
-          value={universityName}
-          list='institutions'
-          onChange={(e) => {
-            setUniversityName(e.target.value);
-            handleAutofill(
-              e.target.value,
-              false,
-              setSuggestedTopics,
-              setSuggestedInstitutions,
-            );
-          }}
-          placeholder='University Name'
-          className='textbox'
-          // disabled={isLoading}
-        />
-        <Suggested suggested={suggestedInstitutions} institutions={true} />
-        <input
-          type='text'
-          value={topicType}
-          onChange={(e) => {
-            setTopicType(e.target.value);
-            handleAutofill(
-              e.target.value,
-              true,
-              setSuggestedTopics,
-              setSuggestedInstitutions,
-            );
-          }}
-          list='topics'
-          placeholder='Type Topic'
-          className='textbox'
-          // disabled={isLoading}
-        />
-        <Suggested suggested={suggestedTopics} institutions={false} />
-        <select
-          value={institutionType}
-          onChange={(e) => setInstitutionType(e.target.value)}
-          className='dropdown'
-        >
-          <option value='Education'>HBCU</option>
-        </select>
-        {/* <FormControl isInvalid={topicType && !researcherType ? true : false}> */}
-        <input
-          type='text'
-          value={researcherType}
-          onChange={(e) => setResearcherType(e.target.value)}
-          placeholder='Type Researcher'
-          className='textbox'
-          // disabled={isLoading}
-        />
-        {/* <FormErrorMessage>
+    <Box>
+      <Flex justifyContent={'flex-end'} px='2rem'>
+        {['List', 'Graph', 'Map'].map((value) => (
+          <Button
+            onClick={() => setIsNetworkMap(value.toLowerCase())}
+            bg='linear-gradient(#053257, #7e7e7e)'
+            color='white'
+            mr='1rem'
+          >
+            {value}
+          </Button>
+        ))}
+      </Flex>
+      <div className='main-content'>
+        <div className='sidebar'>
+          <input
+            type='text'
+            value={universityName}
+            list='institutions'
+            onChange={(e) => {
+              setUniversityName(e.target.value);
+              handleAutofill(
+                e.target.value,
+                false,
+                setSuggestedTopics,
+                setSuggestedInstitutions,
+              );
+            }}
+            placeholder={'University Name'}
+            className='textbox'
+            // disabled={isLoading}
+          />
+          <Suggested suggested={suggestedInstitutions} institutions={true} />
+          {isAddOrgChecked && (
+            <>
+              <input
+                type='text'
+                value={universityName2}
+                list='institutions'
+                onChange={(e) => {
+                  setUniversityName2(e.target.value);
+                  handleAutofill(
+                    e.target.value,
+                    false,
+                    setSuggestedTopics,
+                    setSuggestedInstitutions,
+                  );
+                }}
+                placeholder={'Another University'}
+                className='textbox'
+                // disabled={isLoading}
+              />
+              <Suggested
+                suggested={suggestedInstitutions}
+                institutions={true}
+              />
+            </>
+          )}
+          <input
+            type='text'
+            value={topicType}
+            onChange={(e) => {
+              setTopicType(e.target.value);
+              handleAutofill(
+                e.target.value,
+                true,
+                setSuggestedTopics,
+                setSuggestedInstitutions,
+              );
+            }}
+            list='topics'
+            placeholder='Type Topic'
+            className='textbox'
+            // disabled={isLoading}
+          />
+          <Suggested suggested={suggestedTopics} institutions={false} />
+          <select
+            value={institutionType}
+            onChange={(e) => setInstitutionType(e.target.value)}
+            className='dropdown'
+          >
+            <option value='Education'>HBCU</option>
+          </select>
+          {/* <FormControl isInvalid={topicType && !researcherType ? true : false}> */}
+          <input
+            type='text'
+            value={researcherType}
+            onChange={(e) => setResearcherType(e.target.value)}
+            placeholder='Type Researcher'
+            className='textbox'
+            // disabled={isLoading}
+          />
+          {isAddPersonChecked && (
+            <input
+              type='text'
+              value={researcherType2}
+              onChange={(e) => setResearcherType2(e.target.value)}
+              placeholder='Another Researcher'
+              className='textbox'
+              // disabled={isLoading}
+            />
+          )}
+          {/* <FormErrorMessage>
             Researcher must be provided when Topic is
           </FormErrorMessage>
         </FormControl> */}
-        {/* <Button
+          {/* <Button
           width='100%'
           marginTop='10px'
           backgroundColor='transparent'
@@ -303,66 +387,153 @@ const Search = () => {
         >
           Search
         </Button> */}
-        <button className='button' onClick={handleToggle}>
-          {isNetworkMap ? 'See List Map' : 'See Network Map'}
-        </button>
-      </div>
-      <div className='content'>
-        {isLoading ? (
-          <Box
-            w={{lg: '500px'}}
-            justifyContent={'center'}
-            height={{base: '190px', lg: '340px'}}
-            display={'flex'}
-            alignItems='center'
-          >
-            <Circles
-              height='80'
-              width='80'
-              color='#003057'
-              ariaLabel='circles-loading'
-              wrapperStyle={{}}
-              wrapperClass=''
-              visible={true}
-            />
+          <Box mt='.6rem'>
+            <Flex justifyContent={'space-between'}>
+              {[
+                {
+                  checkedState: isAddOrgChecked,
+                  setCheckedState: setIsAddOrgChecked,
+                  text: 'Add Another Org',
+                },
+                {
+                  checkedState: isAddPersonChecked,
+                  setCheckedState: setIsAddPersonChecked,
+                  text: 'Add Another Person',
+                },
+              ].map(({checkedState, setCheckedState, text}) => (
+                <Flex>
+                  <Checkbox
+                    mr='.2rem'
+                    checked={checkedState}
+                    onChange={(e) => setCheckedState(e.target.checked)}
+                  />
+                  <Text fontSize='11px' color={'white'}>
+                    {text}
+                  </Text>
+                </Flex>
+              ))}
+            </Flex>
+            <Box mt='.6rem'>
+              {[
+                {
+                  list: orgList,
+                  setList: setOrgList,
+                  text: 'Upload Org List',
+                  ref: orgInputRef,
+                },
+                {
+                  list: personList,
+                  setList: setPersonList,
+                  text: 'Upload Person List',
+                  ref: personInputRef,
+                },
+              ].map(({list, setList, text, ref}) => (
+                <Flex alignItems='center'>
+                  <Button
+                    border='1px solid white'
+                    bg='transparent'
+                    color='white'
+                    fontWeight={400}
+                    fontSize={'13px'}
+                    onClick={() => handleListClick(ref)}
+                    mt='.3rem'
+                    mr='.35rem'
+                  >
+                    {list?.name?.slice(0, 14) || text}
+                  </Button>
+                  <input
+                    onChange={(e) => handleListChange(e, setList)}
+                    type='file'
+                    ref={ref}
+                    accept='.csv'
+                    hidden
+                  />
+                  {list && (
+                    <Text
+                      fontSize='11px'
+                      color={'white'}
+                      cursor='pointer'
+                      onClick={() => {
+                        setList(null);
+                        // @ts-ignore
+                        ref.current.value = '';
+                      }}
+                    >
+                      remove
+                    </Text>
+                  )}
+                </Flex>
+              ))}
+            </Box>
           </Box>
-        ) : !data?.graph ? (
-          <Box fontSize={{lg: '20px'}} ml={{lg: '4rem'}} fontWeight={'bold'}>
-            No result
-          </Box>
-        ) : isNetworkMap ? (
-          <div className='network-map'>
-            <button className='topButton'>Network Map</button>
-            {/* <img src={NetworkMap} alt='Network Map' /> */}
-            <GraphComponent graphData={data?.graph} setInstitution={setUniversityName} setTopic={setTopicType} setResearcher={setResearcherType} />
-          </div>
-        ) : (
-          <div>
-            {data?.search === 'institution' ? (
-              <InstitutionMetadata data={data} setTopic={setTopicType} />
-            ) : data?.search === 'topic' ? (
-              <TopicMetadata data={data} setInstitution={setUniversityName} />
-            ) : data?.search === 'researcher' ? (
-              <ResearcherMetadata data={data} setTopic={setTopicType} />
-            ) : data?.search === 'researcher-institution' ? (
-              <InstitutionResearcherMetaData
-                data={data}
-                setTopic={setTopicType}
+          {/* <button className='button' onClick={handleToggle}>
+            {isNetworkMap ? 'See List Map' : 'See Network Map'}
+          </button> */}
+        </div>
+        <div className='content'>
+          {isLoading ? (
+            <Box
+              w={{lg: '500px'}}
+              justifyContent={'center'}
+              height={{base: '190px', lg: '340px'}}
+              display={'flex'}
+              alignItems='center'
+            >
+              <Circles
+                height='80'
+                width='80'
+                color='#003057'
+                ariaLabel='circles-loading'
+                wrapperStyle={{}}
+                wrapperClass=''
+                visible={true}
               />
-            ) : data?.search === 'topic-researcher' ? (
-              <TopicResearcherMetadata data={data} />
-            ) : data?.search === 'topic-institution' ? (
-              <TopicInstitutionMetadata
-                data={data}
+            </Box>
+          ) : !data?.graph ? (
+            <Box fontSize={{lg: '20px'}} ml={{lg: '4rem'}} fontWeight={'bold'}>
+              No result
+            </Box>
+          ) : isNetworkMap === 'graph' ? (
+            <div className='network-map'>
+              <button className='topButton'>Network Map</button>
+              {/* <img src={NetworkMap} alt='Network Map' /> */}
+              <GraphComponent
+                graphData={data?.graph}
+                setInstitution={setUniversityName}
+                setTopic={setTopicType}
                 setResearcher={setResearcherType}
               />
-            ) : (
-              <AllThreeMetadata data={data} />
-            )}
-          </div>
-        )}
+            </div>
+          ) : isNetworkMap === 'list' ? (
+            <div>
+              {data?.search === 'institution' ? (
+                <InstitutionMetadata data={data} setTopic={setTopicType} />
+              ) : data?.search === 'topic' ? (
+                <TopicMetadata data={data} setInstitution={setUniversityName} />
+              ) : data?.search === 'researcher' ? (
+                <ResearcherMetadata data={data} setTopic={setTopicType} />
+              ) : data?.search === 'researcher-institution' ? (
+                <InstitutionResearcherMetaData
+                  data={data}
+                  setTopic={setTopicType}
+                />
+              ) : data?.search === 'topic-researcher' ? (
+                <TopicResearcherMetadata data={data} />
+              ) : data?.search === 'topic-institution' ? (
+                <TopicInstitutionMetadata
+                  data={data}
+                  setResearcher={setResearcherType}
+                />
+              ) : (
+                <AllThreeMetadata data={data} />
+              )}
+            </div>
+          ) : (
+            <Box></Box>
+          )}
+        </div>
       </div>
-    </div>
+    </Box>
   );
 };
 
