@@ -10,7 +10,15 @@ import pandas as pd
 import psycopg2
 
 # Load environment variables
-load_dotenv('.env')
+try:
+  DB_HOST=os.environ['DB_HOST']
+  DB_PORT= int(os.environ['DB_PORT'])
+  DB_NAME=os.environ['DB_NAME']
+  DB_USER=os.environ['DB_USER']
+  DB_PASSWORD=os.environ['DB_PASSWORD']
+  API=os.environ['DB_API']
+except:
+  load_dotenv(dotenv_path=".env")
 
 # Global variable for the SPARQL endpoint
 SEMOPENALEX_SPARQL_ENDPOINT = "https://semopenalex.org/sparql"

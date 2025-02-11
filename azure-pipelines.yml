@@ -21,7 +21,7 @@ variables:
 
   # Database Connection
   DB_HOST: 'openalex.postgres.database.azure.com'
-  DB_PORT: 5432
+  DB_PORT: '5432'
   DB_NAME: 'postgres_v2'
   DB_USER: 'read_only_user'
   DB_PASSWORD: 'read_only'
@@ -114,10 +114,3 @@ stages:
               azureSubscription: $(azureServiceConnectionId)
               appName: $(webAppName)
               package: $(Pipeline.Workspace)/drop/$(Build.BuildId).zip
-            env:
-              DB_HOST: $(DB_HOST)
-              DB_PASSWORD: $(DB_PASSWORD)
-              DB_PORT: $(DB_PORT)
-              DB_NAME: $(DB_NAME)
-              DB_USER: $(DB_USER)
-              API: $(API)
