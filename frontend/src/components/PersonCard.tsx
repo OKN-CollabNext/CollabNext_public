@@ -1,3 +1,5 @@
+import React from "react";
+import "../styles/PersonCard.css";
 import { FaLinkedin, FaGithub, FaGlobe, FaEnvelope } from "react-icons/fa";
 
 interface Person {
@@ -35,70 +37,75 @@ const PersonCard: React.FC<PersonCardProps> = ({
     person.biosketch && person.biosketch.length > bioMaxLength;
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg">
-      <div className="relative w-full h-80">
-        {" "}
-        {/* Adjust height as needed */}
+    <div className="personCard">
+      <div className="personImageWrapper">
         <img
           src={person.image}
           alt={`${person.firstName} ${person.lastName}`}
-          className="absolute inset-0 w-full h-full object-cover"
+          className="personImage"
         />
       </div>
-      <div className="p-4">
-        <h2 className="text-xl font-semibold text-gray-800 mb-1">
+      <div className="personBody">
+        <h2 className="personName">
           {person.firstName} {person.lastName}
         </h2>
-        <p className="text-sm text-gray-600 mb-2">
-          {person.institutionalAffiliation} - {person.role}
-        </p>
-        <div
-          className={`text-sm text-gray-700 mb-4 ${
-            isExpanded ? "max-h-56" : "max-h-24"
-          } overflow-y-auto`}
-        >
+        <div className="personAffiliation">
+          {person.institutionalAffiliation}
+          {person.role ? ` - ${person.role}` : ""}
+        </div>
+        <div className={`personBio ${!isExpanded ? "collapsed" : ""}`}>
           {isExpanded ? person.biosketch : truncatedBio}
-          {shouldShowReadMore && (
+        </div>
+        {
+          shouldShowReadMore && (
             <button
               onClick={onToggleExpand}
-              className="text-blue-600 hover:text-blue-800 font-medium ml-1"
+              className="personReadMoreBtn"
             >
               {isExpanded ? "Read Less" : "Read More"}
             </button>
-          )}
-        </div>
-        <div className="flex space-x-3">
+          )
+        }
+        <div className="personCardLinks">
           {person.linkedin && (
-            <SocialLink href={person.linkedin} icon={<FaLinkedin />} />
+            <SocialLink href={person.linkedin}>
+              <FaLinkedin />
+            </SocialLink>
           )}
           {person.github && (
-            <SocialLink href={person.github} icon={<FaGithub />} />
+            <SocialLink href={person.github}>
+              <FaGithub />
+            </SocialLink>
           )}
           {person.website && (
-            <SocialLink href={person.website} icon={<FaGlobe />} />
+            <SocialLink href={person.website}>
+              <FaGlobe />
+            </SocialLink>
           )}
           {person.email && (
-            <SocialLink href={`mailto:${person.email}`} icon={<FaEnvelope />} />
+            <SocialLink href={`mailto:${person.email}`}>
+              <FaEnvelope />
+            </SocialLink>
           )}
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 
 interface SocialLinkProps {
   href: string;
-  icon: React.ReactNode;
+  children: React.ReactNode;
 }
 
-const SocialLink: React.FC<SocialLinkProps> = ({ href, icon }) => (
+const SocialLink: React.FC<SocialLinkProps> = ({ href, children }) => (
   <a
     href={href}
     target="_blank"
     rel="noopener noreferrer"
-    className="text-gray-400 hover:text-gray-600 transition-colors duration-300"
+    className="personCardSocialLink"
   >
-    {icon}
+    {children}
   </a>
 );
 

@@ -1,0 +1,183 @@
+.ackPageWrapper {
+  background-color: #f3f3f3;
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  font-family: "DM Sans", sans-serif;
+}
+
+.ackMainContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.ackMainTitle {
+  font-size: 2rem;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 3rem;
+  color: #333;
+}
+
+.ackSectionTitle {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #000;
+  margin-bottom: 0.5rem;
+}
+
+.ackSectionDesc {
+  font-size: 0.95rem;
+  margin-bottom: 0.8rem;
+  color: #555;
+}
+
+.ackMasonryGrid {
+  column-count: 4;
+  column-gap: 16px;
+  padding-top: 16px;
+  padding-bottom: 16px;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+@media screen and (max-width: 1100px) {
+  .ackMasonryGrid {
+    column-count: 3;
+  }
+}
+
+@media screen and (max-width: 900px) {
+  .ackMasonryGrid {
+    column-count: 2;
+  }
+}
+
+@media screen and (max-width: 650px) {
+  .ackMasonryGrid {
+    column-count: 1;
+  }
+}
+
+.personCard,
+.personCardFallback {
+  display: inline-block;
+  width: 100%;
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  -moz-column-break-inside: avoid;
+  page-break-inside: avoid;
+  margin-bottom: 16px;
+}
+
+.personCardFallback {
+  background-color: #fff;
+  border-radius: 15px;
+  padding: 1rem;
+  height: auto;
+  animation: pulse 1.5s ease-in-out infinite;
+  border: 1px solid #e0e0e0;
+  margin: 0 0 16px 0;
+}
+
+.fallbackImage {
+  width: 100%;
+  height: 8rem;
+  background-color: #ccc;
+  border-radius: 15px;
+  margin-bottom: 1rem;
+}
+
+.fallbackLine {
+  width: 70%;
+  height: 0.75rem;
+  background-color: #ddd;
+  margin-bottom: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.fallbackLine.large {
+  height: 1.5rem;
+}
+
+.fallbackIcons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: auto;
+}
+
+.fallbackIcon {
+  width: 24px;
+  height: 24px;
+  background-color: #ddd;
+  border-radius: 50%;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.ackPartnerTitle {
+  font-weight: bold;
+  font-size: 1.25rem;
+  margin-top: 2rem;
+}
+
+.ackPartnerDesc {
+  font-size: 1rem;
+  margin-bottom: 1.25rem;
+  color: #555;
+}
+
+.ackPartnerMasonry {
+  display: grid;
+  gap: 16px;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .ackPartnerMasonry {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .ackPartnerMasonry {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ackPartnerCard {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.ackPartnerInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.ackPartnerName {
+  font-weight: bold;
+  margin-top: 1px;
+}
+
+.ackPartnerLink {
+  margin-top: 10px;
+}
+
+.ackPartnerEarthIcon {
+  width: 24px;
+  height: 24px;
+}
