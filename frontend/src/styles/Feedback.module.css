@@ -1,0 +1,60 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #fefefe;
+}
+
+.heroSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg,
+      #b2d8d8 0%,
+      #bce4e3 50%,
+      #86c8c8 100%);
+  color: #333;
+  padding: 100px 20px;
+  text-align: center;
+}
+
+.heroSection h1 {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+}
+
+.heroSection p {
+  font-size: 1.2rem;
+  max-width: 700px;
+  margin-bottom: 30px;
+}
+
+.feedbackButton {
+  font-size: 1.1rem;
+  border-radius: 6px;
+  color: #ffffff;
+  cursor: pointer;
+  padding: 0.8rem 2rem;
+  background-color: #003057;
+  border: none;
+  transition: background-color 0.3s ease;
+}
+
+.feedbackButton:hover {
+  background-color: #00284a;
+}
+
+@media (max-width: 450px) {
+  .heroSection h1 {
+    font-size: 1.6rem;
+  }
+
+  .heroSection p {
+    font-size: 0.9rem;
+  }
+
+  .feedbackButton {
+    font-size: 1rem;
+  }
+}

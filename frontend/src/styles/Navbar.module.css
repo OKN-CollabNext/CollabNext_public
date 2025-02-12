@@ -1,0 +1,87 @@
+.navbarContainer {
+  position: static;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 58px;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  z-index: 1000;
+}
+
+.leftSection {
+  display: flex;
+  align-items: center;
+}
+
+.middleSection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+.rightSection {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.logoLink {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.logo {
+  height: 40px;
+  width: auto;
+  margin-right: 0.5rem;
+  cursor: pointer;
+}
+
+.brandText {
+  font-family: "DM Sans", sans-serif;
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: #000000;
+  text-decoration: none;
+}
+
+.navItemsWrapper {
+  gap: 2rem;
+}
+
+.navItem {
+  font-family: "DM Sans", sans-serif;
+  font-size: 1rem;
+  color: #000;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.navItem:hover {
+  color: #555;
+}
+
+@media (max-width: 768px) {
+  .navbarContainer {
+    height: auto;
+    flex-direction: column;
+    padding: 0.5rem;
+  }
+
+  .middleSection {
+    margin-top: 0.5rem;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .navItem {
+    margin: 0.25rem 0;
+  }
+}

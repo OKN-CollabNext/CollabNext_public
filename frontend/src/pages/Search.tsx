@@ -1,96 +1,193 @@
-import '../styles/Search.css';
-
-import { useEffect, useRef, useState } from 'react';
-import { Circles } from 'react-loader-spinner';
-import { useSearchParams } from 'react-router-dom';
-
+import { useEffect, useRef, useState, useCallback } from "react";
+import { Circles } from "react-loader-spinner";
+import { useSearchParams } from "react-router-dom";
 import {
-	Box,
-	Button,
-	Checkbox,
-	Flex,
-	Input,
-	list,
-	Text,
-} from '@chakra-ui/react';
+  Box, Button, Checkbox, Flex, Text,
+} from "@chakra-ui/react";
+import "../styles/Search.css";
+import AllThreeMetadata from "../components/AllThreeMetadata";
+import GraphComponent from "../components/GraphComponent";
+import InstitutionMetadata from "../components/InstitutionMetadata";
+import InstitutionResearcherMetaData from "../components/InstitutionResearcherMetaData";
+import ResearcherMetadata from "../components/ResearcherMetadata";
+import Suggested from "../components/Suggested";
+import TopicInstitutionMetadata from "../components/TopicInstitutionMetadata";
+import TopicMetadata from "../components/TopicMetadata";
+import TopicResearcherMetadata from "../components/TopicResearcherMetadata";
+import { baseUrl, handleAutofill, initialValue } from "../utils/constants";
+import { ResearchDataInterface, SearchType } from "../utils/interfaces";
+import { FaBars } from "react-icons/fa";
+const MAX_LENGTH = 60;
+const MAX_TOPIC_TAGS = 6;
+interface TopicTagsInputProps {
+  topicTags: string[];
+  setTopicTags: React.Dispatch<React.SetStateAction<string[]>>;
+  setSuggestedTopics: React.Dispatch<React.SetStateAction<any[]>>;
+}
 
-import AllThreeMetadata from '../components/AllThreeMetadata';
-// import CytoscapeComponent from 'react-cytoscapejs';
-import GraphComponent from '../components/GraphComponent';
-import InstitutionMetadata from '../components/InstitutionMetadata';
-import InstitutionResearcherMetaData from '../components/InstitutionResearcherMetaData';
-import ResearcherMetadata from '../components/ResearcherMetadata';
-import Suggested from '../components/Suggested';
-import TopicInstitutionMetadata from '../components/TopicInstitutionMetadata';
-import TopicMetadata from '../components/TopicMetadata';
-import TopicResearcherMetadata from '../components/TopicResearcherMetadata';
-import { baseUrl, handleAutofill, initialValue } from '../utils/constants';
-import { ResearchDataInterface, SearchType } from '../utils/interfaces';
+const TopicTagsInput: React.FC<TopicTagsInputProps> = ({
+  topicTags,
+  setTopicTags,
+  setSuggestedTopics,
+}) => {
+  const [inputValue, setInputValue] = useState("");
+
+  const handleRemoveTag = useCallback(
+    (tagToRemove: string) => {
+      setTopicTags((prev) => prev.filter((t) => t !== tagToRemove));
+    },
+    [setTopicTags]
+  );
+
+  const addTag = (newTag: string) => {
+    const lowerTag = newTag.toLowerCase();
+    if (!topicTags.includes(lowerTag) && topicTags.length < MAX_TOPIC_TAGS) {
+      setTopicTags([...topicTags, lowerTag]);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setInputValue(val);
+    handleAutofill(val, true, setSuggestedTopics, () => { });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if ((e.key === " " || e.key === ",") && inputValue.trim()) {
+      e.preventDefault();
+      addTag(inputValue.trim());
+      setInputValue("");
+    } else if (e.key === "Backspace" && !inputValue) {
+      if (topicTags.length > 0) {
+        handleRemoveTag(topicTags[topicTags.length - 1]);
+      }
+    }
+  };
+
+  return (
+    <div className="topicTagsContainer">
+      <p className="tagInstructions">Press Space or Comma after each keyword</p>
+      <ul className="tagList">
+        {topicTags.map((tag, index) => (
+          <li key={index} className="tagItem">
+            {tag}
+            <span className="removeIcon" onClick={() => handleRemoveTag(tag)}>
+              &times;
+            </span>
+          </li>
+        ))}
+        {topicTags.length < MAX_TOPIC_TAGS && (
+          <li className="inputItem">
+            <input
+              type="text"
+              placeholder="Type a topic keyword..."
+              value={inputValue}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              className="tagInput"
+            />
+          </li>
+        )}
+      </ul>
+      <div className="tagDetails">
+        <p>
+          <span>{MAX_TOPIC_TAGS - topicTags.length}</span> tags remaining
+        </p>
+      </div>
+    </div>
+  );
+};
+
+let latestRequestId = 0;
 
 const Search = () => {
   let [searchParams] = useSearchParams();
-  // const cyRef = React.useRef<cytoscape.Core | undefined>();
-  const institution = searchParams.get('institution');
-  const type = searchParams.get('type');
-  const topic = searchParams.get('topic');
-  const researcher = searchParams.get('researcher');
-  const [isNetworkMap, setIsNetworkMap] = useState('list');
-  const [universityName, setUniversityName] = useState(institution || '');
-  const [universityName2, setUniversityName2] = useState('');
-  const [topicType, setTopicType] = useState(topic || '');
-  const [institutionType, setInstitutionType] = useState(type || 'Education');
-  const [researcherType, setResearcherType] = useState(researcher || '');
-  const [researcherType2, setResearcherType2] = useState('');
+  const institutionParam = searchParams.get("institution") || "";
+  const typeParam = searchParams.get("type") || "Education";
+  const topicParam = searchParams.get("topic") || "";
+  const researcherParam = searchParams.get("researcher") || "";
+  const initialTopicTags = topicParam
+    ? topicParam.split(",").map((t) => t.trim()).filter((t) => t.length > 0)
+    : [];
+  const [isNetworkMap, setIsNetworkMap] = useState("list");
+  const [universityName, setUniversityName] = useState(institutionParam);
+  const [topicTags, setTopicTags] = useState<string[]>(initialTopicTags);
+  const [institutionType, setInstitutionType] = useState(typeParam);
+  const [researcherType, setResearcherType] = useState(researcherParam);
   const [data, setData] = useState<ResearchDataInterface>(initialValue);
   const [isLoading, setIsLoading] = useState(false);
   const [isAddOrgChecked, setIsAddOrgChecked] = useState(false);
   const [orgList, setOrgList] = useState<File | null>(null);
   const [isAddPersonChecked, setIsAddPersonChecked] = useState(false);
   const [personList, setPersonList] = useState<File | null>(null);
-  const [suggestedInstitutions, setSuggestedInstitutions] = useState([]);
-  const [suggestedTopics, setSuggestedTopics] = useState([]);
+  const [suggestedInstitutions, setSuggestedInstitutions] = useState<any[]>([]);
+  const [suggestedTopics, setSuggestedTopics] = useState<any[]>([]);
+  const [showSidebar, setShowSidebar] = useState(true);
+  const orgInputRef = useRef<HTMLInputElement>(null);
+  const personInputRef = useRef<HTMLInputElement>(null);
 
-  // const toast = useToast();
-
-  let latestRequestId = 0;
-  const handleToggle = (value: string) => {
-    setIsNetworkMap(value);
+  const handleListClick = (ref: React.RefObject<HTMLInputElement>) => {
+    ref?.current?.click();
   };
+
+  const handleListChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setList: React.Dispatch<React.SetStateAction<File | null>>
+  ) => {
+    if (e.target.files) {
+      const file = e.target.files[0];
+      if (file && file.name.endsWith(".csv")) {
+        setList(file);
+      } else if (file) {
+        alert("Please select a valid CSV file.");
+      }
+    }
+  };
+
+  const getTopicString = () => topicTags.join(",");
+
+  const combinedSearchQuery = [
+    universityName,
+    ...topicTags,
+    researcherType
+  ]
+    .filter(Boolean)
+    .join(" ")
 
   const sendSearchRequest = (search: SearchType) => {
     const requestId = ++latestRequestId;
     fetch(`${baseUrl}/initial-search`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         organization: universityName,
         type: institutionType,
-        topic: topicType,
+        topic: getTopicString(),
         researcher: researcherType,
       }),
     })
       .then((res) => res.json())
       .then((data) => {
-        console.log(data);
+        if (requestId !== latestRequestId) return;
         const dataObj =
-          search === 'institution'
+          search === "institution"
             ? {
-                institution_name: data?.metadata?.name,
-                is_hbcu: data?.metadata?.hbcu,
-                cited_count: data?.metadata?.cited_count,
-                author_count: data?.metadata?.author_count,
-                works_count: data?.metadata?.works_count,
-                institution_url: data?.metadata?.homepage,
-                open_alex_link: data?.metadata?.oa_link,
-                ror_link: data?.metadata?.ror,
-                graph: data?.graph,
-                topics: data?.list,
-                search,
-              }
-            : search === 'topic'
-            ? {
+              institution_name: data?.metadata?.name,
+              is_hbcu: data?.metadata?.hbcu,
+              cited_count: data?.metadata?.cited_count,
+              author_count: data?.metadata?.author_count,
+              works_count: data?.metadata?.works_count,
+              institution_url: data?.metadata?.homepage,
+              open_alex_link: data?.metadata?.oa_link,
+              ror_link: data?.metadata?.ror,
+              graph: data?.graph,
+              topics: data?.list,
+              search,
+            }
+            : search === "topic"
+              ? {
                 topic_name: data?.metadata?.name,
                 topic_clusters: data?.metadata?.topic_clusters,
                 graph: data?.graph,
@@ -101,89 +198,88 @@ const Search = () => {
                 organizations: data?.list,
                 search,
               }
-            : search === 'researcher'
-            ? {
-                institution_name: data?.metadata?.current_institution,
-                researcher_name: data?.metadata?.name,
-                orcid_link: data?.metadata?.orcid,
-                cited_count: data?.metadata?.cited_by_count,
-                works_count: data?.metadata?.work_count,
-                graph: data?.graph,
-                open_alex_link: data?.metadata?.oa_link,
-                topics: data?.list,
-                institution_url: data?.metadata?.institution_url,
-                search,
-              }
-            : search === 'researcher-institution'
-            ? {
-                graph: data?.graph,
-                topics: data?.list,
-                institution_url: data?.metadata?.homepage,
-                institution_name: data?.metadata?.institution_name,
-                researcher_name: data?.metadata?.researcher_name,
-                orcid_link: data?.metadata?.orcid,
-                works_count: data?.metadata?.work_count,
-                cited_count: data?.metadata?.cited_by_count,
-                ror_link: data?.metadata?.ror,
-                open_alex_link: data?.metadata?.institution_oa_link,
-                researcher_open_alex_link: data?.metadata?.researcher_oa_link,
-                search,
-              }
-            : search === 'topic-researcher'
-            ? {
-                graph: data?.graph,
-                works: data?.list,
-                institution_name: data?.metadata?.current_institution,
-                topic_name: data?.metadata?.topic_name,
-                researcher_name: data?.metadata?.researcher_name,
-                orcid_link: data?.metadata?.orcid,
-                works_count: data?.metadata?.work_count,
-                cited_count: data?.metadata?.cited_by_count,
-                open_alex_link: data?.metadata?.topic_oa_link,
-                researcher_open_alex_link: data?.metadata?.researcher_oa_link,
-                topic_clusters: data?.metadata?.topic_clusters,
-                search,
-              }
-            : search === 'topic-institution'
-            ? {
-                graph: data?.graph,
-                institution_name: data?.metadata?.institution_name,
-                topic_name: data?.metadata?.topic_name,
-                institution_url: data?.metadata?.homepage,
-                cited_count: data?.metadata?.cited_by_count,
-                works_count: data?.metadata?.work_count,
-                author_count: data?.metadata?.people_count,
-                open_alex_link: data?.metadata?.institution_oa_link,
-                topic_open_alex_link: data?.metadata?.topic_oa_link,
-                ror_link: data?.metadata?.ror,
-                topic_clusters: data?.metadata?.topic_clusters,
-                authors: data?.list,
-                search,
-              }
-            : {
-                graph: data?.graph,
-                works: data?.list,
-                institution_url: data?.metadata?.homepage,
-                institution_name: data?.metadata?.institution_name,
-                researcher_name: data?.metadata?.researcher_name,
-                topic_name: data?.metadata?.topic_name,
-                orcid_link: data?.metadata?.orcid,
-                works_count: data?.metadata?.work_count,
-                cited_count: data?.metadata?.cited_by_count,
-                ror_link: data?.metadata?.ror,
-                open_alex_link: data?.metadata?.institution_oa_link,
-                topic_open_alex_link: data?.metadata?.topic_oa_link,
-                researcher_open_alex_link: data?.metadata?.researcher_oa_link,
-                topic_clusters: data?.metadata?.topic_clusters,
-                search,
-              };
-        if (requestId === latestRequestId) {
-          setData({
-            ...initialValue,
-            ...dataObj,
-          });
-          setIsLoading(false);
-        }
+              : search === "researcher"
+                ? {
+                  institution_name: data?.metadata?.current_institution,
+                  researcher_name: data?.metadata?.name,
+                  orcid_link: data?.metadata?.orcid,
+                  cited_count: data?.metadata?.cited_by_count,
+                  works_count: data?.metadata?.work_count,
+                  graph: data?.graph,
+                  open_alex_link: data?.metadata?.oa_link,
+                  topics: data?.list,
+                  institution_url: data?.metadata?.institution_url,
+                  search,
+                }
+                : search === "researcher-institution"
+                  ? {
+                    graph: data?.graph,
+                    topics: data?.list,
+                    institution_url: data?.metadata?.homepage,
+                    institution_name: data?.metadata?.institution_name,
+                    researcher_name: data?.metadata?.researcher_name,
+                    orcid_link: data?.metadata?.orcid,
+                    works_count: data?.metadata?.work_count,
+                    cited_count: data?.metadata?.cited_by_count,
+                    ror_link: data?.metadata?.ror,
+                    open_alex_link: data?.metadata?.institution_oa_link,
+                    researcher_open_alex_link: data?.metadata?.researcher_oa_link,
+                    search,
+                  }
+                  : search === "topic-researcher"
+                    ? {
+                      graph: data?.graph,
+                      works: data?.list,
+                      institution_name: data?.metadata?.current_institution,
+                      topic_name: data?.metadata?.topic_name,
+                      researcher_name: data?.metadata?.researcher_name,
+                      orcid_link: data?.metadata?.orcid,
+                      works_count: data?.metadata?.work_count,
+                      cited_count: data?.metadata?.cited_by_count,
+                      open_alex_link: data?.metadata?.topic_oa_link,
+                      researcher_open_alex_link: data?.metadata?.researcher_oa_link,
+                      topic_clusters: data?.metadata?.topic_clusters,
+                      search,
+                    }
+                    : search === "topic-institution"
+                      ? {
+                        graph: data?.graph,
+                        institution_name: data?.metadata?.institution_name,
+                        topic_name: data?.metadata?.topic_name,
+                        institution_url: data?.metadata?.homepage,
+                        cited_count: data?.metadata?.cited_by_count,
+                        works_count: data?.metadata?.work_count,
+                        author_count: data?.metadata?.people_count,
+                        open_alex_link: data?.metadata?.institution_oa_link,
+                        topic_open_alex_link: data?.metadata?.topic_oa_link,
+                        ror_link: data?.metadata?.ror,
+                        topic_clusters: data?.metadata?.topic_clusters,
+                        authors: data?.list,
+                        search,
+                      }
+                      : {
+                        graph: data?.graph,
+                        works: data?.list,
+                        institution_url: data?.metadata?.homepage,
+                        institution_name: data?.metadata?.institution_name,
+                        researcher_name: data?.metadata?.researcher_name,
+                        topic_name: data?.metadata?.topic_name,
+                        orcid_link: data?.metadata?.orcid,
+                        works_count: data?.metadata?.work_count,
+                        cited_count: data?.metadata?.cited_by_count,
+                        ror_link: data?.metadata?.ror,
+                        open_alex_link: data?.metadata?.institution_oa_link,
+                        topic_open_alex_link: data?.metadata?.topic_oa_link,
+                        researcher_open_alex_link: data?.metadata?.researcher_oa_link,
+                        topic_clusters: data?.metadata?.topic_clusters,
+                        search,
+                      };
+
+        setData({
+          ...initialValue,
+          ...dataObj,
+        });
+        setIsLoading(false);
       })
       .catch((error) => {
         if (requestId === latestRequestId) {
@@ -196,43 +292,46 @@ const Search = () => {
 
   const handleSearch = () => {
     setIsLoading(true);
-    if (topicType && universityName && researcherType) {
-      sendSearchRequest('all-three-search');
-    } else if (
-      (topicType && researcherType) ||
-      (researcherType && universityName) ||
-      (topicType && universityName)
+
+    const topicString = getTopicString();
+    const hasTopic = topicString.length > 0;
+    const hasInstitution = !!universityName;
+    const hasResearcher = !!researcherType;
+
+    if (hasTopic && hasInstitution && hasResearcher) {
+      sendSearchRequest("all-three-search");
+    }
+    else if (
+      (hasTopic && hasResearcher) ||
+      (hasResearcher && hasInstitution) ||
+      (hasTopic && hasInstitution)
     ) {
-      const search =
-        topicType && researcherType
-          ? 'topic-researcher'
-          : researcherType && universityName
-          ? 'researcher-institution'
-          : 'topic-institution';
-      sendSearchRequest(search);
-    } else if (topicType || universityName || researcherType) {
-      const search = topicType
-        ? 'topic'
-        : universityName
-        ? 'institution'
-        : 'researcher';
-      sendSearchRequest(search);
-    } else {
+      if (hasTopic && hasResearcher) sendSearchRequest("topic-researcher");
+      else if (hasResearcher && hasInstitution)
+        sendSearchRequest("researcher-institution");
+      else if (hasTopic && hasInstitution)
+        sendSearchRequest("topic-institution");
+    }
+    else if (hasTopic || hasInstitution || hasResearcher) {
+      if (hasTopic) sendSearchRequest("topic");
+      else if (hasInstitution) sendSearchRequest("institution");
+      else if (hasResearcher) sendSearchRequest("researcher");
+    }
+    else {
       fetch(`${baseUrl}/get-default-graph`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: null,
       })
         .then((res) => res.json())
         .then((data) => {
-          console.log(data);
           setData({
             ...initialValue,
             graph: data?.graph,
           });
-          setIsNetworkMap('graph');
+          setIsNetworkMap("graph");
           setIsLoading(false);
         })
         .catch((error) => {
@@ -243,289 +342,292 @@ const Search = () => {
     }
   };
 
-  const orgInputRef = useRef<HTMLInputElement>(null);
-  const personInputRef = useRef<HTMLInputElement>(null);
-
-  const handleListClick = (ref: React.RefObject<HTMLInputElement>) => {
-    ref?.current?.click();
-  };
-
-  const handleListChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    setList: React.Dispatch<React.SetStateAction<File | null>>,
-  ) => {
-    if (e.target.files) {
-      const file = e.target.files[0];
-      console.log(file);
-      if (file && file.name.endsWith('.csv')) {
-        setList(file);
-      } else if (file) {
-        alert('Please select a valid CSV file.');
-      }
-    }
-  };
-
   useEffect(() => {
     handleSearch();
-  }, [universityName, institutionType, topicType, researcherType]);
+  }, [universityName, institutionType, topicTags, researcherType]);
 
   return (
     <Box>
-      <Flex justifyContent={'flex-end'} px='2rem'>
-        {['List', 'Graph', 'Map'].map((value) => (
-          <Button
-            onClick={() => setIsNetworkMap(value.toLowerCase())}
-            bg='linear-gradient(#053257, #7e7e7e)'
-            color='white'
-            mr='1rem'
-          >
-            {value}
-          </Button>
-        ))}
-      </Flex>
-      <div className='main-content'>
-        <div className='sidebar'>
-          <input
-            type='text'
-            value={universityName}
-            list='institutions'
-            onChange={(e) => {
-              setUniversityName(e.target.value);
-              handleAutofill(
-                e.target.value,
-                false,
-                setSuggestedTopics,
-                setSuggestedInstitutions,
-              );
-            }}
-            placeholder={'University Name'}
-            className='textbox'
-            // disabled={isLoading}
-          />
-          <Suggested suggested={suggestedInstitutions} institutions={true} />
-          {isAddOrgChecked && (
-            <>
-              <input
-                type='text'
-                value={universityName2}
-                list='institutions'
-                onChange={(e) => {
-                  setUniversityName2(e.target.value);
-                  handleAutofill(
-                    e.target.value,
-                    false,
-                    setSuggestedTopics,
-                    setSuggestedInstitutions,
-                  );
-                }}
-                placeholder={'Another University'}
-                className='textbox'
-                // disabled={isLoading}
-              />
-              <Suggested
-                suggested={suggestedInstitutions}
-                institutions={true}
-              />
-            </>
-          )}
-          <input
-            type='text'
-            value={topicType}
-            onChange={(e) => {
-              setTopicType(e.target.value);
-              handleAutofill(
-                e.target.value,
-                true,
-                setSuggestedTopics,
-                setSuggestedInstitutions,
-              );
-            }}
-            list='topics'
-            placeholder='Type Topic'
-            className='textbox'
-            // disabled={isLoading}
-          />
-          <Suggested suggested={suggestedTopics} institutions={false} />
-          <select
-            value={institutionType}
-            onChange={(e) => setInstitutionType(e.target.value)}
-            className='dropdown'
-          >
-            <option value='Education'>HBCU</option>
-          </select>
-          {/* <FormControl isInvalid={topicType && !researcherType ? true : false}> */}
-          <input
-            type='text'
-            value={researcherType}
-            onChange={(e) => setResearcherType(e.target.value)}
-            placeholder='Type Researcher'
-            className='textbox'
-            // disabled={isLoading}
-          />
-          {isAddPersonChecked && (
+      <div className="searchPageHeader">
+        <FaBars
+          className="hamburgerIcon"
+          onClick={() => setShowSidebar(!showSidebar)}
+        />
+        <Flex justifyContent={"flex-end"} flex="1" px="2rem">
+          {["List", "Graph", "Map"].map((value) => (
+            <Button
+              key={value}
+              onClick={() => setIsNetworkMap(value.toLowerCase())}
+              bg="linear-gradient(#053257, #7e7e7e)"
+              color="white"
+              mr="1rem"
+            >
+              {value}
+            </Button>
+          ))}
+        </Flex>
+      </div>
+
+      <div className="main-content">
+        {showSidebar && (
+          <div className="sidebar">
             <input
-              type='text'
-              value={researcherType2}
-              onChange={(e) => setResearcherType2(e.target.value)}
-              placeholder='Another Researcher'
-              className='textbox'
-              // disabled={isLoading}
+              type="text"
+              value={universityName}
+              list="institutions"
+              onChange={(e) => {
+                const val = e.target.value.slice(0, MAX_LENGTH);
+                setUniversityName(val);
+                handleAutofill(val, false, setSuggestedTopics, setSuggestedInstitutions);
+              }}
+              placeholder={"University Name"}
+              className="textbox"
+              maxLength={MAX_LENGTH}
             />
-          )}
-          {/* <FormErrorMessage>
-            Researcher must be provided when Topic is
-          </FormErrorMessage>
-        </FormControl> */}
-          {/* <Button
-          width='100%'
-          marginTop='10px'
-          backgroundColor='transparent'
-          color='white'
-          border='2px solid white'
-          isLoading={isLoading}
-          onClick={() => handleSearch()}
-        >
-          Search
-        </Button> */}
-          <Box mt='.6rem'>
-            <Flex justifyContent={'space-between'}>
-              {[
-                {
-                  checkedState: isAddOrgChecked,
-                  setCheckedState: setIsAddOrgChecked,
-                  text: 'Add Another Org',
-                },
-                {
-                  checkedState: isAddPersonChecked,
-                  setCheckedState: setIsAddPersonChecked,
-                  text: 'Add Another Person',
-                },
-              ].map(({checkedState, setCheckedState, text}) => (
+            <div className="charCountSidebar">
+              {MAX_LENGTH - universityName.length} characters remaining
+            </div>
+            <Suggested suggested={suggestedInstitutions} institutions={true} />
+
+            {isAddOrgChecked && (
+              <>
+                <input
+                  type="text"
+                  list="institutions"
+                  onChange={(e) => {
+                    const val = e.target.value.slice(0, MAX_LENGTH);
+                    setUniversityName(val);
+                    handleAutofill(val, false, setSuggestedTopics, setSuggestedInstitutions);
+                  }}
+                  placeholder={"Another University"}
+                  className="textbox"
+                  maxLength={MAX_LENGTH}
+                />
+                <div className="charCountSidebar">
+                  {MAX_LENGTH - universityName.length} characters remaining
+                </div>
+                <Suggested suggested={suggestedInstitutions} institutions={true} />
+              </>
+            )}
+
+            <TopicTagsInput
+              topicTags={topicTags}
+              setTopicTags={setTopicTags}
+              setSuggestedTopics={setSuggestedTopics}
+            />
+
+            <select
+              value={institutionType}
+              onChange={(e) => setInstitutionType(e.target.value)}
+              className="dropdown"
+            >
+              <option value="Education">HBCU</option>
+            </select>
+
+            <input
+              type="text"
+              value={researcherType}
+              onChange={(e) => {
+                const val = e.target.value.slice(0, MAX_LENGTH);
+                setResearcherType(val);
+              }}
+              placeholder="Type Researcher"
+              className="textbox"
+              maxLength={MAX_LENGTH}
+            />
+            <div className="charCountSidebar">
+              {MAX_LENGTH - researcherType.length} characters remaining
+            </div>
+
+            {isAddPersonChecked && (
+              <>
+                <input
+                  type="text"
+                  value=""
+                  onChange={() => { }}
+                  placeholder="Another Researcher"
+                  className="textbox"
+                />
+              </>
+            )}
+
+            <Box mt=".6rem">
+              <Flex justifyContent={"space-between"}>
                 <Flex>
                   <Checkbox
-                    mr='.2rem'
-                    checked={checkedState}
-                    onChange={(e) => setCheckedState(e.target.checked)}
+                    mr=".2rem"
+                    isChecked={isAddOrgChecked}
+                    onChange={(e) => setIsAddOrgChecked(e.target.checked)}
                   />
-                  <Text fontSize='11px' color={'white'}>
-                    {text}
+                  <Text fontSize="11px" color={"white"}>
+                    Add Another Org
                   </Text>
                 </Flex>
-              ))}
-            </Flex>
-            <Box mt='.6rem'>
-              {[
-                {
-                  list: orgList,
-                  setList: setOrgList,
-                  text: 'Upload Org List',
-                  ref: orgInputRef,
-                },
-                {
-                  list: personList,
-                  setList: setPersonList,
-                  text: 'Upload Person List',
-                  ref: personInputRef,
-                },
-              ].map(({list, setList, text, ref}) => (
-                <Flex alignItems='center'>
+
+                <Flex>
+                  <Checkbox
+                    mr=".2rem"
+                    isChecked={isAddPersonChecked}
+                    onChange={(e) => setIsAddPersonChecked(e.target.checked)}
+                  />
+                  <Text fontSize="11px" color={"white"}>
+                    Add Another Person
+                  </Text>
+                </Flex>
+              </Flex>
+
+              <Box mt=".6rem">
+                <Flex alignItems="center">
                   <Button
-                    border='1px solid white'
-                    bg='transparent'
-                    color='white'
+                    border="1px solid white"
+                    bg="transparent"
+                    color="white"
                     fontWeight={400}
-                    fontSize={'13px'}
-                    onClick={() => handleListClick(ref)}
-                    mt='.3rem'
-                    mr='.35rem'
+                    fontSize={"13px"}
+                    onClick={() => handleListClick(orgInputRef)}
+                    mt=".3rem"
+                    mr=".35rem"
                   >
-                    {list?.name?.slice(0, 14) || text}
+                    {orgList?.name?.slice(0, 14) || "Upload Org List"}
                   </Button>
                   <input
-                    onChange={(e) => handleListChange(e, setList)}
-                    type='file'
-                    ref={ref}
-                    accept='.csv'
+                    onChange={(e) => handleListChange(e, setOrgList)}
+                    type="file"
+                    ref={orgInputRef}
+                    accept=".csv"
                     hidden
                   />
-                  {list && (
+                  {orgList && (
                     <Text
-                      fontSize='11px'
-                      color={'white'}
-                      cursor='pointer'
+                      fontSize="11px"
+                      color={"white"}
+                      cursor="pointer"
                       onClick={() => {
-                        setList(null);
-                        // @ts-ignore
-                        ref.current.value = '';
+                        setOrgList(null);
+                        if (orgInputRef.current) {
+                          orgInputRef.current.value = "";
+                        }
                       }}
                     >
                       remove
                     </Text>
                   )}
                 </Flex>
-              ))}
+
+                <Flex alignItems="center">
+                  <Button
+                    border="1px solid white"
+                    bg="transparent"
+                    color="white"
+                    fontWeight={400}
+                    fontSize={"13px"}
+                    onClick={() => handleListClick(personInputRef)}
+                    mt=".3rem"
+                    mr=".35rem"
+                  >
+                    {personList?.name?.slice(0, 14) || "Upload Person List"}
+                  </Button>
+                  <input
+                    onChange={(e) => handleListChange(e, setPersonList)}
+                    type="file"
+                    ref={personInputRef}
+                    accept=".csv"
+                    hidden
+                  />
+                  {personList && (
+                    <Text
+                      fontSize="11px"
+                      color={"white"}
+                      cursor="pointer"
+                      onClick={() => {
+                        setPersonList(null);
+                        if (personInputRef.current) {
+                          personInputRef.current.value = "";
+                        }
+                      }}
+                    >
+                      remove
+                    </Text>
+                  )}
+                </Flex>
+              </Box>
             </Box>
-          </Box>
-          {/* <button className='button' onClick={handleToggle}>
-            {isNetworkMap ? 'See List Map' : 'See Network Map'}
-          </button> */}
-        </div>
-        <div className='content'>
+          </div>
+        )}
+
+        <div className="content">
           {isLoading ? (
             <Box
-              w={{lg: '500px'}}
-              justifyContent={'center'}
-              height={{base: '190px', lg: '340px'}}
-              display={'flex'}
-              alignItems='center'
+              w={{ lg: "500px" }}
+              justifyContent={"center"}
+              height={{ base: "190px", lg: "340px" }}
+              display={"flex"}
+              alignItems="center"
             >
               <Circles
-                height='80'
-                width='80'
-                color='#003057'
-                ariaLabel='circles-loading'
-                wrapperStyle={{}}
-                wrapperClass=''
+                height="80"
+                width="80"
+                color="#003057"
+                ariaLabel="circles-loading"
                 visible={true}
               />
             </Box>
           ) : !data?.graph ? (
-            <Box fontSize={{lg: '20px'}} ml={{lg: '4rem'}} fontWeight={'bold'}>
+            <Box fontSize={{ lg: "20px" }} ml={{ lg: "4rem" }} fontWeight={"bold"}>
               No result
             </Box>
-          ) : isNetworkMap === 'graph' ? (
-            <div className='network-map'>
-              <button className='topButton'>Network Map</button>
-              {/* <img src={NetworkMap} alt='Network Map' /> */}
+          ) : isNetworkMap === "graph" ? (
+            <div className="network-map">
+              <button className="topButton">Network Map</button>
               <GraphComponent
                 graphData={data?.graph}
                 setInstitution={setUniversityName}
-                setTopic={setTopicType}
+                setTopic={(val) => setTopicTags(val ? [val] : [])}
                 setResearcher={setResearcherType}
               />
             </div>
-          ) : isNetworkMap === 'list' ? (
+          ) : isNetworkMap === "list" ? (
             <div>
-              {data?.search === 'institution' ? (
-                <InstitutionMetadata data={data} setTopic={setTopicType} />
-              ) : data?.search === 'topic' ? (
-                <TopicMetadata data={data} setInstitution={setUniversityName} />
-              ) : data?.search === 'researcher' ? (
-                <ResearcherMetadata data={data} setTopic={setTopicType} />
-              ) : data?.search === 'researcher-institution' ? (
+              {data?.search === "institution" ? (
+                <InstitutionMetadata
+                  data={data}
+                  setTopic={(val: string) => setTopicTags(val ? [val] : [])}
+                  searchQuery={combinedSearchQuery}
+                />
+              ) : data?.search === "topic" ? (
+                <TopicMetadata
+                  data={data}
+                  setInstitution={setUniversityName}
+                  searchQuery={combinedSearchQuery}
+                />
+              ) : data?.search === "researcher" ? (
+                <ResearcherMetadata
+                  data={data}
+                  setTopic={(val: string) => setTopicTags(val ? [val] : [])}
+                  searchQuery={combinedSearchQuery}
+                />
+              ) : data?.search === "researcher-institution" ? (
                 <InstitutionResearcherMetaData
                   data={data}
-                  setTopic={setTopicType}
+                  setTopic={(val: string) => setTopicTags(val ? [val] : [])}
+                  searchQuery={combinedSearchQuery}
                 />
-              ) : data?.search === 'topic-researcher' ? (
-                <TopicResearcherMetadata data={data} />
-              ) : data?.search === 'topic-institution' ? (
+              ) : data?.search === "topic-researcher" ? (
+                <TopicResearcherMetadata
+                  data={data}
+                  searchQuery={combinedSearchQuery}
+                />
+              ) : data?.search === "topic-institution" ? (
                 <TopicInstitutionMetadata
                   data={data}
                   setResearcher={setResearcherType}
+                  searchQuery={combinedSearchQuery}
                 />
               ) : (
-                <AllThreeMetadata data={data} />
+                <AllThreeMetadata
+                  data={data}
+                  searchQuery={combinedSearchQuery}
+                />
               )}
             </div>
           ) : (

@@ -1,37 +1,152 @@
-.ackPageWrapper {
-  background-color: #f3f3f3;
-  min-height: 100vh;
-  padding: 2rem 1rem;
-  font-family: "DM Sans", sans-serif;
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&display=swap');
+
+:root {
+  --primary-color: #006666;
+  --primary-color-hover: #005353;
+  --secondary-color: #b2d8d8;
+  --accent-color: #f05e5e;
+  --accent-color-hover: #cc4b4b;
+  --text-color: #333;
+  --text-color-light: #fff;
+  --background-color: #f9f9f9;
+  --light-hover-color: rgba(0, 0, 0, 0.05);
 }
 
-.ackMainContainer {
-  max-width: 1200px;
+.ackPageWrapper {
+  display: flex;
+  flex-direction: column;
+  background-color: rgb(243, 243, 243);
+}
+
+.v1Container {
+  font-family: 'Poppins', sans-serif;
+}
+
+.v1Container .heroSection {
+  background-color: var(--primary-color);
+  color: var(--text-color-light);
+  padding: 60px 20px;
+  text-align: center;
+  background-image: linear-gradient(135deg, var(--primary-color), var(--primary-color-hover));
+  clip-path: polygon(0 0, 100% 0, 100% 75%, 0 100%);
+}
+
+.v1Container .heroTitle {
+  font-size: 2.4rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.v1Container .heroSubtitle {
+  font-size: 1.1rem;
+  max-width: 700px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.v1Container .ourPartnersSection {
+  background: #519DE3;
+  padding: 60px 20px;
+  margin-top: 40px;
+  border-radius: 5px;
+}
+
+.v1Container .mainpageOurPartners {
+  position: relative;
+  max-width: 1240px;
   margin: 0 auto;
 }
 
-.ackMainTitle {
+.v1Container .mainpageOurPartnersHeader {
+  font-family: 'Poppins', sans-serif;
+  font-style: normal;
+  font-weight: 600;
   font-size: 2rem;
-  font-weight: bold;
   text-align: center;
-  margin-bottom: 3rem;
+  color: #fff;
+  margin-bottom: 30px;
+}
+
+.v1Container .mainpageOurPartnersBox {
+  background: #fff;
+  box-shadow: 4px 4px 18px 4px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  border-radius: 25px;
+  padding: 40px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+}
+
+.v1Container .partnerLogoContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 20px;
+  max-width: 220px;
+  text-align: center;
+}
+
+.v1Container .partnerLogo {
+  max-width: 200px;
+  max-height: 150px;
+  object-fit: contain;
+}
+
+.v1Container .partnerName {
+  font-weight: 600;
+  margin-top: 8px;
+  font-size: 1rem;
   color: #333;
 }
 
-.ackSectionTitle {
+.v1Container .partnerLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  color: var(--primary-color);
+  font-size: 0.9rem;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.v1Container .partnerLink:hover {
+  text-decoration: underline;
+}
+
+.v1Container .partnerEarthIcon {
+  width: 24px;
+  height: 24px;
+}
+
+.v2Container {
+  font-family: "DM Sans", sans-serif;
+  background-color: #f3f3f3;
+  padding: 2rem 1rem;
+}
+
+.v2Container .v2SectionBlock {
+  margin-bottom: 1.8rem;
+}
+
+.v2Container .ackSectionTitle {
   font-size: 1.25rem;
   font-weight: bold;
   color: #000;
   margin-bottom: 0.5rem;
 }
 
-.ackSectionDesc {
+.v2Container .ackSectionDesc {
   font-size: 0.95rem;
   margin-bottom: 0.8rem;
   color: #555;
 }
 
-.ackMasonryGrid {
+.v2Container .ackMasonryGrid {
   column-count: 4;
   column-gap: 16px;
   padding-top: 16px;
@@ -41,25 +156,25 @@
 }
 
 @media screen and (max-width: 1100px) {
-  .ackMasonryGrid {
+  .v2Container .ackMasonryGrid {
     column-count: 3;
   }
 }
 
 @media screen and (max-width: 900px) {
-  .ackMasonryGrid {
+  .v2Container .ackMasonryGrid {
     column-count: 2;
   }
 }
 
 @media screen and (max-width: 650px) {
-  .ackMasonryGrid {
+  .v2Container .ackMasonryGrid {
     column-count: 1;
   }
 }
 
-.personCard,
-.personCardFallback {
+.v2Container .personCard,
+.v2Container .personCardFallback {
   display: inline-block;
   width: 100%;
   break-inside: avoid;
@@ -69,7 +184,7 @@
   margin-bottom: 16px;
 }
 
-.personCardFallback {
+.v2Container .personCardFallback {
   background-color: #fff;
   border-radius: 15px;
   padding: 1rem;
@@ -79,7 +194,7 @@
   margin: 0 0 16px 0;
 }
 
-.fallbackImage {
+.v2Container .fallbackImage {
   width: 100%;
   height: 8rem;
   background-color: #ccc;
@@ -87,7 +202,7 @@
   margin-bottom: 1rem;
 }
 
-.fallbackLine {
+.v2Container .fallbackLine {
   width: 70%;
   height: 0.75rem;
   background-color: #ddd;
@@ -95,17 +210,17 @@
   border-radius: 0.25rem;
 }
 
-.fallbackLine.large {
+.v2Container .fallbackLine.large {
   height: 1.5rem;
 }
 
-.fallbackIcons {
+.v2Container .fallbackIcons {
   display: flex;
   gap: 0.5rem;
   margin-top: auto;
 }
 
-.fallbackIcon {
+.v2Container .fallbackIcon {
   width: 24px;
   height: 24px;
   background-color: #ddd;
@@ -122,62 +237,4 @@
   50% {
     opacity: 0.5;
   }
-}
-
-.ackPartnerTitle {
-  font-weight: bold;
-  font-size: 1.25rem;
-  margin-top: 2rem;
-}
-
-.ackPartnerDesc {
-  font-size: 1rem;
-  margin-bottom: 1.25rem;
-  color: #555;
-}
-
-.ackPartnerMasonry {
-  display: grid;
-  gap: 16px;
-  width: fit-content;
-  margin: 0 auto;
-}
-
-@media (min-width: 768px) {
-  .ackPartnerMasonry {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 767px) {
-  .ackPartnerMasonry {
-    grid-template-columns: 1fr;
-  }
-}
-
-.ackPartnerCard {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 20px;
-}
-
-.ackPartnerInner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.ackPartnerName {
-  font-weight: bold;
-  margin-top: 1px;
-}
-
-.ackPartnerLink {
-  margin-top: 10px;
-}
-
-.ackPartnerEarthIcon {
-  width: 24px;
-  height: 24px;
 }

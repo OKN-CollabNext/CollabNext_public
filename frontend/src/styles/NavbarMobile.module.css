@@ -1,0 +1,53 @@
+.navbarMobile {
+  display: flex;
+  flex-direction: column;
+  background-color: #f5f5f5;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid #ccc;
+  position: relative;
+  z-index: 1000;
+}
+
+.navbarHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.brandText {
+  font-family: "DM Sans", sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #000;
+  margin-right: 1rem;
+}
+
+.menuContainer {
+  position: static;
+  top: 3.5rem;
+  left: 0;
+  right: 0;
+  background-color: #ffffff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+  z-index: 999;
+}
+
+.navLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.navItem {
+  color: #000;
+  text-decoration: none;
+  transition: color 0.2s ease;
+  font-family: "DM Sans", sans-serif;
+  font-size: 1rem;
+}
+
+.navItem:hover {
+  color: #555;
+}

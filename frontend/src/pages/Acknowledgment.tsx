@@ -1,7 +1,6 @@
 import React, { Suspense, useState } from 'react';
-import { Box } from '@chakra-ui/react';
-import '../styles/Acknowledgment.css';
 import team_members from '../assets/team_members.json';
+import '../styles/Acknowledgment.css';
 
 const PersonCard = React.lazy(() => import('../components/PersonCard'));
 
@@ -25,7 +24,7 @@ const AcknowledgementsPage: React.FC = () => {
       github: string;
       website: string;
       image: string;
-    }[],
+    }[]
   ) => {
     const sortedData = data.toSorted((a, b) => {
       if (a.lastName < b.lastName) return -1;
@@ -33,7 +32,7 @@ const AcknowledgementsPage: React.FC = () => {
       return 0;
     });
     return sortedData;
-  }; // sort by sortbyLastName
+  };
 
   const handleToggleExpand = (index: number) => {
     setExpandedCardIndex(expandedCardIndex === index ? null : index);
@@ -41,26 +40,37 @@ const AcknowledgementsPage: React.FC = () => {
 
   return (
     <div className="ackPageWrapper">
-      <div className="ackMainContainer">
-        <h1 className="ackMainTitle">Our Team</h1>
+      <div className="v1Container">
+        <section className="heroSection">
+          <h1 className="heroTitle">Our Team</h1>
+          <p className="heroSubtitle">
+            Meet the leadership team, advisory group, students, and partners contributing to CollabNext.
+          </p>
+        </section>
+      </div>
+
+      <div className="v2Container">
         {[
           {
             name: 'Leadership Team',
-            desc: 'The Leadership Team consists of all researchers supported by this project including the PI, Co-PIs, and Senior Personnel.',
+            desc:
+              'The Leadership Team consists of researchers supporting this project, including the PI, Co-PIs, and Senior Personnel.',
             data: leadershipData,
           },
           {
-            name: 'Advisory group',
-            desc: 'The Advisory Group consists of selected members of the Leadership Team as well other individuals who have a unique and valuable perspective on our project (eg HBCU faculty, underrepresented groups in STEM, etc.). The group serves as a standing focus group and supports our larger evaluation plan.',
+            name: 'Advisory Group',
+            desc:
+              'The Advisory Group brings unique perspectives to the project, including HBCU faculty and underrepresented voices in STEM.',
             data: sortByLastName(advisoryData),
           },
           {
             name: 'Students',
-            desc: 'We are fortunate to have a strong and diverse group of people working on this project and contributing to software development, data analytics, project management, and more.',
+            desc:
+              'Our diverse group of contributors includes software developers, data analysts, and project managers from various backgrounds.',
             data: sortByLastName(studentsData),
           },
-        ].map(({ name, desc, data }, i) => (
-          <Box mb={i !== 2 ? '1.8rem' : undefined} key={name}>
+        ].map(({ name, desc, data }) => (
+          <div className="v2SectionBlock" key={name}>
             <h2 className="ackSectionTitle">{name}</h2>
             <p className="ackSectionDesc">{desc}</p>
             <div className="ackMasonryGrid">
@@ -89,55 +99,48 @@ const AcknowledgementsPage: React.FC = () => {
                 </Suspense>
               ))}
             </div>
-          </Box>
-        ))
-        }
+          </div>
+        ))}
+      </div>
 
-        {/* Partner Section */}
-        <div>
-          <h1 className="ackPartnerTitle">Partnership Team</h1>
-          <h2 className="ackPartnerDesc">
-            Our external partners meet with the Leadership Team quarterly to
-            identify collaboration opportunities within their networks, share
-            resources (e.g., data, code, and expertise) and actively support the
-            goals of the OKN project. They also provide advise regarding data
-            sources and project sustainability.
-          </h2>
-          <div className="ackPartnerMasonry">
-            {partnerData.map((partner, index) => (
-              <div key={index} className="ackPartnerCard">
-                <div className="ackPartnerInner">
+      <div className="v1Container">
+        <section className="ourPartnersSection">
+          <div className="mainpageOurPartners">
+            <h2 className="mainpageOurPartnersHeader">Our Partners</h2>
+            <div className="mainpageOurPartnersBox">
+              {partnerData.map((partner, index) => (
+                <div key={index} className="partnerLogoContainer">
                   <img
                     src={partner.ppp}
                     alt={`${partner.name} logo`}
+                    className="partnerLogo"
                     style={{
                       width: partner.width || 'auto',
                       height: partner.height || 'auto',
-                      marginTop: '10px',
                     }}
                   />
-                  <div className="ackPartnerName">{partner.name}</div>
+                  <div className="partnerName">{partner.name}</div>
                   <a
                     href={partner.website}
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className='ackPartnerLink'
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="partnerLink"
                   >
                     <img
-                      src='/assets/ppp/icons8-earth-24.png'
-                      alt='Visit website'
-                      className='ackPartnerEarthIcon'
+                      src="/assets/ppp/icons8-earth-24.png"
+                      alt="Visit website"
+                      className="partnerEarthIcon"
                     />
+                    <span>Visit Site</span>
                   </a>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </div >
-    </div >
+        </section>
+      </div>
+    </div>
   );
 };
 
 export default AcknowledgementsPage;
-//Finished acknowledgement page

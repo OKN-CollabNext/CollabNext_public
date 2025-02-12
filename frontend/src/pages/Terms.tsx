@@ -1,104 +1,55 @@
-
-import { Box, Text, Link } from '@chakra-ui/react';
+import styles from "../styles/Terms.module.css";
 
 const Terms = () => {
-    return (<div>
-        <Box w={{ lg: '900px' }} mx='auto' mt='1.5rem'>
-            <Text
-                pl={{ base: '.8rem', lg: 0 }}
-                fontFamily='DM Sans'
-                fontSize={{ lg: '22px' }}
-                color='#000000'
-            >
-                Terms and Conditions
-            </Text>
-        </Box>
-        <Box w={{ lg: '900px' }} mt='1.7rem' mx='auto'>
-            <Text>
+    return (
+        <div className={styles.container}>
+            <section className={styles.heroSection}>
+                <h1>Terms and Conditions</h1>
+            </section>
 
-                <ol>
+            <section className={styles.mainContent}>
+                <ol className={styles.termList}>
                     <li>
-                        •	This web application is free to use.
+                        This web application is free to use.
                     </li>
                     <li>
-                        •	If you use it, we would greatly appreciate your feedback and suggestions for improvement.
+                        We would greatly appreciate your feedback and suggestions for
+                        improvement.
                     </li>
                     <li>
-                        •	Our data sources are described in more detail on our Data Sources page.
+                        Our data sources are described in more detail on our Data Sources
+                        page.
                     </li>
                     <li>
-                        •	Our technology stack is described in more details on our Technology page.
+                        Our technology stack is described in more detail on our Technology
+                        page.
                     </li>
                     <li>
-                        •	The tool was developed as a public open-source project hosted on github.com and is released under the MIT License.
-
+                        The tool was developed as a public open-source project hosted on
+                        github.com and is released under the MIT License.
                     </li>
                     <li>
                         The text of this License is included below for reference:
                     </li>
                 </ol>
-            </Text>
-        </Box>
-        <Box w={{ lg: '900px' }} mt='1.7rem' mx='auto'>
-            <Text
-                mt='.45rem'
-                lineHeight='24px'
 
-                fontSize={{ base: '12px', lg: '16px' }}
-            >
-                MIT License
-            </Text>
-        </Box >
-        <Box w={{ lg: '900px' }} mt='1.7rem' mx='auto'>
-            <Text
-                mt='.45rem'
-                lineHeight='24px'
-
-                fontSize={{ base: '12px', lg: '16px' }}
-            >
-                Copyright (c) 2021 Georgia Tech Research Corporation
-            </Text>
-        </Box>
-
-        <Box w={{ lg: '900px' }} mt='1.7rem' mx='auto'>
-            <Text
-                mt='.45rem'
-                lineHeight='24px'
-                fontSize={{ base: '12px', lg: '16px' }}
-            >
-                Permission is hereby granted, free of charge, to any person obtaining a copy
-                of this software and associated documentation files (the "Software"), to deal
-                in the Software without restriction, including without limitation the rights
-                to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-                copies of the Software, and to permit persons to whom the Software is
-                furnished to do so, subject to the following conditions:
-            </Text>
-        </Box>
-
-        <Box w={{ lg: '900px' }} mt='1.7rem' mx='auto'>
-            <Text
-                mt='.45rem'
-                lineHeight='24px'
-                fontSize={{ base: '12px', lg: '16px' }}
-            >
-                The above copyright notice and this permission notice shall be included in all
-                copies or substantial portions of the Software.
-            </Text>
-        </Box>
-
-        <Box w={{ lg: '900px' }} mt='1.7rem' mx='auto'>
-            <Text
-                mt='.45rem'
-                lineHeight='24px'
-                fontSize={{ base: '12px', lg: '16px' }}
-            >
-                THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-                SOFTWARE.
-            </Text>
-        </Box>
-
-
-    </div >)
+                <div className={styles.licenseBlock}>
+                    <p>MIT License</p>
+                    <p>Copyright (c) 2021 Georgia Tech Research Corporation</p>
+                    <p>
+                        Permission is hereby granted, free of charge, to any person
+                        obtaining a copy of this software and associated documentation
+                        files (the &quot;Software&quot;), to deal in the Software
+                        without restriction...
+                    </p>
+                    <p>
+                        THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF
+                        ANY KIND, EXPRESS OR IMPLIED...
+                    </p>
+                </div>
+            </section>
+        </div>
+    );
 };
 
 export default Terms;
