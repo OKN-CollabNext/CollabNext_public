@@ -19,14 +19,6 @@ variables:
   # Environment name
   environmentName: 'collabnext'
 
-  # Database Connection
-  DB_HOST: 'openalex.postgres.database.azure.com'
-  DB_PORT: '5432'
-  DB_NAME: 'postgres_v2'
-  DB_USER: 'read_only_user'
-  DB_PASSWORD: 'read_only'
-  API: 'https://api.openalex.org/authors/'
-
   # Project root folder. Point to the folder containing manage.py file.
   projectRoot: $(System.DefaultWorkingDirectory)
 
