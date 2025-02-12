@@ -1,22 +1,130 @@
-import {Field, Form, Formik} from 'formik';
-import React, {useState} from 'react';
-import {useNavigate} from 'react-router-dom';
-import * as Yup from 'yup';
+import React, { useState, useCallback } from "react";
+import { Field, Form, Formik } from "formik";
+import { useNavigate } from "react-router-dom";
+import * as Yup from "yup";
+import Suggested from "../components/Suggested";
+import { handleAutofill } from "../utils/constants";
+import styles from "../styles/Home.module.css";
+import { FaBell, FaSearch } from "react-icons/fa";
 
-import {
-  Box,
-  Button,
-  Flex,
-  FormControl,
-  FormErrorMessage,
-  Input,
-  Select,
-  SimpleGrid,
-  Text,
-} from '@chakra-ui/react';
+/**
+ * Reuse the new approach for topic tags in Home.
+ * If you prefer a simpler approach, remove it—but here we preserve the new logic.
+ */
+const MAX_TOPIC_TAGS = 6;
+const MAX_INPUT_LENGTH = 60;
 
-import Suggested from '../components/Suggested';
-import {baseUrl, handleAutofill} from '../utils/constants';
+interface TopicTagsInputProps {
+  tags: string[];
+  setTags: React.Dispatch<React.SetStateAction<string[]>>;
+  suggestedTopics: any[];
+  setSuggestedTopics: React.Dispatch<React.SetStateAction<any[]>>;
+  setFieldValue: (field: string, value: any) => void;
+}
+
+const TopicTagsInput: React.FC<TopicTagsInputProps> = ({
+  tags,
+  setTags,
+  suggestedTopics,
+  setSuggestedTopics,
+  setFieldValue,
+}) => {
+  const [inputValue, setInputValue] = useState("");
+
+  const handleRemoveTag = useCallback(
+    (tagToRemove: string) => {
+      const newTags = tags.filter((t) => t !== tagToRemove);
+      setTags(newTags);
+      setFieldValue("topic", newTags.join(","));
+    },
+    [tags, setTags, setFieldValue]
+  );
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+    handleAutofill(e.target.value, true, setSuggestedTopics, () => { });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if ((e.key === " " || e.key === ",") && inputValue.trim()) {
+      e.preventDefault();
+      addTag(inputValue.trim());
+    } else if (e.key === "Backspace" && !inputValue) {
+      if (tags.length > 0) {
+        handleRemoveTag(tags[tags.length - 1]);
+      }
+    }
+  };
+
+  const addTag = (newTag: string) => {
+    const lowerTag = newTag.toLowerCase();
+    if (tags.length < MAX_TOPIC_TAGS && !tags.includes(lowerTag)) {
+      const newTags = [...tags, lowerTag];
+      setTags(newTags);
+      setFieldValue("topic", newTags.join(","));
+    }
+    setInputValue("");
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    addTag(suggestion);
+  };
+
+  return (
+    <div className={styles.topicTagsWrapper}>
+      <div className={styles.topicTagsHeader}>
+        <p>Topic Keywords</p>
+        <p className={styles.tagInstructions}>Press Space or Comma after each tag</p>
+      </div>
+
+      <ul className={styles.tagList}>
+        {tags.map((tag, index) => (
+          <li key={index} className={styles.tagItem}>
+            {tag}
+            <span
+              onClick={() => handleRemoveTag(tag)}
+              className={styles.removeIcon}
+            >
+              &times;
+            </span>
+          </li>
+        ))}
+        {tags.length < MAX_TOPIC_TAGS && (
+          <li className={styles.inputItem}>
+            <input
+              type="text"
+              value={inputValue}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              className={styles.tagInput}
+              placeholder="Type a keyword..."
+            />
+          </li>
+        )}
+      </ul>
+
+      {suggestedTopics.length > 0 && (
+        <div className={styles.suggestionsContainer}>
+          {suggestedTopics.map((suggestion: any, idx: number) => (
+            <div
+              key={idx}
+              className={styles.suggestionItem}
+              onClick={() => handleSuggestionClick(suggestion.value)}
+            >
+              {suggestion.value}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className={styles.tagDetails}>
+        <p>
+          <span>{MAX_TOPIC_TAGS - tags.length}</span> tags remaining
+        </p>
+      </div>
+    </div>
+  );
+};
 
 const validateSchema = Yup.object().shape({
   institution: Yup.string().notRequired(),
@@ -25,272 +133,163 @@ const validateSchema = Yup.object().shape({
   researcher: Yup.string().notRequired(),
 });
 
+// Combined description from c371ba2
 const DESCRIPTION_TEXT =
-  'CollabNext is part of the the Prototype Open Knowledge Network. We are developing a knowledge graph with entities consisting of people, organizations, and research topics. We are adopting an intentional design approach, initially prioritizing HBCUs and emerging researchers in a deliberate effort to counterbalance the Matthew effect, a naturally accumulated advantage of well-resourced research organizations.';
+  "CollabNext is part of the Prototype Open Knowledge Network. We are developing a knowledge graph consisting of people, organizations, and research topics. Our design approach prioritizes HBCUs and emerging researchers to counterbalance the Matthew effect.";
 
 const initialValues = {
-  institution: '',
-  type: '',
-  topic: '',
-  researcher: '',
+  institution: "",
+  type: "Education",
+  topic: "",
+  researcher: "",
 };
 
 const Home = () => {
   const navigate = useNavigate();
-  const [suggestedInstitutions, setSuggestedInstitutions] = useState([]);
-  const [suggestedTopics, setSuggestedTopics] = useState([]);
-  const institutionTypes = [
-    'HBCU',
-    'AANAPISI',
-    'ANNH',
-    'Carnegie R1',
-    'Carnegie R2',
-    'Emerging',
-    'HSI',
-    'MSI',
-    'NASNTI',
-    'PBI',
-    'TCU',
-  ];
-  // const toast = useToast();
+  const [suggestedInstitutions, setSuggestedInstitutions] = useState<any[]>([]);
+  const [suggestedTopics, setSuggestedTopics] = useState<any[]>([]);
+  const [topicTags, setTopicTags] = useState<string[]>([]); // new approach with multiple topics
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
 
-  console.log(suggestedTopics);
+  const onSubmitHandler = (values: typeof initialValues) => {
+    const { institution, type, researcher } = values;
+    // turn your array of tags into a comma-separated string
+    const topic = topicTags.join(",");
+    navigate(
+      `search?institution=${institution}&type=${type}&topic=${topic}&researcher=${researcher}`
+    );
+  };
+
+  const handleInputSuggestions = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>, fieldOnChange: any) => {
+      fieldOnChange(e);
+      handleAutofill(
+        e.target.value,
+        false,
+        setSuggestedTopics,
+        setSuggestedInstitutions
+      );
+    },
+    [setSuggestedTopics, setSuggestedInstitutions]
+  );
+
   return (
-    <Box w={{lg: '700px'}} mx='auto' mt='1rem'>
-      {/* <Box
-        background='linear-gradient(180deg, #003057 0%, rgba(0, 0, 0, 0.5) 100%)'
-        borderRadius={{lg: '6px'}}
-        px={{base: '1.5rem', lg: '2.5rem'}}
-        py={{base: '1.5rem', lg: '2rem'}}
-      >
-        <Text
-          fontFamily='DM Sans'
-          fontSize={{base: '12px', lg: '16px'}}
-          color='#FFFFFF'
-          lineHeight='1.6'
-        >
-          {DESCRIPTION_TEXT}
-        </Text>
-      </Box> */}
+    <div className={styles.container}>
+      <section className={styles.heroSection}>
+        <h1 className={styles.heroTitle}>CollabNext</h1>
+        <p className={styles.heroSubtitle}>{DESCRIPTION_TEXT}</p>
+      </section>
 
-      <Text
-        pl={{base: '1rem', lg: 0}}
-        fontFamily='DM Sans'
-        fontSize={{lg: '22px'}}
-        color='#000000'
-      >
-        What are you searching for?
-      </Text>
-
-      <Box
-        background='linear-gradient(180deg, #003057 0%, rgba(0, 0, 0, 0.5) 100%)'
-        borderRadius={{lg: '6px'}}
-        px={{base: '1.5rem', lg: '2.5rem'}}
-        py={{base: '1.5rem', lg: '2rem'}}
-        mt='1rem'
-      >
-        <Formik
-          initialValues={initialValues}
-          enableReinitialize
-          validationSchema={validateSchema}
-          onSubmit={async ({institution, type, topic, researcher}) => {
-            console.log(`institution: ${institution}`);
-            console.log(`type: ${type}`);
-            console.log(`topic: ${topic}`);
-            console.log(`researcher: ${researcher}`);
-            // if (!institution && !topic && !researcher) {
-            //   toast({
-            //     title: 'Error',
-            //     description: 'All 3 fields cannot be empty',
-            //     status: 'error',
-            //     duration: 8000,
-            //     isClosable: true,
-            //     position: 'top-right',
-            //   });
-            //   return;
-            // }
-            navigate(
-              `search?institution=${institution}&type=${type}&topic=${topic}&researcher=${researcher}`,
-            );
-          }}
+      <section className={styles.searchSection}>
+        <h2 className={styles.searchTitle}>What are you searching for?</h2>
+        <div
+          className={styles.dropdownToggle}
+          onClick={() => setShowSearchDropdown(!showSearchDropdown)}
         >
-          {(props) => (
-            <Form>
-              <SimpleGrid
-                columns={{base: 1, lg: 2}}
-                spacing={{base: 7, lg: '90px'}}
-              >
-                {[
-                  {text: 'Organization (eg. University)', key: 'institution'},
-                  {text: 'Type', key: 'type'},
-                ].map(({text, key}) => (
-                  <Box key={text}>
-                    <Field name={key}>
-                      {({field, form}: any) => (
-                        <FormControl
-                          isInvalid={form.errors[key] && form.touched[key]}
-                        >
-                          {text === 'Organization (eg. University)' ? (
-                            <>
-                              <Input
-                                variant={'flushed'}
-                                focusBorderColor='white'
-                                borderBottomWidth={'2px'}
-                                color='white'
-                                fontSize={{lg: '20px'}}
-                                textAlign={'center'}
-                                list='institutions'
-                                {...field}
-                                onChange={(e) => {
-                                  field.onChange(e);
-                                  handleAutofill(
-                                    field.value,
-                                    false,
-                                    setSuggestedTopics,
-                                    setSuggestedInstitutions,
-                                  );
-                                }}
-                              />
-                              <Suggested
-                                suggested={suggestedInstitutions}
-                                institutions={true}
-                              />
-                            </>
-                          ) : (
-                            <Select
-                              variant={'flushed'}
-                              focusBorderColor='white'
-                              borderBottomWidth={'2px'}
-                              color='white'
-                              fontSize={{lg: '20px'}}
-                              textAlign={'center'}
+          <FaBell className={styles.bellIcon} />
+          <span>Search Options</span>
+        </div>
+
+        {showSearchDropdown && (
+          <div className={styles.dropdownContainer}>
+            <Formik
+              initialValues={initialValues}
+              validationSchema={validateSchema}
+              onSubmit={onSubmitHandler}
+            >
+              {({ values, setFieldValue }) => (
+                <Form className={styles.searchForm}>
+                  <div className={styles.inputRow}>
+                    {/* Institution Field */}
+                    <div className={styles.formControl}>
+                      <Field name="institution">
+                        {({ field }: any) => (
+                          <>
+                            <input
+                              type="text"
+                              className={styles.inputField}
+                              placeholder="Organization (e.g. University)"
                               {...field}
-                            >
-                              <option value='' style={{color: 'black'}}>
-                                Select an institution type
-                              </option>
-                              {institutionTypes.map((type) => (
-                                <option
-                                  style={{color: 'black'}}
-                                  key={type}
-                                  value={type}
-                                >
-                                  {type}
-                                </option>
-                              ))}
-                            </Select>
-                          )}
-                          <FormErrorMessage>
-                            {form.errors[key]}
-                          </FormErrorMessage>
-                        </FormControl>
-                      )}
-                    </Field>
-                    <Text
-                      fontSize={{base: '12px', lg: '15px'}}
-                      color='#FFFFFF'
-                      textAlign={'center'}
-                      mt='.7rem'
-                    >
-                      {text}
-                    </Text>
-                  </Box>
-                ))}
-              </SimpleGrid>
-              <SimpleGrid
-                mt={{base: '1.35rem', lg: '1rem'}}
-                columns={{base: 1, lg: 2}}
-                spacing={{base: 7, lg: '90px'}}
-              >
-                {[
-                  {text: 'Topic Keyword', key: 'topic'},
-                  {text: 'Researcher Name', key: 'researcher'},
-                ].map(({text, key}) => (
-                  <Box key={text}>
-                    <Field name={key}>
-                      {({field, form}: any) => (
-                        <FormControl
-                          isInvalid={form.errors[key] && form.touched[key]}
-                        >
-                          <Input
-                            variant={'flushed'}
-                            focusBorderColor='white'
-                            borderBottomWidth={'2px'}
-                            color='white'
-                            fontSize={{lg: '20px'}}
-                            textAlign={'center'}
-                            list={key === 'topic' && 'topics'}
-                            {...field}
-                            onChange={
-                              key === 'topic'
-                                ? (e) => {
-                                    field.onChange(e);
-                                    handleAutofill(
-                                      field.value,
-                                      true,
-                                      setSuggestedTopics,
-                                      setSuggestedInstitutions,
-                                    );
-                                  }
-                                : field.onChange
-                            }
-                          />
-                          <Suggested
-                            suggested={suggestedTopics}
-                            institutions={false}
-                          />
-                          <FormErrorMessage>
-                            {form.errors[key]}
-                          </FormErrorMessage>
-                        </FormControl>
-                      )}
-                    </Field>
-                    <Text
-                      fontSize={{base: '12px', lg: '15px'}}
-                      color='#FFFFFF'
-                      textAlign={'center'}
-                      mt='.7rem'
-                    >
-                      {text}
-                    </Text>
-                  </Box>
-                ))}
-              </SimpleGrid>
-              <Flex justifyContent={'flex-end'} mt={'3rem'}>
-                <Button
-                  width={{base: '165px', lg: '205px'}}
-                  height='41px'
-                  background='#000000'
-                  borderRadius={{base: '4px', lg: '6px'}}
-                  fontSize={{base: '13px', lg: '18px'}}
-                  color='#FFFFFF'
-                  fontWeight={'500'}
-                  type='submit'
-                >
-                  Search
-                </Button>
-              </Flex>
-            </Form>
-          )}
-        </Formik>
-      </Box>
-      <Flex justifyContent={'center'} mt='1.5rem'>
-        <Button
-          width={{base: '165px', lg: '205px'}}
-          height='41px'
-          background='linear-gradient(180deg, #003057 0%, rgba(0, 0, 0, 0.5) 100%)'
-          borderRadius={{base: '4px', lg: '6px'}}
-          fontSize={{base: '13px', lg: '18px'}}
-          color='#FFFFFF'
-          fontWeight={'500'}
-          onClick={() => {
-            navigate(`topic-search`);
-          }}
-        >
-          Explore Topics
-        </Button>
-      </Flex>
-    </Box>
+                              maxLength={MAX_INPUT_LENGTH}
+                              onChange={(e) => handleInputSuggestions(e, field.onChange)}
+                            />
+                            <div className={styles.charCount}>
+                              {MAX_INPUT_LENGTH - field.value.length} characters remaining
+                            </div>
+                          </>
+                        )}
+                      </Field>
+                    </div>
+
+                    {/* Type Select */}
+                    <div className={styles.formControl}>
+                      <Field name="type">
+                        {({ field }: any) => (
+                          <select {...field} className={styles.inputField}>
+                            {/* Hard-coded sample from c371ba2; adapt as needed */}
+                            <option value="Education">HBCU</option>
+                          </select>
+                        )}
+                      </Field>
+                    </div>
+                  </div>
+
+                  <div className={styles.inputRow}>
+                    {/* New multi-topic input */}
+                    <div className={styles.formControl}>
+                      <TopicTagsInput
+                        tags={topicTags}
+                        setTags={setTopicTags}
+                        suggestedTopics={suggestedTopics}
+                        setSuggestedTopics={setSuggestedTopics}
+                        setFieldValue={setFieldValue}
+                      />
+                    </div>
+
+                    {/* Researcher Field */}
+                    <div className={styles.formControl}>
+                      <Field name="researcher">
+                        {({ field }: any) => (
+                          <>
+                            <input
+                              type="text"
+                              className={styles.inputField}
+                              placeholder="Researcher Name"
+                              {...field}
+                              maxLength={MAX_INPUT_LENGTH}
+                            />
+                            <div className={styles.charCount}>
+                              {MAX_INPUT_LENGTH - field.value.length} characters remaining
+                            </div>
+                          </>
+                        )}
+                      </Field>
+                    </div>
+                  </div>
+
+                  <Field type="hidden" name="topic" />
+                  <Suggested suggested={suggestedInstitutions} institutions={true} />
+
+                  <button type="submit" className={styles.searchButton}>
+                    <FaSearch className={styles.searchButtonIcon} />
+                    <span>Search</span>
+                  </button>
+                </Form>
+              )}
+            </Formik>
+          </div>
+        )}
+
+        <div className={styles.exploreContainer}>
+          <button
+            className={styles.exploreButton}
+            onClick={() => navigate("topic-search")}
+          >
+            Explore Topics
+          </button>
+        </div>
+      </section>
+    </div>
   );
 };
 

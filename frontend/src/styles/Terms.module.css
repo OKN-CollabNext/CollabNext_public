@@ -1,0 +1,52 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #fafafa;
+}
+
+.heroSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg,
+      #b2d8d8 0%,
+      #bce4e3 50%,
+      #86c8c8 100%);
+  color: #333;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.heroSection h1 {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+}
+
+.mainContent {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  color: #333;
+}
+
+.termList {
+  list-style-type: decimal;
+  margin-left: 1.5rem;
+  margin-bottom: 2rem;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.licenseBlock {
+  background-color: #fff;
+  padding: 1.5rem;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.licenseBlock p {
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}

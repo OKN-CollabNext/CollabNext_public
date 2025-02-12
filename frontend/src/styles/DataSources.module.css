@@ -1,0 +1,58 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #fafafa;
+}
+
+.heroSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg,
+      #003057 0%,
+      rgba(0, 0, 0, 0.5) 100%);
+  color: #fff;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.heroSection h1 {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+}
+
+.mainContent {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  color: #333;
+}
+
+.block {
+  margin-bottom: 2rem;
+}
+
+.block h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: #003057;
+}
+
+.block p {
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.block ul {
+  list-style-type: disc;
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.link {
+  color: #003366;
+  text-decoration: underline;
+}

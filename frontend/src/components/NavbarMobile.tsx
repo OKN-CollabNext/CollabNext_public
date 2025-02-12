@@ -3,52 +3,48 @@ import { Squash as Hamburger } from 'hamburger-react';
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useClickAway } from 'react-use';
-
-import { Flex, Text } from '@chakra-ui/react';
+import { Text } from '@chakra-ui/react';
+import styles from '../styles/NavbarMobile.module.css';
 
 const NavbarMobile = () => {
   const [isOpen, setOpen] = useState(false);
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
 
   useClickAway(ref, () => setOpen(false));
 
+  const NAV_LINKS = [
+    { text: 'Home', href: '/' },
+    { text: 'About Us', href: '/about' },
+    { text: 'Team', href: '/team' },
+    { text: 'Data Sources', href: '/data' },
+    { text: 'Technology', href: '/technology' },
+  ];
+
   return (
-    <div ref={ref} className='lg-hidden'>
-      <Flex justifyContent={'space-between'} alignItems={'center'}>
+    <div ref={ref} className={styles.navbarMobile}>
+      <div className={styles.navbarHeader}>
         <Hamburger toggled={isOpen} size={20} toggle={setOpen} />
-        <Link to='/'>
-          <Text
-            fontFamily='DM Sans'
-            fontSize='14px'
-            color='#000000'
-            fontWeight={'700'}
-            mr='1rem'
-          >
-            CollabNext
-          </Text>
+
+        <Link to="/">
+          <Text className={styles.brandText}>CollabNext</Text>
         </Link>
-      </Flex>
+      </div>
+
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{opacity: 0}}
-            animate={{opacity: 1}}
-            exit={{opacity: 0}}
-            transition={{duration: 0.2}}
-            className='fixed left-0 shadow-4xl right-0 top-[3.5rem] p-5 pt-0 bg-white border-b border-b-white/20 z-10'
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className={styles.menuContainer}
           >
-            <nav className='flex flex-col gap-4'>
-              {[
-                {text: 'Home', href: '/'},
-                {text: 'About Us', href: '/about'},
-                {text: 'Team', href: '/team'},
-                {text: 'Data Sources', href: '/data'},
-                {text: 'Technology', href: '/technology'},
-              ].map(({text, href}) => (
+            <nav className={styles.navLinks}>
+              {NAV_LINKS.map(({ text, href }) => (
                 <Link
                   key={text}
                   to={href}
-                  className='text-black hover:text-gray-500 py-2'
+                  className={styles.navItem}
                   onClick={() => setOpen(false)}
                 >
                   {text}

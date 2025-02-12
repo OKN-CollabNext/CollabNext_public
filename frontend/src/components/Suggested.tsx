@@ -1,20 +1,20 @@
-import React from 'react';
-
 const Suggested = ({
   suggested,
   institutions,
 }: {
-  suggested: never[];
+  suggested: string[];
   institutions: boolean;
 }) => {
   return (
-    <datalist id={institutions ? 'institutions' : 'topics'}>
-      {suggested?.map((institution: string) => (
-        <option key={institution} value={institution}>
-          {institution}
-        </option>
-      ))}
-    </datalist>
+    <>
+      <datalist id={institutions ? "institutions" : "topics"}>
+        {suggested?.map((item: string) => (
+          <option key={item} value={item}>
+            {item}
+          </option>
+        ))}
+      </datalist>
+    </>
   );
 };
 

@@ -1,28 +1,37 @@
-import React from 'react';
-import {Link} from 'react-router-dom';
-
-import {Flex, Text} from '@chakra-ui/react';
+import { Link } from 'react-router-dom';
+import styles from '../styles/Footer.module.css';
 
 const Footer = () => {
   return (
-    <Flex alignItems={'center'} justifyContent={'center'} height={'11vh'}>
-      {[
-        {text: 'Contact Us', href: '/contact'},
-        {text: 'Terms and Conditions', href: '/terms'},
-        {text: 'Help', href: '/help'},
-        {text: 'Provide Feedback', href: '/feedback'},
-      ].map(({text, href}) => (
-        <Text
-          mt='0.5rem'
-          key={text}
-          fontSize={{base: '8px', lg: '16px'}}
-          mr={{base: '1.3rem', lg: '2.5rem'}}
-          color='#000000'
-        >
-          <Link to={href}>{text}</Link>
-        </Text>
-      ))}
-    </Flex>
+    <div className={styles.footer}>
+      <div className={styles.about}>
+        <div className={styles.footerTitle}>
+          <p>About</p>
+        </div>
+        <div className={styles.footerInfo}>
+          <Link to="/terms" className={styles.link}>
+            Terms &amp; Conditions
+          </Link>
+          <Link to="/help" className={styles.link}>
+            Help
+          </Link>
+        </div>
+      </div>
+
+      <div className={styles.contact}>
+        <div className={styles.footerTitle}>
+          <p>Contact</p>
+        </div>
+        <div className={styles.footerInfo}>
+          <Link to="/contact" className={styles.link}>
+            Contact Us
+          </Link>
+          <Link to="/feedback" className={styles.link}>
+            Provide Feedback
+          </Link>
+        </div>
+      </div>
+    </div>
   );
 };
 
