@@ -57,7 +57,7 @@ def fetch_last_known_institutions(raw_id):
     """
     try:
         id = raw_id.split('/')[-1]
-        response = requests.get(f"{API}{id}")
+        response = requests.get(f"{'https://api.openalex.org/authors/'}{id}")
         data = response.json()
         return data.get('last_known_institutions', [])
     except Exception as e:
@@ -176,6 +176,8 @@ def search_by_institution(institution_name):
     return None
 
 def search_by_author(author_name):
+    print(DB_HOST)
+    print("Getting authors")
     author_ids = get_author_ids(author_name)
     if not author_ids:
         print("No author IDs found.")
@@ -281,9 +283,13 @@ def get_researcher_result(researcher):
   metadata['cited_by_count'] = metadata['num_of_citations']
   metadata['oa_link'] = metadata['openalex_url']
   if metadata['last_known_institution'] is None:
-    institution_object = fetch_last_known_institutions(metadata['oa_link'])[0]
-    last_known_institution = institution_object['display_name']
-    institution_url = institution_object['id']
+    institution_object = fetch_last_known_institutions(metadata['oa_link'])
+    if institution_object == []:
+      last_known_institution = ""
+    else:
+      institution_object = institution_object[0]
+      last_known_institution = institution_object['display_name']
+      institution_url = institution_object['id']
   else:
     last_known_institution = metadata['last_known_institution']
   metadata['current_institution'] = last_known_institution
