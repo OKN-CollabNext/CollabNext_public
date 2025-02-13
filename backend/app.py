@@ -16,7 +16,7 @@ try:
   DB_NAME=os.environ['DB_NAME']
   DB_USER=os.environ['DB_USER']
   DB_PASSWORD=os.environ['DB_PASSWORD']
-  API=os.environ['DB_API']
+  API=os.getenv('DB_API')
 
 except:
   print("Using Local Variables")
