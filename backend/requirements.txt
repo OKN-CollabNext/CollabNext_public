@@ -7,4 +7,5 @@ python-dotenv
 flask-cors
 mysql-connector-python
 pandas
+psycopg2
 psycopg2-binary
