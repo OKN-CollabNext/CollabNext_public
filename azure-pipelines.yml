@@ -6,6 +6,16 @@
 trigger:
 - main
 
+pr: none
+
+resources:
+  repositories:
+    - repository: self
+      trigger:
+        branches:
+          include:
+            - main
+
 variables:
   # Azure Resource Manager connection created during pipeline creation
   azureServiceConnectionId: 'nsf-cloudbank-azure-connection'
@@ -86,7 +96,7 @@ stages:
 - stage: Deploy
   displayName: 'Deploy Web App'
   dependsOn: Build
-  condition: succeeded()
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))  # Ensures it only runs when changes are merged into 'main'
   jobs:
   - deployment: DeploymentJob
     pool:
