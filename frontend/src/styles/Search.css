@@ -32,7 +32,7 @@
   height: 100%;
 }
 
-.sidebar input,
+.sidebar input:not([type='file']),
 .sidebar select,
 .sidebar .button {
   display: block;
