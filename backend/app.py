@@ -177,6 +177,7 @@ def search_by_institution(institution_name):
 
 def search_by_author(author_name):
     print(DB_HOST)
+    print("Getting authors")
     author_ids = get_author_ids(author_name)
     if not author_ids:
         print("No author IDs found.")
