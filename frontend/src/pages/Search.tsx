@@ -43,6 +43,11 @@ const Search = () => {
     setIsNetworkMap(!isNetworkMap);
   };
 
+  const institutionTypes = [
+    'HBCU', 'AANAPISI', 'ANNH', 'Carnegie R1', 'Carnegie R2', 
+    'Emerging', 'HSI', 'MSI', 'NASNTI', 'PBI', 'TCU'
+  ];
+
   const sendSearchRequest = (search: SearchType) => {
     const requestId = ++latestRequestId;
     fetch(`${baseUrl}/initial-search`, {
@@ -277,7 +282,10 @@ const Search = () => {
           onChange={(e) => setInstitutionType(e.target.value)}
           className='dropdown'
         >
-          <option value='Education'>HBCU</option>
+          <option value="" disabled>Select an institution type</option>
+          {institutionTypes.map((type) => (
+            <option key={type} value={type}>{type}</option>
+          ))}
         </select>
         {/* <FormControl isInvalid={topicType && !researcherType ? true : false}> */}
         <input

@@ -38,6 +38,10 @@ const Home = () => {
   const navigate = useNavigate();
   const [suggestedInstitutions, setSuggestedInstitutions] = useState([]);
   const [suggestedTopics, setSuggestedTopics] = useState([]);
+  const institutionTypes = [
+    'HBCU', 'AANAPISI', 'ANNH', 'Carnegie R1', 'Carnegie R2', 
+    'Emerging', 'HSI', 'MSI', 'NASNTI', 'PBI', 'TCU'
+  ];
   // const toast = useToast();
 
   console.log(suggestedTopics);
@@ -154,7 +158,10 @@ const Home = () => {
                               {...field}
                               // placeholder='Select option'
                             >
-                              <option value='Education'>HBCU</option>
+                              <option value="" disabled>Select an institution type</option>
+                              {institutionTypes.map((type) => (
+                                <option key={type} value={type}>{type}</option>
+                              ))}
                             </Select>
                           )}
                           <FormErrorMessage>
