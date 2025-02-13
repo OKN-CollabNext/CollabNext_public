@@ -14,12 +14,14 @@ try:
   DB_HOST=os.environ['DB_HOST']
   DB_PORT= int(os.environ['DB_PORT'])
   DB_NAME=os.environ['DB_NAME']
-  DB_NAME2=os.environ['DB_NAME2']
   DB_USER=os.environ['DB_USER']
   DB_PASSWORD=os.environ['DB_PASSWORD']
-  API=os.environ['DB_API']
+  API=os.getenv('DB_API')
+
 except:
+  print("Using Local Variables")
   load_dotenv(dotenv_path=".env")
+  API = os.getenv('DB_API')
 
 # Global variable for the SPARQL endpoint
 SEMOPENALEX_SPARQL_ENDPOINT = "https://semopenalex.org/sparql"
@@ -46,26 +48,6 @@ def execute_query(query, params):
     except Exception as e:
         print(e)
         return None
-    
-def execute_mup_query(query, params):
-    """
-    Utility function to execute a query and fetch results from the database.
-    Handles connection and cursor management.
-    """
-    try:
-        with psycopg2.connect(
-            user=os.getenv('DB_USER'),
-            password=os.getenv('DB_PASSWORD'),
-            host=os.getenv('DB_HOST'),            
-            database=os.getenv('DB_NAME2'),
-            sslmode='disable'       
-        ) as connection:
-            with connection.cursor() as cursor:
-                cursor.execute(query, params)                
-                return cursor.fetchall()        
-    except Exception as e:
-        print(e)
-        return None
 
 def fetch_last_known_institutions(raw_id):
     """
@@ -75,7 +57,7 @@ def fetch_last_known_institutions(raw_id):
     """
     try:
         id = raw_id.split('/')[-1]
-        response = requests.get(f"{os.getenv('API')}{id}")
+        response = requests.get(f"{'https://api.openalex.org/authors/'}{id}")
         data = response.json()
         return data.get('last_known_institutions', [])
     except Exception as e:
@@ -194,6 +176,8 @@ def search_by_institution(institution_name):
     return None
 
 def search_by_author(author_name):
+    print(DB_HOST)
+    print("Getting authors")
     author_ids = get_author_ids(author_name)
     if not author_ids:
         print("No author IDs found.")
@@ -283,6 +267,9 @@ def get_researcher_result(researcher):
   if data == None:
     print("Using SPARQL...")
     data = get_author_metadata_sparql(researcher)
+    if data == {}:
+      print("No Results")
+      return {}
     topic_list, graph = list_given_researcher_institution(data['oa_link'], data['name'], data['current_institution'])
     results = {"metadata": data, "graph": graph, "list": topic_list}
     return results
@@ -296,9 +283,13 @@ def get_researcher_result(researcher):
   metadata['cited_by_count'] = metadata['num_of_citations']
   metadata['oa_link'] = metadata['openalex_url']
   if metadata['last_known_institution'] is None:
-    institution_object = fetch_last_known_institutions(metadata['oa_link'])[0]
-    last_known_institution = institution_object['display_name']
-    institution_url = institution_object['id']
+    institution_object = fetch_last_known_institutions(metadata['oa_link'])
+    if institution_object == []:
+      last_known_institution = ""
+    else:
+      institution_object = institution_object[0]
+      last_known_institution = institution_object['display_name']
+      institution_url = institution_object['id']
   else:
     last_known_institution = metadata['last_known_institution']
   metadata['current_institution'] = last_known_institution
@@ -335,6 +326,9 @@ def get_institution_results(institution):
   if data == None:
     print("Using SPARQL...")
     data = get_institution_metadata_sparql(institution)
+    if data == {}:
+      print("No Results")
+      return {}
     topic_list, graph = list_given_institution(data['ror'], data['name'], data['oa_link'])
     results = {"metadata": data, "graph": graph, "list": topic_list}
     return results
@@ -432,6 +426,9 @@ def get_researcher_and_subfield_results(researcher, topic):
   if data == None:
     print("Using SPARQL...")
     data = get_topic_and_researcher_metadata_sparql(topic, researcher)
+    if data == {}:
+      print("No Results")
+      return {}
     work_list, graph, extra_metadata = list_given_researcher_topic(topic, researcher, data['current_institution'], data['topic_oa_link'], data['researcher_oa_link'], data['institution_oa_link'])
     data['work_count'] = extra_metadata['work_count']
     data['cited_by_count'] = extra_metadata['cited_by_count']
@@ -499,6 +496,9 @@ def get_institution_and_subfield_results(institution, topic):
   if data == None:
     print("Using SPARQL...")
     data = get_institution_and_topic_metadata_sparql(institution, topic)
+    if data == {}:
+      print("No Results")
+      return {}
     topic_list, graph, extra_metadata = list_given_institution_topic(institution, data['institution_oa_link'], topic, data['topic_oa_link'])
     data['work_count'] = extra_metadata['work_count']
     data['people_count'] = extra_metadata['num_people']
@@ -560,6 +560,9 @@ def get_institution_and_researcher_results(institution, researcher):
   if data == None:
     print("Using SPARQL...")
     data = get_researcher_and_institution_metadata_sparql(researcher, institution)
+    if data == {}:
+      print("No Results")
+      return {}
     topic_list, graph = list_given_researcher_institution(data['researcher_oa_link'], researcher, institution)
     results = {"metadata": data, "graph": graph, "list": topic_list}
     return results
@@ -615,6 +618,9 @@ def get_institution_researcher_subfield_results(institution, researcher, topic):
   if data == None:
     print("Using SPARQL...")
     data = get_institution_and_topic_and_researcher_metadata_sparql(institution, topic, researcher)
+    if data == {}:
+      print("No Results")
+      return {}
     work_list, graph, extra_metadata = list_given_researcher_topic(topic, researcher, institution, data['topic_oa_link'], data['researcher_oa_link'], data['institution_oa_link'])
     data['work_count'] = extra_metadata['work_count']
     data['cited_by_count'] = extra_metadata['cited_by_count']
@@ -711,6 +717,9 @@ def get_institution_metadata_sparql(institution):
   {'}'} GROUP BY ?ror ?workscount ?citedcount ?homepage ?institution
   """
   results = query_SPARQL_endpoint(SEMOPENALEX_SPARQL_ENDPOINT, query)
+  if results == []:
+    print("No Results")
+    return {}
   ror = results[0]['ror']
   works_count = results[0]['workscount']
   cited_count = results[0]['citedcount']
@@ -789,6 +798,9 @@ def get_author_metadata_sparql(author):
     {'}'}
   """
   results = query_SPARQL_endpoint(SEMOPENALEX_SPARQL_ENDPOINT, query)
+  if results == []:
+    print("No Results")
+    return {}
   cited_by_count = results[0]['cite_count']
   orcid = results[0]['orcid'] if 'orcid' in results[0] else ''
   work_count = results[0]['works_count']
@@ -810,6 +822,8 @@ def get_researcher_and_institution_metadata_sparql(researcher, institution):
 
   researcher_data = get_author_metadata_sparql(researcher)
   institution_data = get_institution_metadata_sparql(institution)
+  if researcher_data == {} or institution_data == {}:
+    return {}
 
   institution_name = institution
   researcher_name = researcher
@@ -878,9 +892,8 @@ def get_subfield_metadata_sparql(subfield):
   metadata : information on the subfield as a dictionary with the following keys:
     name, topic_clusters, cited_by_count, work_count, researchers, oa_link
   """
-  print(f"https://api.openalex.org/subfields?filter=display_name.search:{subfield}")
   headers = {'Accept': 'application/json'}
-  response = requests.get(f'https://api.openalex.org/subfields?filter=display_name.search:{subfield}', headers=headers)
+  response = requests.get(f'https://api.openalex.org/subfields?filter=display_name.search:{subfield}', headers=headers) 
   data = response.json()['results'][0]
   oa_link = data['id']
   cited_by_count = data['cited_by_count']
@@ -950,6 +963,8 @@ def get_institution_and_topic_metadata_sparql(institution, topic):
   """
   institution_data = get_institution_metadata_sparql(institution)
   topic_data = get_subfield_metadata_sparql(topic)
+  if topic_data == {} or institution_data == {}:
+    return {}
 
   institution_name = institution
   subfield_name = topic
@@ -1038,6 +1053,8 @@ def get_topic_and_researcher_metadata_sparql(topic, researcher):
 
   researcher_data = get_author_metadata_sparql(researcher)
   topic_data = get_subfield_metadata_sparql(topic)
+  if researcher_data == {} or topic_data == {}:
+    return {}
 
   researcher_name = researcher
   subfield_name = topic
@@ -1121,6 +1138,8 @@ def get_institution_and_topic_and_researcher_metadata_sparql(institution, topic,
   institution_data = get_institution_metadata_sparql(institution)
   topic_data = get_subfield_metadata_sparql(topic)
   researcher_data = get_author_metadata_sparql(researcher)
+  if researcher_data == {} or institution_data == {} or topic_data == {}:
+    return {}
 
   institution_url = institution_data['homepage']
   orcid = researcher_data['orcid']
@@ -1333,7 +1352,7 @@ def is_HBCU(id):
 
 def get_institution_id(institution_name):
     query = """SELECT get_institution_id_from_mup(%s);"""    
-    results = execute_mup_query(query, (institution_name,))
+    results = execute_query(query, (institution_name,))
     if results:
         # psycopg2 returns a list of tuples with each tuple representing a row
         # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
@@ -1346,7 +1365,7 @@ def get_institution_mup_id(institution_name):
         return None
     institution_id = institution_id['institution_id']
     query = """SELECT get_institution_mup_id(%s);"""
-    results = execute_mup_query(query, (institution_id,))
+    results = execute_query(query, (institution_id,))
     if results:
         # psycopg2 returns a list of tuples with each tuple representing a row
         # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
@@ -1360,7 +1379,7 @@ def get_institution_sat_scores(institution_name):
         return None
     institution_id = institution_id['institution_id']
     query = """SELECT get_institution_sat_scores(%s);"""
-    results = execute_mup_query(query, (institution_id,))
+    results = execute_query(query, (institution_id,))
     if results:
         # psycopg2 returns a list of tuples with each tuple representing a row
         # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
@@ -1378,7 +1397,7 @@ def get_institution_endowments_and_givings(institution_name):
         return None
     institution_id = institution_id['institution_id']
     query = """SELECT get_institution_endowments_and_givings(%s);"""
-    results = execute_mup_query(query, (institution_id,))
+    results = execute_query(query, (institution_id,))
     if results:
         # psycopg2 returns a list of tuples with each tuple representing a row
         # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
@@ -1396,7 +1415,7 @@ def get_institution_medical_expenses(institution_name):
         return None
     institution_mup_id = institution_mup_id['institution_mup_id']
     query = """SELECT get_institution_medical_expenses(%s);"""
-    results = execute_mup_query(query, (institution_mup_id,))
+    results = execute_query(query, (institution_mup_id,))
     if results:
         # psycopg2 returns a list of tuples with each tuple representing a row
         # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
@@ -1414,7 +1433,7 @@ def get_institution_doctorates_and_postdocs(institution_name):
         return None
     institution_id = institution_id['institution_id']
     query = """SELECT get_institution_doctorates_and_postdocs(%s);"""
-    results = execute_mup_query(query, (institution_id,))
+    results = execute_query(query, (institution_id,))
     if results:
         # psycopg2 returns a list of tuples with each tuple representing a row
         # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
@@ -1432,7 +1451,7 @@ def get_institution_num_of_researches(institution_name):
         return None
     institution_id = institution_id['institution_id']
     query = """SELECT get_institution_num_of_researches(%s);"""
-    results = execute_mup_query(query, (institution_id,))
+    results = execute_query(query, (institution_id,))
     if results:
         # psycopg2 returns a list of tuples with each tuple representing a row
         # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
@@ -1451,7 +1470,7 @@ def get_institutions_faculty_awards(institution_name):
 
     institution_id = institution_id['institution_id']
     query = """SELECT get_institutions_faculty_awards(%s);"""
-    results = execute_mup_query(query, (institution_id,))
+    results = execute_query(query, (institution_id,))
     if results:
         # Add the institution name and id to the result
         results[0][0]['institution_name'] = institution_name
@@ -1467,7 +1486,7 @@ def get_institutions_r_and_d(institution_name):
 
     institution_id = institution_id['institution_id']
     query = """SELECT get_institutions_r_and_d(%s);"""
-    results = execute_mup_query(query, (institution_id,))
+    results = execute_query(query, (institution_id,))
     if results:
         # Add the institution name and id to the result
         results[0][0]['institution_name'] = institution_name
