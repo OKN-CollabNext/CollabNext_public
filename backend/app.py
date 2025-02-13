@@ -19,7 +19,9 @@ try:
   API=os.environ['DB_API']
 
 except:
+  print("Using Local Variables")
   load_dotenv(dotenv_path=".env")
+  API = os.getenv('DB_API')
 
 # Global variable for the SPARQL endpoint
 SEMOPENALEX_SPARQL_ENDPOINT = "https://semopenalex.org/sparql"
