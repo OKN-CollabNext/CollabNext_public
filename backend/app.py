@@ -17,6 +17,7 @@ try:
   DB_USER=os.environ['DB_USER']
   DB_PASSWORD=os.environ['DB_PASSWORD']
   API=os.environ['DB_API']
+
 except:
   load_dotenv(dotenv_path=".env")
 
@@ -54,7 +55,7 @@ def fetch_last_known_institutions(raw_id):
     """
     try:
         id = raw_id.split('/')[-1]
-        response = requests.get(f"{os.getenv('API')}{id}")
+        response = requests.get(f"{API}{id}")
         data = response.json()
         return data.get('last_known_institutions', [])
     except Exception as e:
@@ -262,6 +263,9 @@ def get_researcher_result(researcher):
   if data == None:
     print("Using SPARQL...")
     data = get_author_metadata_sparql(researcher)
+    if data == {}:
+      print("No Results")
+      return {}
     topic_list, graph = list_given_researcher_institution(data['oa_link'], data['name'], data['current_institution'])
     results = {"metadata": data, "graph": graph, "list": topic_list}
     return results
@@ -314,6 +318,9 @@ def get_institution_results(institution):
   if data == None:
     print("Using SPARQL...")
     data = get_institution_metadata_sparql(institution)
+    if data == {}:
+      print("No Results")
+      return {}
     topic_list, graph = list_given_institution(data['ror'], data['name'], data['oa_link'])
     results = {"metadata": data, "graph": graph, "list": topic_list}
     return results
@@ -411,6 +418,9 @@ def get_researcher_and_subfield_results(researcher, topic):
   if data == None:
     print("Using SPARQL...")
     data = get_topic_and_researcher_metadata_sparql(topic, researcher)
+    if data == {}:
+      print("No Results")
+      return {}
     work_list, graph, extra_metadata = list_given_researcher_topic(topic, researcher, data['current_institution'], data['topic_oa_link'], data['researcher_oa_link'], data['institution_oa_link'])
     data['work_count'] = extra_metadata['work_count']
     data['cited_by_count'] = extra_metadata['cited_by_count']
@@ -478,6 +488,9 @@ def get_institution_and_subfield_results(institution, topic):
   if data == None:
     print("Using SPARQL...")
     data = get_institution_and_topic_metadata_sparql(institution, topic)
+    if data == {}:
+      print("No Results")
+      return {}
     topic_list, graph, extra_metadata = list_given_institution_topic(institution, data['institution_oa_link'], topic, data['topic_oa_link'])
     data['work_count'] = extra_metadata['work_count']
     data['people_count'] = extra_metadata['num_people']
@@ -539,6 +552,9 @@ def get_institution_and_researcher_results(institution, researcher):
   if data == None:
     print("Using SPARQL...")
     data = get_researcher_and_institution_metadata_sparql(researcher, institution)
+    if data == {}:
+      print("No Results")
+      return {}
     topic_list, graph = list_given_researcher_institution(data['researcher_oa_link'], researcher, institution)
     results = {"metadata": data, "graph": graph, "list": topic_list}
     return results
@@ -594,6 +610,9 @@ def get_institution_researcher_subfield_results(institution, researcher, topic):
   if data == None:
     print("Using SPARQL...")
     data = get_institution_and_topic_and_researcher_metadata_sparql(institution, topic, researcher)
+    if data == {}:
+      print("No Results")
+      return {}
     work_list, graph, extra_metadata = list_given_researcher_topic(topic, researcher, institution, data['topic_oa_link'], data['researcher_oa_link'], data['institution_oa_link'])
     data['work_count'] = extra_metadata['work_count']
     data['cited_by_count'] = extra_metadata['cited_by_count']
@@ -690,6 +709,9 @@ def get_institution_metadata_sparql(institution):
   {'}'} GROUP BY ?ror ?workscount ?citedcount ?homepage ?institution
   """
   results = query_SPARQL_endpoint(SEMOPENALEX_SPARQL_ENDPOINT, query)
+  if results == []:
+    print("No Results")
+    return {}
   ror = results[0]['ror']
   works_count = results[0]['workscount']
   cited_count = results[0]['citedcount']
@@ -768,6 +790,9 @@ def get_author_metadata_sparql(author):
     {'}'}
   """
   results = query_SPARQL_endpoint(SEMOPENALEX_SPARQL_ENDPOINT, query)
+  if results == []:
+    print("No Results")
+    return {}
   cited_by_count = results[0]['cite_count']
   orcid = results[0]['orcid'] if 'orcid' in results[0] else ''
   work_count = results[0]['works_count']
@@ -789,6 +814,8 @@ def get_researcher_and_institution_metadata_sparql(researcher, institution):
 
   researcher_data = get_author_metadata_sparql(researcher)
   institution_data = get_institution_metadata_sparql(institution)
+  if researcher_data == {} or institution_data == {}:
+    return {}
 
   institution_name = institution
   researcher_name = researcher
@@ -857,9 +884,8 @@ def get_subfield_metadata_sparql(subfield):
   metadata : information on the subfield as a dictionary with the following keys:
     name, topic_clusters, cited_by_count, work_count, researchers, oa_link
   """
-  print(f"https://api.openalex.org/subfields?filter=display_name.search:{subfield}")
   headers = {'Accept': 'application/json'}
-  response = requests.get(f'https://api.openalex.org/subfields?filter=display_name.search:{subfield}', headers=headers)
+  response = requests.get(f'https://api.openalex.org/subfields?filter=display_name.search:{subfield}', headers=headers) 
   data = response.json()['results'][0]
   oa_link = data['id']
   cited_by_count = data['cited_by_count']
@@ -929,6 +955,8 @@ def get_institution_and_topic_metadata_sparql(institution, topic):
   """
   institution_data = get_institution_metadata_sparql(institution)
   topic_data = get_subfield_metadata_sparql(topic)
+  if topic_data == {} or institution_data == {}:
+    return {}
 
   institution_name = institution
   subfield_name = topic
@@ -1017,6 +1045,8 @@ def get_topic_and_researcher_metadata_sparql(topic, researcher):
 
   researcher_data = get_author_metadata_sparql(researcher)
   topic_data = get_subfield_metadata_sparql(topic)
+  if researcher_data == {} or topic_data == {}:
+    return {}
 
   researcher_name = researcher
   subfield_name = topic
@@ -1100,6 +1130,8 @@ def get_institution_and_topic_and_researcher_metadata_sparql(institution, topic,
   institution_data = get_institution_metadata_sparql(institution)
   topic_data = get_subfield_metadata_sparql(topic)
   researcher_data = get_author_metadata_sparql(researcher)
+  if researcher_data == {} or institution_data == {} or topic_data == {}:
+    return {}
 
   institution_url = institution_data['homepage']
   orcid = researcher_data['orcid']
