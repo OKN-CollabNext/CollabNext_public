@@ -62,3 +62,6 @@ Desktop.ini
 # Other
 *.log
 
+#log files
+logs/
+

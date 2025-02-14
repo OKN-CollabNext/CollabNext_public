@@ -5,7 +5,7 @@ from datetime import datetime
 from logging.handlers import RotatingFileHandler
 
 import requests
-from flask import Flask, send_from_directory, request
+from flask import Flask, send_from_directory, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
 import mysql.connector
@@ -35,30 +35,41 @@ CORS(app)
 def setup_logger():
     """Configure logging with rotating file handler for all levels"""
     # Create logs directory if it doesn't exist
-    if not os.path.exists("logs"):
-        os.makedirs("logs")
+    log_path = "/home/LogFiles" if os.environ.get("WEBSITE_SITE_NAME") else "logs"
+    if not os.path.exists(log_path):
+        os.makedirs(log_path)
 
     # Configure logging format
     formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
-    # Create handlers for different log levels
+    # Create handlers for different log levels with different storage allocations
     handlers = {
         "debug": RotatingFileHandler(
-            "logs/debug.log", maxBytes=10*1024*1024, backupCount=5
+            os.path.join(log_path, "debug.log"),
+            maxBytes=15*1024*1024,  # 10MB
+            backupCount=3
         ),
         "info": RotatingFileHandler(
-            "logs/info.log", maxBytes=10*1024*1024, backupCount=5
+            os.path.join(log_path, "info.log"),
+            maxBytes=15*1024*1024,  # 10MB
+            backupCount=3
         ),
         "warning": RotatingFileHandler(
-            "logs/warning.log", maxBytes=10*1024*1024, backupCount=5
+            os.path.join(log_path, "warning.log"),
+            maxBytes=10*1024*1024,   # 5MB
+            backupCount=3
         ),
         "error": RotatingFileHandler(
-            "logs/error.log", maxBytes=10*1024*1024, backupCount=5
+            os.path.join(log_path, "error.log"),
+            maxBytes=5*1024*1024,   # 2MB
+            backupCount=3
         ),
         "critical": RotatingFileHandler(
-            "logs/critical.log", maxBytes=10*1024*1024, backupCount=5
+            os.path.join(log_path, "critical.log"),
+            maxBytes=2*1024*1024,   # 1MB
+            backupCount=3
         )
     }
 
@@ -1520,6 +1531,18 @@ def serve(path):
     
     app.logger.debug("Serving index.html for frontend routing")
     return send_from_directory(app.static_folder, 'index.html')
+
+@app.route('/get-institutions', methods=['GET'])
+def get_institutions():
+    """
+    Returns the contents of the institutions.csv file as JSON.
+    """
+    try:
+        with open('institutions.csv', 'r') as file:
+            institutions = file.read().split(',\n')
+        return jsonify(institutions=institutions)
+    except Exception as e:
+        return jsonify(error=str(e)), 500
 
 if __name__ == '__main__':
     app.logger.info("Starting Flask application")
