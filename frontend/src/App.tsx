@@ -21,17 +21,19 @@ import TopicSearch from './pages/TopicSearch';
 function App() {
   return (
     <ChakraProvider>
-      <Box maxHeight={{lg: '100vh'}}>
-        <Box display={{base: 'none', lg: 'block'}}>
+      <Box display='flex' flexDirection='column' minH='100vh' overflow='hidden'>
+        <Box flexShrink={0}>
+          <Box display={{base: 'none', lg: 'block'}}>
           <Navbar />
         </Box>
         <Box display={{lg: 'none'}}>
           <NavbarMobile />
         </Box>
+      </Box>
         <Box
-          height={{lg: 'calc(100vh - 31vh)'}}
-          maxHeight={{base: '100vh', lg: 'calc(100vh - 31vh)'}}
-          overflowY={'auto'}
+          flex={1}
+          overflowY="auto"
+          px={{ base: 2, lg: 4 }}
         >
           <Routes>
             <Route path='/' element={<Home />} />

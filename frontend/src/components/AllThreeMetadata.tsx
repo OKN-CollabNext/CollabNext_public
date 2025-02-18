@@ -1,10 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import { Box, Flex, Text } from '@chakra-ui/react';
 
 import { ResearchDataInterface } from '../utils/interfaces';
+import TopicClusterGraphComponent from './TopicClusterGraphComponent';
+import { TransformTopicClustersForOrb } from './TransformTopicCluster.js';
 
 const AllThreeMetadata = ({data}: {data: ResearchDataInterface}) => {
+
+  const [showTopicClusterGraph, setTopicClusterGraph] = useState(false);
+  const handleTopicClusterClick = () => {
+    setTopicClusterGraph(!showTopicClusterGraph);
+  }
+
   return (
     <Flex
       display={{base: 'block', lg: 'flex'}}
@@ -39,15 +47,13 @@ const AllThreeMetadata = ({data}: {data: ResearchDataInterface}) => {
         </a>
         <p>Total {data?.works_count} works</p>
         <p>Total {data?.cited_count} citations</p>
+
         <Box mt='0.4rem'>
           <Text fontSize={'17px'} fontWeight={'600'}>
-            Topic Clusters
+            <a style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={handleTopicClusterClick}>
+              Topic Clusters
+            </a>
           </Text>
-          <Box ml='2rem'>
-            {data?.topic_clusters?.map((cluster) => (
-              <Text mt='0.3rem'>{cluster}</Text>
-            ))}
-          </Box>
         </Box>
         <a target='_blank' rel='noreferrer' href={data?.open_alex_link}>
           View Institution on OpenAlex
@@ -63,7 +69,12 @@ const AllThreeMetadata = ({data}: {data: ResearchDataInterface}) => {
           View Researcher on OpenAlex
         </a>
       </Box>
-      <Box w={{lg: '64%'}} mt={{base: '.9rem', lg: 0}}>
+      {showTopicClusterGraph ? (
+        <Box mt='1rem' w={{ lg: '70%' }} mx='auto'>
+        <TopicClusterGraphComponent graphData={TransformTopicClustersForOrb(data, data?.topic_clusters)} />
+      </Box>
+      ) : (
+        <Box w={{lg: '64%'}} mt={{base: '.9rem', lg: 0}}>
         <Box display={'flex'} justifyContent={'space-between'}>
           <Text fontSize={'18px'} fontWeight={600} w='72%'>
             Work
@@ -85,6 +96,7 @@ const AllThreeMetadata = ({data}: {data: ResearchDataInterface}) => {
           ))}
         </Box>
       </Box>
+      )}
     </Flex>
   );
 };
