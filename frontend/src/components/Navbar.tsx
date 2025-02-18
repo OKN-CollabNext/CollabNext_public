@@ -9,7 +9,7 @@ const Navbar = () => {
       px='3rem'
       justifyContent={'space-between'}
       alignItems={'center'}
-      height='20vh'
+      height='15vh'
     >
       <Link to='/'>
         <Flex alignItems={'center'}>
