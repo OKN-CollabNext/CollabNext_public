@@ -4,6 +4,13 @@ import { Box, Flex, Text } from '@chakra-ui/react';
 
 import { ResearchDataInterface } from '../utils/interfaces';
 import MUPDataVisualizer from './MUPDataVisualizer';
+import { Organization, Thing, WithContext } from 'schema-dts';
+
+export function JsonLd<T extends Thing>(json: WithContext<T>): string {
+  return `<script type="application/ld+json">
+${JSON.stringify(json)}
+</script>`;
+}
 
 const InstitutionMetadata = ({
   data,
@@ -12,8 +19,29 @@ const InstitutionMetadata = ({
   data: ResearchDataInterface;
   setTopic: React.Dispatch<React.SetStateAction<string>>;
 }) => {
+  const structuredData: WithContext<Organization> = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": data?.institution_name,
+    "url": data?.institution_url,
+    "sameAs": [
+      data?.open_alex_link,
+      data?.ror_link,
+    ].filter((url): url is string => url !== null && url !== undefined),
+    "memberOf": data?.is_hbcu
+      ? {
+          "@type": "Organization",
+          "name": "Historically Black Colleges and Universities"
+        }
+      : undefined,
+    // TODO: Add more properties
+  };
+
   return (
     <Box>
+      <div
+        dangerouslySetInnerHTML={{ __html: JsonLd(structuredData) }}
+      />
       <Flex
         display={{base: 'block', lg: 'flex'}}
         justifyContent={'space-between'}
