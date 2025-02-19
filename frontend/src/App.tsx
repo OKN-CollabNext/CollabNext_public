@@ -1,7 +1,7 @@
 import React from 'react';
-import { Route, Routes } from 'react-router-dom';
+import {Route, Routes} from 'react-router-dom';
 
-import { Box, ChakraProvider } from '@chakra-ui/react';
+import {Box, ChakraProvider} from '@chakra-ui/react';
 
 import Footer from './components/Footer';
 import Navbar from './components/Navbar';
@@ -21,19 +21,17 @@ import TopicSearch from './pages/TopicSearch';
 function App() {
   return (
     <ChakraProvider>
-      <Box display='flex' flexDirection='column' minH='100vh' overflow='hidden'>
-        <Box flexShrink={0}>
-          <Box display={{base: 'none', lg: 'block'}}>
+      <Box maxHeight={{lg: '100vh'}}>
+        <Box display={{base: 'none', lg: 'block'}}>
           <Navbar />
         </Box>
         <Box display={{lg: 'none'}}>
           <NavbarMobile />
         </Box>
-      </Box>
         <Box
-          flex={1}
-          overflowY="auto"
-          px={{ base: 2, lg: 4 }}
+          height={{lg: 'calc(100vh - 23vh)'}}
+          maxHeight={{base: '100vh', lg: 'calc(100vh - 23vh)'}}
+          overflowY={'auto'}
         >
           <Routes>
             <Route path='/' element={<Home />} />

@@ -1,11 +1,11 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import {Link} from 'react-router-dom';
 
-import { Flex, Text } from '@chakra-ui/react';
+import {Flex, Text} from '@chakra-ui/react';
 
 const Footer = () => {
   return (
-    <Flex alignItems={'center'} justifyContent={'center'} height={'6vh'}>
+    <Flex alignItems={'center'} justifyContent={'center'} height={'11vh'}>
       {[
         {text: 'Contact Us', href: '/contact'},
         {text: 'Terms and Conditions', href: '/terms'},
@@ -15,7 +15,7 @@ const Footer = () => {
         <Text
           mt='0.5rem'
           key={text}
-          fontSize={{base: '8px', lg: '15px'}}
+          fontSize={{base: '8px', lg: '16px'}}
           mr={{base: '1.3rem', lg: '2.5rem'}}
           color='#000000'
         >
