@@ -1,7 +1,7 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import {Link} from 'react-router-dom';
 
-import { Flex, Image, Text } from '@chakra-ui/react';
+import {Flex, Image, Text} from '@chakra-ui/react';
 
 const Navbar = () => {
   return (
@@ -9,15 +9,15 @@ const Navbar = () => {
       px='3rem'
       justifyContent={'space-between'}
       alignItems={'center'}
-      height='15vh'
+      height='12vh'
     >
       <Link to='/'>
         <Flex alignItems={'center'}>
           <Image
             mr='.8rem'
             src='/favicon.png'
-            w='52px'
-            h='77px'
+            w='40px'
+            h='60px'
             objectFit={'cover'}
           />
           <Text

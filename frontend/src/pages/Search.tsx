@@ -1,18 +1,10 @@
 import '../styles/Search.css';
 
-import { useEffect, useRef, useState } from 'react';
-import { Circles } from 'react-loader-spinner';
-import { useSearchParams } from 'react-router-dom';
+import {useEffect, useRef, useState} from 'react';
+import {Circles} from 'react-loader-spinner';
+import {useSearchParams} from 'react-router-dom';
 
-import {
-	Box,
-	Button,
-	Checkbox,
-	Flex,
-	Input,
-	list,
-	Text,
-} from '@chakra-ui/react';
+import {Box, Button, Checkbox, Flex, Input, list, Text} from '@chakra-ui/react';
 
 import AllThreeMetadata from '../components/AllThreeMetadata';
 // import CytoscapeComponent from 'react-cytoscapejs';
@@ -24,8 +16,8 @@ import Suggested from '../components/Suggested';
 import TopicInstitutionMetadata from '../components/TopicInstitutionMetadata';
 import TopicMetadata from '../components/TopicMetadata';
 import TopicResearcherMetadata from '../components/TopicResearcherMetadata';
-import { baseUrl, handleAutofill, initialValue } from '../utils/constants';
-import { ResearchDataInterface, SearchType } from '../utils/interfaces';
+import {baseUrl, handleAutofill, initialValue} from '../utils/constants';
+import {ResearchDataInterface, SearchType} from '../utils/interfaces';
 
 const Search = () => {
   let [searchParams] = useSearchParams();
@@ -38,7 +30,7 @@ const Search = () => {
   const [universityName, setUniversityName] = useState(institution || '');
   const [universityName2, setUniversityName2] = useState('');
   const [topicType, setTopicType] = useState(topic || '');
-  const [institutionType, setInstitutionType] = useState(type || 'Education');
+  const [institutionType, setInstitutionType] = useState(type || '');
   const [researcherType, setResearcherType] = useState(researcher || '');
   const [researcherType2, setResearcherType2] = useState('');
   const [data, setData] = useState<ResearchDataInterface>(initialValue);
@@ -56,7 +48,19 @@ const Search = () => {
   const handleToggle = (value: string) => {
     setIsNetworkMap(value);
   };
-
+  const institutionTypes = [
+    'HBCU',
+    'AANAPISI',
+    'ANNH',
+    'Carnegie R1',
+    'Carnegie R2',
+    'Emerging',
+    'HSI',
+    'MSI',
+    'NASNTI',
+    'PBI',
+    'TCU',
+  ];
   const sendSearchRequest = (search: SearchType) => {
     const requestId = ++latestRequestId;
     fetch(`${baseUrl}/initial-search`, {
@@ -351,7 +355,14 @@ const Search = () => {
             onChange={(e) => setInstitutionType(e.target.value)}
             className='dropdown'
           >
-            <option value='Education'>HBCU</option>
+            <option style={{color: 'black'}} value=''>
+              Select an institution type
+            </option>
+            {institutionTypes.map((type) => (
+              <option style={{color: 'black'}} key={type} value={type}>
+                {type}
+              </option>
+            ))}
           </select>
           {/* <FormControl isInvalid={topicType && !researcherType ? true : false}> */}
           <input
