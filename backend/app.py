@@ -249,6 +249,7 @@ def initial_search():
   elif institution:
     results = get_institution_results(institution)
   elif researcher:
+    print(get_author_ids(researcher))
     results = get_researcher_result(researcher)
   return results
 
@@ -745,12 +746,13 @@ def list_given_institution(ror, name, id):
   graph : a graphical representation of the sorted_subfields.
   """
   final_subfield_count = {}
+  counter = 0
   headers = {'Accept': 'application/json'}
   response = requests.get(f'https://api.openalex.org/authors?per-page=200&filter=last_known_institutions.ror:{ror}&cursor=*', headers=headers)
   data = response.json()
   authors = data['results']
   next_page = data['meta']['next_cursor']
-  while next_page is not None:
+  while next_page is not None and counter < 10:
     for a in authors:
       topics = a['topics']
       for topic in topics:
@@ -758,6 +760,7 @@ def list_given_institution(ror, name, id):
           final_subfield_count[topic['subfield']['display_name']] = final_subfield_count[topic['subfield']['display_name']] + 1
         else:
           final_subfield_count[topic['subfield']['display_name']] = 1
+    counter += 1
     response = requests.get(f'https://api.openalex.org/authors?per-page=200&filter=last_known_institutions.ror:{ror}&cursor=' + next_page, headers=headers)
     data = response.json()
     authors = data['results']
