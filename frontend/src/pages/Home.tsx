@@ -57,7 +57,7 @@ const Home = () => {
   console.log(suggestedTopics);
   return (
     <Box w={{lg: '700px'}} mx='auto' mt='1rem'>
-      {/* <Box
+      <Box
         background='linear-gradient(180deg, #003057 0%, rgba(0, 0, 0, 0.5) 100%)'
         borderRadius={{lg: '6px'}}
         px={{base: '1.5rem', lg: '2.5rem'}}
@@ -71,13 +71,14 @@ const Home = () => {
         >
           {DESCRIPTION_TEXT}
         </Text>
-      </Box> */}
+      </Box>
 
       <Text
         pl={{base: '1rem', lg: 0}}
         fontFamily='DM Sans'
         fontSize={{lg: '22px'}}
         color='#000000'
+        marginTop={{lg:'50px'}}
       >
         What are you searching for?
       </Text>
