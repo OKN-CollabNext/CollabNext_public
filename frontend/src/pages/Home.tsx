@@ -42,7 +42,7 @@ const Home = () => {
 
   console.log(suggestedTopics);
   return (
-    <Box w={{lg: '700px'}} mx='auto' mt='1.5rem'>
+    <Box w={{lg: '800px'}} mx='auto'>
       <Box
         background='linear-gradient(180deg, #003057 0%, rgba(0, 0, 0, 0.5) 100%)'
         borderRadius={{lg: '6px'}}
@@ -72,8 +72,8 @@ const Home = () => {
       <Box
         background='linear-gradient(180deg, #003057 0%, rgba(0, 0, 0, 0.5) 100%)'
         borderRadius={{lg: '6px'}}
-        px={{base: '1.5rem', lg: '2.5rem'}}
-        py={{base: '1.5rem', lg: '2rem'}}
+        px={{base: '2rem', lg: '2rem'}}
+        py={{base: '1rem', lg: '1.5rem'}}
         mt='1rem'
       >
         <Formik
