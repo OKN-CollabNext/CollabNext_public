@@ -1,0 +1,29 @@
+# Python cache
+__pycache__
+*.pyc
+
+# Node_modules (if any were ever placed here)
+node_modules
+
+# Log files
+npm-debug.log
+yarn-error.log
+
+# Docker & Git
+Dockerfile*
+.dockerignore
+.git
+.gitignore
+
+# Environment config
+.env
+.env.*  # e.g. .env.production, etc.
+
+# Build/Dist output
+build
+dist
+
+# OS/editor junk
+*.swp
+*.DS_Store
+Thumbs.db

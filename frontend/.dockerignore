@@ -1,0 +1,25 @@
+# Node modules
+node_modules
+
+# Log files
+npm-debug.log
+yarn-error.log
+
+# Docker & Git
+Dockerfile*
+.dockerignore
+.git
+.gitignore
+
+# Environment config
+.env
+.env.*  # e.g. .env.production, etc.
+
+# Build output
+build
+dist
+
+# OS-specific or editor-specific files
+*.swp
+*.DS_Store
+Thumbs.db

@@ -1,0 +1,13 @@
+FROM mysql:8.0
+
+# Expose the default MySQL port
+EXPOSE 3306
+
+# Copy the SQL script into the initialization directory
+COPY disable-host-cache.sql /docker-entrypoint-initdb.d/
+
+# Copy custom MySQL configuration file (this file will be loaded automatically)
+COPY my.cnf /etc/mysql/conf.d/
+
+# The base image automatically runs scripts in /docker-entrypoint-initdb.d/
+# on first initialization.

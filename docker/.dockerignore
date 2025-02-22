@@ -1,0 +1,17 @@
+Dockerfile*
+.dockerignore
+
+.env
+.env.*
+
+# Ignore Git
+.git
+.gitignore
+
+# Any log files
+*.log
+
+# OS/editor junk
+*.DS_Store
+*.swp
+Thumbs.db
