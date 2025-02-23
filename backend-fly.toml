@@ -1,9 +1,9 @@
-app = "collabnext-public-backend"  # unique name
+app = "collabnext-aastika-chinar-dean-public-backend"  # unique name
 
 primary_region = "ord"
 
 [build]
-  dockerfile = "./docker/Dockerfile.backend"
+  dockerfile = "./backend/Dockerfile.backend"
 
 [http_service]
   internal_port = 5000

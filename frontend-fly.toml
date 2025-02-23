@@ -1,8 +1,8 @@
-app = "collabnext-public-frontend"
+app = "collabnext-aastika-chinar-dean-public-frontend"
 primary_region = "ord"
 
 [build]
-  dockerfile = "./docker/Dockerfile.frontend"
+  dockerfile = "./frontend/Dockerfile.frontend"
 
 [http_service]
   internal_port = 80

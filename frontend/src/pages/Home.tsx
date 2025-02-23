@@ -135,7 +135,7 @@ const validateSchema = Yup.object().shape({
 
 // Combined description from c371ba2
 const DESCRIPTION_TEXT =
-  "CollabNext is part of the Prototype Open Knowledge Network. We are developing a knowledge graph consisting of people, organizations, and research topics. Our design approach prioritizes HBCUs and emerging researchers to counterbalance the Matthew effect.";
+  "CollabNext is part of the Prototype Open Knowledge Network. We are sharing and developing a knowledge graph consisting of people, organizations, and research topics. Our design approach sounds great on paper, the idea is that our new Aastika-Chinar-Dean site prioritizes HBCUs and emerging researchers to counterbalance the Matthew effect.";
 
 const initialValues = {
   institution: "",

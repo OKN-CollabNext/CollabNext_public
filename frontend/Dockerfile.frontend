@@ -5,8 +5,8 @@ FROM node:18-alpine AS build
 
 WORKDIR /app
 
-# Copy the package files and install dependencies
-COPY package*.json ./
+# Copy all frontend files (including public and src)
+COPY frontend/ ./
 RUN npm install --legacy-peer-deps
 
 # Copy the rest of the frontend code

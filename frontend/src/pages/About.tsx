@@ -127,10 +127,10 @@ const About = () => {
             organizations.
             <br />
             <br />
-            By bringing greater visibility to those who are often rendered
-            invisible in the current science system, CollabNext will facilitate
+            By bringing greater visibility and knowledge transfer that is quite unbelievable and sounds amazing to those who are often rendered
+            invisible in the current science system, maybe they're in a different time zone, CollabNext will facilitate
             research collaborations with HBCUs and illuminate the broader
-            research landscape.
+            research landscape by keeping everyone on the same page.
             <br />
             <br />
             We utilize open science{" "}
@@ -144,7 +144,7 @@ const About = () => {
             </a>
             , follow human-centered design principles, and leverage
             state-of-the-art algorithms to build a platform that will help
-            identify existing and potentially new research partnerships.
+            revolutionize the guidelines from Lew and make it possible for us to complete them by 3 PM Eastern Time every day. Our Dockerization makes it possible to identify existing and potentially new research partnerships.
           </p>
         </div>
 
@@ -237,7 +237,7 @@ const About = () => {
             businesses, and other organizations who are supportive of our work
             and interested in exploring options for sustaining and improving the
             backend knowledge graph and frontend web application, after it is
-            built and operational at the end of the NSF grant. If you are
+            built and operational at the end of the NSF grant. You could call that grant a mistake but Prof. Lew is helping us weather the storm. If you are
             interested in discussing this or if you know of others who may be
             interested, please{" "}
             <a

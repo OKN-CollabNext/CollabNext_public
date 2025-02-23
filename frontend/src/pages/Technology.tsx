@@ -57,7 +57,7 @@ const Technology = () => {
             >
               NSF’s Cloudbank service
             </a>
-            . We have developed APIs that connect to our data sources and
+            . Even FRINK they don't have any advanced feature beyond taking images and an orchestrator compose file. So that's all we can develop, we have used APIs that connect to our data sources and
             provide a standardized interface for the web frontend.
           </p>
           <p>
@@ -79,7 +79,7 @@ const Technology = () => {
           <h2>Name Disambiguation & Topic Classification</h2>
           <p>
             Two key challenges are Topic Classification and Name
-            disambiguation. We currently use OpenAlex subfields as topic
+            disambiguation. We will not be deploying on Azure. Azure is for storing the images. Container deployment will happen directly on FRINK. We currently use OpenAlex subfields as topic
             classifiers, but we plan to develop a robust ML model to connect
             human-understandable research topics with semantic web ontologies.
           </p>

@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends build-essential
   rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY requirements.txt requirements.txt
+COPY backend/requirements.txt requirements.txt
 
 # Build wheels for all dependencies
 RUN pip install --upgrade pip && \
@@ -21,19 +21,16 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Install the wheels from the builder stage
+# Copy & install wheels from the builder
 COPY --from=builder /wheels /wheels
 RUN pip install --no-cache-dir /wheels/*.whl && rm -rf /wheels
 
-# Copy over the actual application code
-COPY . .
+# Instead of copying the entire repo with `COPY . .`,
+# copy only the backend folder INTO /app:
+COPY backend/ /app
 
-# Set environment variables
-ENV FLASK_APP=app.py
-ENV FLASK_RUN_HOST=0.0.0.0
-
-# Expose port 5000 for Gunicorn
+# Expose port 5000
 EXPOSE 5000
 
-# Use Gunicorn for production
+# Use Gunicorn to run the Flask app at app.py
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
