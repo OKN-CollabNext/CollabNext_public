@@ -864,9 +864,10 @@ def list_given_institution(ror, name, id):
     data = response.json()
     authors = data['results']
     next_page = data['meta']['next_cursor']
+    counter = 0
     
     app.logger.debug("Processing authors and their topics")
-    while next_page is not None:
+    while next_page is not None and counter < 10:
         for a in authors:
             topics = a['topics']
             for topic in topics:
@@ -878,6 +879,7 @@ def list_given_institution(ror, name, id):
         data = response.json()
         authors = data['results']
         next_page = data['meta']['next_cursor']
+        counter += 1
     
     sorted_subfields = sorted([(k, v) for k, v in final_subfield_count.items() if v > 5], key=lambda x: x[1], reverse=True)
     app.logger.info(f"Found {len(sorted_subfields)} subfields with more than 5 authors")
