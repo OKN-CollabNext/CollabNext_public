@@ -71,7 +71,7 @@ const Home = () => {
         >
           {DESCRIPTION_TEXT}
         </Text>
-      </Box> */}
+      </Box>
 
       <Text
         pl={{base: '1rem', lg: 0}}
