@@ -1,1 +1,12 @@
+#!/usr/bin/env bash
+
+# 1. Here's how to run tests with coverage, producing both HTML and XML (JUnit) reports:
+echo "Running tests with coverage..."
+pytest --cov=backend \
+       --cov-report=xml \
+       --cov-report=html \
+       --junitxml=pytest_junit.xml
+
+# 2. Then start the Gunicorn server:
+echo "Starting gunicorn server..."
 gunicorn --bind=0.0.0.0 --workers=4 app:app

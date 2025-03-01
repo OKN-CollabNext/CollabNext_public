@@ -1,3 +1,5 @@
+# /Users/deangladish/CollabNext_public/backend/requirements.txt
+
 Flask==2.2.2
 Flask-Cors
 gunicorn
@@ -10,3 +12,5 @@ pandas
 psycopg2
 pytest
 pytest-cov
+requests-mock
+responses
