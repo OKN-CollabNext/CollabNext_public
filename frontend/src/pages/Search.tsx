@@ -20,18 +20,17 @@ import {baseUrl, handleAutofill, initialValue} from '../utils/constants';
 import {ResearchDataInterface, SearchType} from '../utils/interfaces';
 
 const Search = () => {
-  let [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+
   // const cyRef = React.useRef<cytoscape.Core | undefined>();
-  const institution = searchParams.get('institution');
-  const type = searchParams.get('type');
-  const topic = searchParams.get('topic');
-  const researcher = searchParams.get('researcher');
+  const universityName = searchParams.get('institution') || '';
+  const topicType = searchParams.get('topic') || '';
+  const institutionType = searchParams.get('type') || '';
+  const researcherType = searchParams.get('researcher') || '';
+
   const [isNetworkMap, setIsNetworkMap] = useState('list');
-  const [universityName, setUniversityName] = useState(institution || '');
+  //TODO: Filter out universityName2 & researcherType
   const [universityName2, setUniversityName2] = useState('');
-  const [topicType, setTopicType] = useState(topic || '');
-  const [institutionType, setInstitutionType] = useState(type || '');
-  const [researcherType, setResearcherType] = useState(researcher || '');
   const [researcherType2, setResearcherType2] = useState('');
   const [data, setData] = useState<ResearchDataInterface>(initialValue);
   const [isLoading, setIsLoading] = useState(false);
@@ -208,7 +207,7 @@ const Search = () => {
       (topicType && universityName)
     ) {
       const search =
-        topicType && researcherType
+      topicType && researcherType
           ? 'topic-researcher'
           : researcherType && universityName
           ? 'researcher-institution'
@@ -271,7 +270,13 @@ const Search = () => {
 
   useEffect(() => {
     handleSearch();
-  }, [universityName, institutionType, topicType, researcherType]);
+  }, [searchParams]);
+
+  const handleFilterChange = (key: string, value: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set(key, value);
+    setSearchParams(newParams);
+  };
 
   return (
     <Box>
@@ -294,7 +299,7 @@ const Search = () => {
             value={universityName}
             list='institutions'
             onChange={(e) => {
-              setUniversityName(e.target.value);
+              handleFilterChange('institution', e.target.value);
               handleAutofill(
                 e.target.value,
                 false,
@@ -316,12 +321,12 @@ const Search = () => {
                 onChange={(e) => {
                   setUniversityName2(e.target.value);
                   handleAutofill(
-                    e.target.value,
-                    false,
-                    setSuggestedTopics,
-                    setSuggestedInstitutions,
-                  );
-                }}
+                  e.target.value,
+                  false,
+                  setSuggestedTopics,
+                  setSuggestedInstitutions,
+              );
+            }}
                 placeholder={'Another University'}
                 className='textbox'
                 // disabled={isLoading}
@@ -336,13 +341,13 @@ const Search = () => {
             type='text'
             value={topicType}
             onChange={(e) => {
-              setTopicType(e.target.value);
+              handleFilterChange('topic', e.currentTarget.value);
               handleAutofill(
-                e.target.value,
-                true,
-                setSuggestedTopics,
-                setSuggestedInstitutions,
-              );
+              e.target.value,
+              true,
+              setSuggestedTopics,
+              setSuggestedInstitutions,
+            );
             }}
             list='topics'
             placeholder='Type Topic'
@@ -352,7 +357,7 @@ const Search = () => {
           <Suggested suggested={suggestedTopics} institutions={false} />
           <select
             value={institutionType}
-            onChange={(e) => setInstitutionType(e.target.value)}
+            onChange={(e) => handleFilterChange('type', e.target.value)}
             className='dropdown'
           >
             <option style={{color: 'black'}} value=''>
@@ -368,7 +373,7 @@ const Search = () => {
           <input
             type='text'
             value={researcherType}
-            onChange={(e) => setResearcherType(e.target.value)}
+            onChange={(e) => handleFilterChange('researcher', e.target.value)}
             placeholder='Type Researcher'
             className='textbox'
             // disabled={isLoading}
@@ -510,30 +515,30 @@ const Search = () => {
               {/* <img src={NetworkMap} alt='Network Map' /> */}
               <GraphComponent
                 graphData={data?.graph}
-                setInstitution={setUniversityName}
-                setTopic={setTopicType}
-                setResearcher={setResearcherType}
+                setInstitution={(value: string) => handleFilterChange('institution', value)}
+                setTopic={(value: string) => handleFilterChange('topic', value)}
+                setResearcher={(value: string) => handleFilterChange('researcher', value)}
               />
             </div>
           ) : isNetworkMap === 'list' ? (
             <div>
               {data?.search === 'institution' ? (
-                <InstitutionMetadata data={data} setTopic={setTopicType} />
+                <InstitutionMetadata data={data} setTopic={(value) => handleFilterChange('topic', value)}/>
               ) : data?.search === 'topic' ? (
-                <TopicMetadata data={data} setInstitution={setUniversityName} />
+                <TopicMetadata data={data} setInstitution={(value) => handleFilterChange('institution', value)} />
               ) : data?.search === 'researcher' ? (
-                <ResearcherMetadata data={data} setTopic={setTopicType} />
+                <ResearcherMetadata data={data} setTopic={(value) => handleFilterChange('topic', value)}/>
               ) : data?.search === 'researcher-institution' ? (
                 <InstitutionResearcherMetaData
-                  data={data}
-                  setTopic={setTopicType}
+                  data={data} 
+                  setTopic={(value) => handleFilterChange('topic', value)}
                 />
               ) : data?.search === 'topic-researcher' ? (
                 <TopicResearcherMetadata data={data} />
               ) : data?.search === 'topic-institution' ? (
                 <TopicInstitutionMetadata
                   data={data}
-                  setResearcher={setResearcherType}
+                  setResearcher={(value) => handleFilterChange('researcher', value)}
                 />
               ) : (
                 <AllThreeMetadata data={data} />

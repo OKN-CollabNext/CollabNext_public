@@ -12,7 +12,7 @@ const TopicMetadata = ({
   setInstitution,
 }: {
   data: ResearchDataInterface;
-  setInstitution: React.Dispatch<React.SetStateAction<string>>;
+  setInstitution: (value: string) => void;
 }) => {
   const [showTopicClusterGraph, setTopicClusterGraph] = useState(false);
   const handleTopicClusterClick = () => {

@@ -9,7 +9,7 @@ const InstitutionMetadata = ({
   setTopic,
 }: {
   data: ResearchDataInterface;
-  setTopic: React.Dispatch<React.SetStateAction<string>>;
+  setTopic: (value: string) => void;
 }) => {
   return (
     <Flex

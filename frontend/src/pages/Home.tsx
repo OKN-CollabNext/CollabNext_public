@@ -93,11 +93,11 @@ const Home = () => {
           initialValues={initialValues}
           enableReinitialize
           validationSchema={validateSchema}
-          onSubmit={async ({institution, type, topic, researcher}) => {
-            console.log(`institution: ${institution}`);
-            console.log(`type: ${type}`);
-            console.log(`topic: ${topic}`);
-            console.log(`researcher: ${researcher}`);
+          onSubmit={async (values) => {
+            const params = new URLSearchParams(values);
+            console.log(`type: ${values.type}`);
+            console.log(`topic: ${values.topic}`);
+            console.log(`researcher: ${values.researcher}`);
             // if (!institution && !topic && !researcher) {
             //   toast({
             //     title: 'Error',
@@ -109,9 +109,7 @@ const Home = () => {
             //   });
             //   return;
             // }
-            navigate(
-              `search?institution=${institution}&type=${type}&topic=${topic}&researcher=${researcher}`,
-            );
+            navigate(`search?${params.toString()}`);
           }}
         >
           {(props) => (
