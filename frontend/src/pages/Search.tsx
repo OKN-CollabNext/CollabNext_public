@@ -2,7 +2,7 @@ import '../styles/Search.css';
 
 import {useEffect, useRef, useState} from 'react';
 import {Circles} from 'react-loader-spinner';
-import {useNavigate, useSearchParams} from 'react-router-dom';
+import {useNavigate} from 'react-router-dom';
 
 import {Box, Button, Checkbox, Flex, Input, list, Text} from '@chakra-ui/react';
 
@@ -20,7 +20,7 @@ import {baseUrl, handleAutofill, initialValue} from '../utils/constants';
 import {ResearchDataInterface, SearchType} from '../utils/interfaces';
 
 const Search = () => {
-  let [searchParams] = useSearchParams();
+  const searchParams = new URLSearchParams(window.location.search);
   // const cyRef = React.useRef<cytoscape.Core | undefined>();
   const institution = searchParams.get('institution');
   const type = searchParams.get('type');
@@ -45,7 +45,7 @@ const Search = () => {
   const navigate = useNavigate();
   // const toast = useToast();
 
-  let latestRequestId = 0;
+  // let latestRequestId = 0;
   const handleToggle = (value: string) => {
     setIsNetworkMap(value);
   };
@@ -62,13 +62,24 @@ const Search = () => {
     'PBI',
     'TCU',
   ];
-  const sendSearchRequest = (search: SearchType) => {
-    const requestId = ++latestRequestId;
+
+  const sendSearchRequest = (
+    search: SearchType,
+    {
+      universityName,
+      institutionType,
+      topicType,
+      researcherType,
+    }: {
+      universityName: string;
+      institutionType: string;
+      topicType: string;
+      researcherType: string;
+    },
+  ) => {
     fetch(`${baseUrl}/initial-search`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
         organization: universityName,
         type: institutionType,
@@ -182,61 +193,90 @@ const Search = () => {
                 topic_clusters: data?.metadata?.topic_clusters,
                 search,
               };
-        if (requestId === latestRequestId) {
-          setData({
-            ...initialValue,
-            ...dataObj,
-          });
-          setIsLoading(false);
-        }
+        setData({
+          ...initialValue,
+          ...dataObj,
+        });
+        setIsLoading(false);
       })
       .catch((error) => {
-        if (requestId === latestRequestId) {
-          setData(initialValue);
-          setIsLoading(false);
-        }
+        setData(initialValue);
+        setIsLoading(false);
         console.log(error);
       });
   };
 
-  const handleSearch = () => {
+  const handleSearch = (
+    newUniversityName: string,
+    newInstitutionType: string,
+    newTopicType: string,
+    newResearcherType: string,
+  ) => {
     setIsLoading(true);
-    if (topicType && universityName && researcherType) {
-      sendSearchRequest('all-three-search');
+    const params = new URLSearchParams(window.location.search);
+    const universityName = params.get('institution') || '';
+    const institutionType = params.get('type') || '';
+    const topicType = params.get('topic') || '';
+    const researcherType = params.get('researcher') || '';
+    if (
+      universityName !== newUniversityName ||
+      institutionType !== newInstitutionType ||
+      topicType !== newTopicType ||
+      researcherType !== newResearcherType
+    ) {
+      if (newUniversityName) params.set('institution', newUniversityName);
+      if (newInstitutionType) params.set('type', newInstitutionType);
+      if (newTopicType) params.set('topic', newTopicType);
+      if (newResearcherType) params.set('researcher', newResearcherType);
+      navigate(`?${params.toString()}`, {replace: false});
+    }
+    // Determine search type and call sendSearchRequest using the passed values.
+    if (newTopicType && newUniversityName && newResearcherType) {
+      sendSearchRequest('all-three-search', {
+        universityName: newUniversityName,
+        institutionType: newInstitutionType,
+        topicType: newTopicType,
+        researcherType: newResearcherType,
+      });
     } else if (
-      (topicType && researcherType) ||
-      (researcherType && universityName) ||
-      (topicType && universityName)
+      (newTopicType && newResearcherType) ||
+      (newResearcherType && newUniversityName) ||
+      (newTopicType && newUniversityName)
     ) {
       const search =
-        topicType && researcherType
+        newTopicType && newResearcherType
           ? 'topic-researcher'
-          : researcherType && universityName
+          : newResearcherType && newUniversityName
           ? 'researcher-institution'
           : 'topic-institution';
-      sendSearchRequest(search);
-    } else if (topicType || universityName || researcherType) {
-      const search = topicType
+      sendSearchRequest(search, {
+        universityName: newUniversityName,
+        institutionType: newInstitutionType,
+        topicType: newTopicType,
+        researcherType: newResearcherType,
+      });
+    } else if (newTopicType || newUniversityName || newResearcherType) {
+      const search = newTopicType
         ? 'topic'
-        : universityName
+        : newUniversityName
         ? 'institution'
         : 'researcher';
-      sendSearchRequest(search);
+      sendSearchRequest(search, {
+        universityName: newUniversityName,
+        institutionType: newInstitutionType,
+        topicType: newTopicType,
+        researcherType: newResearcherType,
+      });
     } else {
+      // Default graph request
       fetch(`${baseUrl}/get-default-graph`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: null,
       })
         .then((res) => res.json())
         .then((data) => {
-          console.log(data);
-          setData({
-            ...initialValue,
-            graph: data?.graph,
-          });
+          setData({...initialValue, graph: data?.graph});
           setIsNetworkMap('graph');
           setIsLoading(false);
         })
@@ -269,32 +309,37 @@ const Search = () => {
       }
     }
   };
+
   useEffect(() => {
     const handlePopState = () => {
       const params = new URLSearchParams(window.location.search);
-      setUniversityName(params.get("institution") || "");
-      setInstitutionType(params.get("type") || "");
-      setTopicType(params.get("topic") || "");
-      setResearcherType(params.get("researcher") || "");
+      const newUniversityName = params.get('institution') || '';
+      const newInstitutionType = params.get('type') || '';
+      const newTopicType = params.get('topic') || '';
+      const newResearcherType = params.get('researcher') || '';
+
+      // Update states if needed (for UI inputs)
+      setUniversityName(newUniversityName);
+      setInstitutionType(newInstitutionType);
+      setTopicType(newTopicType);
+      setResearcherType(newResearcherType);
+
+      // Immediately use the extracted values for a search.
+      handleSearch(
+        newUniversityName,
+        newInstitutionType,
+        newTopicType,
+        newResearcherType,
+      );
     };
 
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   useEffect(() => {
-    console.log("Searching")
-      const params = new URLSearchParams();
-      if (universityName) params.set("institution", universityName);
-      if (institutionType) params.set("type", institutionType);
-      if (topicType) params.set("topic", topicType);
-      if (researcherType) params.set("researcher", researcherType);
-  
-      if (params.toString() !== searchParams.toString()) {
-        navigate(`?${params.toString()}`, { replace: false }); 
-      }
-      handleSearch(); 
-  }, [universityName, institutionType, topicType, researcherType]);
+    handleSearch(universityName, institutionType, topicType, researcherType);
+  }, []);
 
   return (
     <Box>
@@ -311,7 +356,18 @@ const Search = () => {
         ))}
       </Flex>
       <div className='main-content'>
-        <div className='sidebar'>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSearch(
+              universityName,
+              institutionType,
+              topicType,
+              researcherType,
+            );
+          }}
+          className='sidebar'
+        >
           <input
             type='text'
             value={universityName}
@@ -410,17 +466,6 @@ const Search = () => {
             Researcher must be provided when Topic is
           </FormErrorMessage>
         </FormControl> */}
-          {/* <Button
-          width='100%'
-          marginTop='10px'
-          backgroundColor='transparent'
-          color='white'
-          border='2px solid white'
-          isLoading={isLoading}
-          onClick={() => handleSearch()}
-        >
-          Search
-        </Button> */}
           <Box mt='.6rem'>
             <Flex justifyContent={'space-between'}>
               {[
@@ -499,11 +544,23 @@ const Search = () => {
                 </Flex>
               ))}
             </Box>
+            <Button
+              width='100%'
+              marginTop='10px'
+              backgroundColor='transparent'
+              color='white'
+              border='2px solid white'
+              isLoading={isLoading}
+              type='submit'
+            >
+              Search
+            </Button>
           </Box>
           {/* <button className='button' onClick={handleToggle}>
             {isNetworkMap ? 'See List Map' : 'See Network Map'}
           </button> */}
-        </div>
+        </form>
+
         <div className='content'>
           {isLoading ? (
             <Box
