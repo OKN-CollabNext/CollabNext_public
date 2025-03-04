@@ -109,9 +109,12 @@ const Home = () => {
             //   });
             //   return;
             // }
-            navigate(
-              `search?institution=${institution}&type=${type}&topic=${topic}&researcher=${researcher}`,
-            );
+            const params = new URLSearchParams(window.location.search);
+            if (institution) params.set('institution', institution);
+            if (type) params.set('type', type);
+            if (topic) params.set('topic', topic);
+            if (researcher) params.set('researcher', researcher);
+            navigate(`search?${params.toString()}`);
           }}
         >
           {(props) => (
