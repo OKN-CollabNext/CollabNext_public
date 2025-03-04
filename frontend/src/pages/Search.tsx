@@ -2,7 +2,7 @@ import '../styles/Search.css';
 
 import {useEffect, useRef, useState} from 'react';
 import {Circles} from 'react-loader-spinner';
-import {useSearchParams} from 'react-router-dom';
+import {useNavigate, useSearchParams} from 'react-router-dom';
 
 import {Box, Button, Checkbox, Flex, Input, list, Text} from '@chakra-ui/react';
 
@@ -42,6 +42,7 @@ const Search = () => {
   const [suggestedInstitutions, setSuggestedInstitutions] = useState([]);
   const [suggestedTopics, setSuggestedTopics] = useState([]);
 
+  const navigate = useNavigate();
   // const toast = useToast();
 
   let latestRequestId = 0;
@@ -268,9 +269,31 @@ const Search = () => {
       }
     }
   };
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      setUniversityName(params.get("institution") || "");
+      setInstitutionType(params.get("type") || "");
+      setTopicType(params.get("topic") || "");
+      setResearcherType(params.get("researcher") || "");
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   useEffect(() => {
-    handleSearch();
+    console.log("Searching")
+      const params = new URLSearchParams();
+      if (universityName) params.set("institution", universityName);
+      if (institutionType) params.set("type", institutionType);
+      if (topicType) params.set("topic", topicType);
+      if (researcherType) params.set("researcher", researcherType);
+  
+      if (params.toString() !== searchParams.toString()) {
+        navigate(`?${params.toString()}`, { replace: false }); 
+      }
+      handleSearch(); 
   }, [universityName, institutionType, topicType, researcherType]);
 
   return (
