@@ -1,3 +1,5 @@
+import coordinatesData from "../data/coordinates.json";
+
 export const baseUrl =
   process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
 
@@ -106,6 +108,7 @@ export const initialValue = {
   orcid_link: '',
   researcher_open_alex_link: '',
   topic_open_alex_link: '',
+  coordinates: coordinatesData
 };
 
 export const handleAutofill = (
