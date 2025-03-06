@@ -24,8 +24,8 @@ import Suggested from '../components/Suggested';
 import TopicInstitutionMetadata from '../components/TopicInstitutionMetadata';
 import TopicMetadata from '../components/TopicMetadata';
 import TopicResearcherMetadata from '../components/TopicResearcherMetadata';
-import { baseUrl, handleAutofill, initialValue } from '../utils/constants';
-import { ResearchDataInterface, SearchType } from '../utils/interfaces';
+import { baseUrl, handleAutofill, initialValue, initialInstitutionDesignationsValues } from '../utils/constants';
+import { ResearchDataInterface, SearchType, InstitutionDesignations } from '../utils/interfaces';
 
 const Search = () => {
   let [searchParams] = useSearchParams();
@@ -42,6 +42,7 @@ const Search = () => {
   const [researcherType, setResearcherType] = useState(researcher || '');
   const [researcherType2, setResearcherType2] = useState('');
   const [data, setData] = useState<ResearchDataInterface>(initialValue);
+  const [institutionDesignations, setInstitutionDesignations] = useState<InstitutionDesignations[]>([initialInstitutionDesignationsValues]);
   const [isLoading, setIsLoading] = useState(false);
   const [isAddOrgChecked, setIsAddOrgChecked] = useState(false);
   const [orgList, setOrgList] = useState<File | null>(null);
@@ -194,10 +195,29 @@ const Search = () => {
       });
   };
 
+  const institutionDesignationSearch = (universityName: string) => {
+    fetch(`${baseUrl}/institutions-designations`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ institution_name:  universityName }),
+    })
+      .then(res => res.json())
+      .then((data) => {
+        console.log(data);
+        setInstitutionDesignations(data);
+      })
+      .catch((error) => {
+        console.log(error);
+        setInstitutionDesignations([initialInstitutionDesignationsValues]);
+        setIsLoading(false);
+      });
+  }
+
   const handleSearch = () => {
     setIsLoading(true);
     if (topicType && universityName && researcherType) {
       sendSearchRequest('all-three-search');
+      institutionDesignationSearch(universityName);
     } else if (
       (topicType && researcherType) ||
       (researcherType && universityName) ||
@@ -217,6 +237,7 @@ const Search = () => {
         ? 'institution'
         : 'researcher';
       sendSearchRequest(search);
+      institutionDesignationSearch(universityName);
     } else {
       fetch(`${baseUrl}/get-default-graph`, {
         method: 'POST',
@@ -507,7 +528,7 @@ const Search = () => {
           ) : isNetworkMap === 'list' ? (
             <div>
               {data?.search === 'institution' ? (
-                <InstitutionMetadata data={data} setTopic={setTopicType} />
+                <InstitutionMetadata data={data} setTopic={setTopicType} institutionDesignations={institutionDesignations[0]} />
               ) : data?.search === 'topic' ? (
                 <TopicMetadata data={data} setInstitution={setUniversityName} />
               ) : data?.search === 'researcher' ? (

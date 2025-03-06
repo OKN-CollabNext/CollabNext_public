@@ -29,3 +29,17 @@ export interface ResearchDataInterface {
   topic_open_alex_link: string;
   search?: SearchType;
 }
+
+export interface InstitutionDesignations {
+  msi_designation : string;
+  is_r1 : boolean;
+  is_r2 : boolean;
+  is_hbcu: boolean,
+  is_tcu : boolean;
+  is_non_msi : boolean;
+  is_aanapisi: boolean;
+  is_pbi : boolean;
+  is_hsi : boolean;
+  is_nasnti : boolean;
+  is_aanh : boolean;
+}

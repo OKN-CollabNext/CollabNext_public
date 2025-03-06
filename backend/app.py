@@ -1279,6 +1279,47 @@ def query_SQL_endpoint(connection, query):
     except Error as e:
         app.logger.error(f"SQL query failed: {str(e)}")
 
+def fetch_institutions_designations(institution_name):
+    """
+    Returns a dictionary with the following keys:
+        institution_name: String
+        msi_designation: String
+        is_r1: Boolean
+        is_r2: Boolean
+        is_hsi: Boolean
+        is_pbi: Boolean
+        is_tcu: Boolean
+        is_annh: Boolean
+        is_hbcu: Boolean
+        is_nasnti: Boolean
+        is_non_msi: Boolean
+        is_aanapisi: Boolean
+    """
+    query = """SELECT get_institutions_designations(%s);"""
+    app.logger.debug(f"Executing SQL query to fetch institution designations for: {institution_name}")
+    results = execute_query(query, (institution_name,))
+    if results:
+        app.logger.debug(f"Fetched the following institution designations for {institution_name}: {results[0][0]['data'][0]}")
+        return results[0][0]['data'][0]
+    app.logger.warning(f"No institution designations found for {institution_name}")
+    return {}
+
+@app.route('/institutions-designations', methods=['POST'])
+def get_institutions_designations():
+    data = request.json
+    if not data or 'institution_name' not in data:
+        app.logger.warning(f"Failed to get the institution name")
+        return {}
+
+    institution_name = data['institution_name']
+    app.logger.debug(f"Processing institution designations for: {institution_name}")
+    result = fetch_institutions_designations(institution_name)
+
+    if result:
+        return jsonify(result)
+    else:
+        return {}
+
 @app.route('/autofill-institutions', methods=['POST'])
 def autofill_institutions():
     """

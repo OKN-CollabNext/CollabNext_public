@@ -1,3 +1,5 @@
+import { InstitutionDesignations } from "./interfaces";
+
 export const baseUrl =
   process.env.REACT_APP_BASE_URL || 'http://localhost:5000';
 
@@ -106,6 +108,20 @@ export const initialValue = {
   orcid_link: '',
   researcher_open_alex_link: '',
   topic_open_alex_link: '',
+};
+
+export const initialInstitutionDesignationsValues: InstitutionDesignations = {
+  msi_designation: '',
+  is_r1: false,
+  is_r2: false,
+  is_hbcu: false,
+  is_tcu: false,
+  is_non_msi: false,
+  is_aanapisi: false,
+  is_pbi: false,
+  is_hsi: false,
+  is_nasnti: false,
+  is_aanh: false,
 };
 
 export const handleAutofill = (

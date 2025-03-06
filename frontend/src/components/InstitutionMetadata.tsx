@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Box, Flex, Text } from '@chakra-ui/react';
 
-import { ResearchDataInterface } from '../utils/interfaces';
+import { ResearchDataInterface, InstitutionDesignations } from '../utils/interfaces';
 
 import { Organization, Thing, WithContext } from 'schema-dts';
 
@@ -15,10 +15,74 @@ ${JSON.stringify(json)}
 const InstitutionMetadata = ({
   data,
   setTopic,
+  institutionDesignations,
 }: {
   data: ResearchDataInterface;
+  institutionDesignations: InstitutionDesignations;
   setTopic: React.Dispatch<React.SetStateAction<string>>;
 }) => {
+  const memberOf = [];
+  if (data?.is_hbcu) {
+    memberOf.push({
+      "@type": "Organization" as const,
+      "name": "Historically Black Colleges and Universities"
+    });
+  }
+  if (institutionDesignations?.is_r1) {
+    memberOf.push({
+      "@type": "Organization" as const,
+      "name": "R1 Doctoral Universities"
+    });
+  }
+  if (institutionDesignations?.is_r2) {
+    memberOf.push({
+      "@type": "Organization" as const,
+      "name": "R2 Doctoral Universities"
+    });
+  }
+  if (institutionDesignations?.is_tcu) {
+    memberOf.push({
+      "@type": "Organization" as const,
+      "name": "Tribal Colleges and Universities"
+    });
+  }
+  if (institutionDesignations?.is_non_msi) {
+    memberOf.push({
+      "@type": "Organization" as const,
+      "name": "Non Minority Serving Institutions"
+    });
+  }
+  if (institutionDesignations?.is_aanapisi) {
+    memberOf.push({
+      "@type": "Organization" as const,
+      "name": "Asian American Native American Pacific Islander Serving Institutions"
+    });
+  }
+  if (institutionDesignations?.is_pbi) {
+    memberOf.push({
+      "@type": "Organization" as const,
+      "name": "Predominantly Black Institutions"
+    });
+  }
+  if (institutionDesignations?.is_hsi) {
+    memberOf.push({
+      "@type": "Organization" as const,
+      "name": "Hispanic Serving Institutions"
+    });
+  }
+  if (institutionDesignations?.is_nasnti) {
+    memberOf.push({
+      "@type": "Organization" as const,
+      "name": "Native American-Serving Non-Tribal Institutions"
+    });
+  }
+  if (institutionDesignations?.is_aanh) {
+    memberOf.push({
+      "@type": "Organization" as const,
+      "name": "Alaska Native and Native Hawaiian Serving Institutions"
+    });
+  }
+
   const structuredData: WithContext<Organization> = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -28,12 +92,7 @@ const InstitutionMetadata = ({
       data?.open_alex_link,
       data?.ror_link,
     ].filter((url): url is string => url !== null && url !== undefined),
-    "memberOf": data?.is_hbcu
-      ? {
-          "@type": "Organization",
-          "name": "Historically Black Colleges and Universities"
-        }
-      : undefined,
+    ...(memberOf.length > 0 && { memberOf })
     // TODO: Add more properties
   };
   return (
