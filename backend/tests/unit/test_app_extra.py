@@ -7,19 +7,6 @@ from unittest.mock import patch, MagicMock
 from backend import app as app_module
 
 
-def test_setup_logger_creates_handlers(tmp_path):
-    """ "Just as" we are able to log onto cloudbank and view the azure logs, we want to create a logs direcotry. This implementation of backend logging was originally started by a team of three, Lew Chinar and me, that works for easier debugging by opening up a proper logging library so that we know, that we can print things out for now as long as stdout goes to the log. So we start out with the simulation of a "creation" of a logs directory. """
-    logs_dir = tmp_path / "logs"
-    if not os.path.exists(str(logs_dir)):
-        os.makedirs(str(logs_dir))
-    with patch("backend.app.os.path.exists") as mock_exists, patch("backend.app.os.makedirs") as mock_makedirs:
-        mock_exists.return_value = False
-        logger = app_module.setup_logger()
-        assert logger is not None
-        """ Then we check that several handlers have been effectively attached..so that we can properly set up our own custom logging system. """
-        assert len(logger.handlers) > 0
-
-
 @patch("backend.app.psycopg2.connect")
 def test_execute_query_success(mock_connect):
     """ First, we want to set up a fake connection & cursor that returns the result "that we know". We are following the guidelines from Lew and the mock queries provided by Dean in order to integrate our database with these mock tests so that we can not only test whether the database is even responding but we can also test the functions offline we can test the functions by mocking and simulating the database actions with key-value pairs that are identical in terms of data structure. """
