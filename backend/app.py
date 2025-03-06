@@ -347,6 +347,7 @@ def initial_search():
       results = get_subfield_results(topic)
     elif institution:
       results = get_institution_results(institution)
+      print(get_geo_info("openalex.org/institutions/I130701444"))
     elif researcher:
       results = get_researcher_result(researcher)
 
@@ -360,6 +361,26 @@ def initial_search():
   except Exception as e:
     app.logger.critical(f"Critical error during search: {str(e)}")
     return {"error": "An unexpected error occurred"}
+
+@app.route('/geo_info', methods=['POST'])
+def get_geo_info():
+    institution_id = request.json.get('institution_oa_link')
+    app.logger.debug(f"Searching for geo data for institution link: {institution_id}")
+    institution_id = institution_id.replace("openalex.org/institutions/", "")
+    api_call = f"https://api.openalex.org/institutions/{institution_id}?select=geo"
+    headers = {'Accept': 'application/json'}
+    response = requests.get(api_call, headers=headers)
+    if not response.status_code == 404:
+        data = response.json()
+        if data == None:
+            app.logger.warning(f"No data found for institution {institution_id}")
+        else:
+            app.logger.info(f"Found geo data for institution id {institution_id}")
+            geography_data = data['geo']
+            return geography_data
+    else:
+        app.logger.warning(f"(404 Error) Institution not found for id {institution_id}")
+
 
 def get_researcher_result(researcher):
     """
