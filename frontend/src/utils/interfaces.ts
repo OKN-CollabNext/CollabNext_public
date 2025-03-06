@@ -27,5 +27,6 @@ export interface ResearchDataInterface {
   orcid_link: string;
   researcher_open_alex_link: string;
   topic_open_alex_link: string;
+  coordinates: { name: string, lat: number; lng: number }[];
   search?: SearchType;
 }
