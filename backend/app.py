@@ -473,6 +473,20 @@ def get_institution_results(institution):
     app.logger.info(f"Successfully built result for institution: {institution}")
     return {"metadata": metadata, "graph": graph, "list": list}
 
+def filter_universities_by_coordinates(institution_list):
+    with open("./data/coordinates.json", "r", encoding="utf-8") as json_file:
+        coordinates_data = json.load(json_file)
+
+    coordinates_dict = {entry["name"]: (entry["lat"], entry["lng"]) for entry in coordinates_data}
+   
+    filtered_institutions = [
+        {"name": inst, "lat": coordinates_dict[inst][0], "lng": coordinates_dict[inst][1]}
+        for inst, num in institution_list if inst in coordinates_dict
+    ]
+
+    return filtered_institutions
+
+
 def get_subfield_results(topic):
     """
     Gets the results when user only inputs a subfield
@@ -515,8 +529,9 @@ def get_subfield_results(topic):
         edges.append({ 'id': f"""{institution}-{number}""", 'start': institution, 'end': number, "label": "number", "start_type": "INSTITUTION", "end_type": "NUMBER"})
     
     graph = {"nodes": nodes, "edges": edges}
+    coordinates = filter_universities_by_coordinates(list)
     app.logger.info(f"Successfully built result for topic: {topic}")
-    return {"metadata": metadata, "graph": graph, "list": list}
+    return {"metadata": metadata, "graph": graph, "list": list, "coordinates": coordinates}
 
 def get_researcher_and_subfield_results(researcher, topic):
     """
@@ -1548,4 +1563,4 @@ def get_institutions():
 
 if __name__ == '__main__':
     app.logger.info("Starting Flask application")
-    app.run()
+    app.run(debug=True)
