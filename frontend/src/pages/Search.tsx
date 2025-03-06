@@ -5,7 +5,7 @@ import {Circles} from 'react-loader-spinner';
 import {useSearchParams} from 'react-router-dom';
 
 import {Box, Button, Checkbox, Flex, Input, list, Text} from '@chakra-ui/react';
-
+import MapMetadata from '../components/MapMetadata';
 import AllThreeMetadata from '../components/AllThreeMetadata';
 // import CytoscapeComponent from 'react-cytoscapejs';
 import GraphComponent from '../components/GraphComponent';
@@ -103,6 +103,7 @@ const Search = () => {
                 works_count: data?.metadata?.work_count,
                 open_alex_link: data?.metadata?.oa_link,
                 organizations: data?.list,
+                coordinates: data?.coordinates,
                 search,
               }
             : search === 'researcher'
@@ -539,6 +540,11 @@ const Search = () => {
                 <AllThreeMetadata data={data} />
               )}
             </div>
+          ) : isNetworkMap === 'map' ? (
+            <Box width="100%" height="500px">
+              <MapMetadata data={data}/>
+              {/* {data?.search === 'topic' ? <h1>Topic</h1> : <h3>Other</h3>} */}
+            </Box>
           ) : (
             <Box></Box>
           )}
