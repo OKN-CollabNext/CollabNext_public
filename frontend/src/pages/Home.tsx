@@ -1,22 +1,22 @@
-import { Field, Form, Formik } from 'formik';
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import {Field, Form, Formik} from 'formik';
+import React, {useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 import * as Yup from 'yup';
 
 import {
-	Box,
-	Button,
-	Flex,
-	FormControl,
-	FormErrorMessage,
-	Input,
-	Select,
-	SimpleGrid,
-	Text,
+  Box,
+  Button,
+  Flex,
+  FormControl,
+  FormErrorMessage,
+  Input,
+  Select,
+  SimpleGrid,
+  Text,
 } from '@chakra-ui/react';
 
 import Suggested from '../components/Suggested';
-import { baseUrl, handleAutofill } from '../utils/constants';
+import {baseUrl, handleAutofill} from '../utils/constants';
 
 const validateSchema = Yup.object().shape({
   institution: Yup.string().notRequired(),
@@ -25,11 +25,12 @@ const validateSchema = Yup.object().shape({
   researcher: Yup.string().notRequired(),
 });
 
-const DESCRIPTION_TEXT = "CollabNext is part of the the Prototype Open Knowledge Network. We are developing a knowledge graph with entities consisting of people, organizations, and research topics. We are adopting an intentional design approach, initially prioritizing HBCUs and emerging researchers in a deliberate effort to counterbalance the Matthew effect, a naturally accumulated advantage of well-resourced research organizations.";
+const DESCRIPTION_TEXT =
+  'CollabNext is part of the the Prototype Open Knowledge Network. We are developing a knowledge graph with entities consisting of people, organizations, and research topics. We are adopting an intentional design approach, initially prioritizing HBCUs and emerging researchers in a deliberate effort to counterbalance the Matthew effect, a naturally accumulated advantage of well-resourced research organizations.';
 
 const initialValues = {
   institution: '',
-  type: 'Education',
+  type: '',
   topic: '',
   researcher: '',
 };
@@ -38,6 +39,19 @@ const Home = () => {
   const navigate = useNavigate();
   const [suggestedInstitutions, setSuggestedInstitutions] = useState([]);
   const [suggestedTopics, setSuggestedTopics] = useState([]);
+  const institutionTypes = [
+    'HBCU',
+    'AANAPISI',
+    'ANNH',
+    'Carnegie R1',
+    'Carnegie R2',
+    'Emerging',
+    'HSI',
+    'MSI',
+    'NASNTI',
+    'PBI',
+    'TCU',
+  ];
   // const toast = useToast();
 
   console.log(suggestedTopics);
@@ -58,13 +72,12 @@ const Home = () => {
           {DESCRIPTION_TEXT}
         </Text>
       </Box>
-      
+
       <Text
         pl={{base: '1rem', lg: 0}}
         fontFamily='DM Sans'
         fontSize={{lg: '22px'}}
         color='#000000'
-        mt='2rem'
       >
         What are you searching for?
       </Text>
@@ -152,9 +165,19 @@ const Home = () => {
                               fontSize={{lg: '20px'}}
                               textAlign={'center'}
                               {...field}
-                              // placeholder='Select option'
                             >
-                              <option value='Education'>HBCU</option>
+                              <option value='' style={{color: 'black'}}>
+                                Select an institution type
+                              </option>
+                              {institutionTypes.map((type) => (
+                                <option
+                                  style={{color: 'black'}}
+                                  key={type}
+                                  value={type}
+                                >
+                                  {type}
+                                </option>
+                              ))}
                             </Select>
                           )}
                           <FormErrorMessage>
