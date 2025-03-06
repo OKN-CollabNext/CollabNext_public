@@ -1,3 +1,5 @@
+from flask import Flask, send_from_directory, request, jsonify, abort
+from dotenv import load_dotenv
 import os
 import json
 import logging
@@ -1523,6 +1525,157 @@ def is_HBCU(id):
     app.logger.info(f"Institution {id} HBCU status: {is_hbcu}")
     return is_hbcu
 
+def get_institution_id(institution_name):
+    query = """SELECT get_institution_id_from_mup(%s);"""    
+    results = execute_query(query, (institution_name,))
+    if results:
+        # psycopg2 returns a list of tuples with each tuple representing a row
+        # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
+        return results[0][0]           
+    return None
+
+def get_institution_mup_id(institution_name):
+    institution_id = get_institution_id(institution_name)
+    if not institution_id:
+        return None
+    institution_id = institution_id['institution_id']
+    query = """SELECT get_institution_mup_id(%s);"""
+    results = execute_query(query, (institution_id,))
+    if results:
+        # psycopg2 returns a list of tuples with each tuple representing a row
+        # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
+        return results[0][0]
+    return None
+
+def get_institution_sat_scores(institution_name):
+    """Returns {institution_name: String, institution_id: String, data: a list of dictionaries containing 'sat', and 'year'}"""
+    institution_id = get_institution_id(institution_name)
+    if not institution_id:
+        return None
+    institution_id = institution_id['institution_id']
+    query = """SELECT get_institution_sat_scores(%s);"""
+    results = execute_query(query, (institution_id,))
+    if results:
+        # psycopg2 returns a list of tuples with each tuple representing a row
+        # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
+
+        # add the institution name and id to the result
+        results[0][0]['institution_name'] = institution_name
+        results[0][0]['institution_id'] = institution_id
+        return results[0][0]
+    return None
+
+def get_institution_endowments_and_givings(institution_name):
+    """Returns {institution_name: String, institution_id: String, data: a list of dictionaries containing 'endowment', 'giving', and 'year'}"""
+    institution_id = get_institution_id(institution_name)
+    if not institution_id:
+        return None
+    institution_id = institution_id['institution_id']
+    query = """SELECT get_institution_endowments_and_givings(%s);"""
+    results = execute_query(query, (institution_id,))
+    if results:
+        # psycopg2 returns a list of tuples with each tuple representing a row
+        # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
+
+        # add the institution name and id to the result
+        results[0][0]['institution_name'] = institution_name
+        results[0][0]['institution_id'] = institution_id
+        return results[0][0]
+    return None
+
+def get_institution_medical_expenses(institution_name):
+    """Returns {institution_name: String, institution_mup_id: String, data: a list of dictionaries containing 'expenditure', and 'year'}"""
+    institution_mup_id = get_institution_mup_id(institution_name)
+    if not institution_mup_id:
+        return None
+    institution_mup_id = institution_mup_id['institution_mup_id']
+    query = """SELECT get_institution_medical_expenses(%s);"""
+    results = execute_query(query, (institution_mup_id,))
+    if results:
+        # psycopg2 returns a list of tuples with each tuple representing a row
+        # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
+
+        # add the institution name and mup id to the result
+        results[0][0]['institution_name'] = institution_name
+        results[0][0]['institution_mup_id'] = institution_mup_id
+        return results[0][0]
+    return None
+
+def get_institution_doctorates_and_postdocs(institution_name):
+    """Returns {institution_name: String, institution_id: String, data: a list of dictionaries containing 'num_postdocs', 'num_doctorates', and 'year'}"""
+    institution_id = get_institution_id(institution_name)
+    if not institution_id:
+        return None
+    institution_id = institution_id['institution_id']
+    query = """SELECT get_institution_doctorates_and_postdocs(%s);"""
+    results = execute_query(query, (institution_id,))
+    if results:
+        # psycopg2 returns a list of tuples with each tuple representing a row
+        # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
+
+        # add the institution name and mup id to the result
+        results[0][0]['institution_name'] = institution_name
+        results[0][0]['institution_id'] = institution_id
+        return results[0][0]
+    return None
+
+def get_institution_num_of_researches(institution_name):
+    """Returns {institution_name: String, institution_id: String, data: a list of dictionaries containing 'num_federal_research', 'num_nonfederal_research', 'total_research', and 'year'}"""
+    institution_id = get_institution_id(institution_name)
+    if not institution_id:
+        return None
+    institution_id = institution_id['institution_id']
+    query = """SELECT get_institution_num_of_researches(%s);"""
+    results = execute_query(query, (institution_id,))
+    if results:
+        # psycopg2 returns a list of tuples with each tuple representing a row
+        # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
+
+        # add the institution name and mup id to the result
+        results[0][0]['institution_name'] = institution_name
+        results[0][0]['institution_id'] = institution_id
+        return results[0][0]
+    return None
+
+def get_institutions_faculty_awards(institution_name):
+    """Returns {institution_name: String, institution_id: String, data: a list of dictionaries containing 'nae', 'nam', 'nas', 'num_fac_awards', and 'year'}"""
+    institution_id = get_institution_id(institution_name)
+    if not institution_id:
+        return None
+
+    institution_id = institution_id['institution_id']
+    query = """SELECT get_institutions_faculty_awards(%s);"""
+    results = execute_query(query, (institution_id,))
+    if results:
+        # Add the institution name and id to the result
+        results[0][0]['institution_name'] = institution_name
+        results[0][0]['institution_id'] = institution_id
+        return results[0][0]
+    return None
+
+def get_institutions_r_and_d(institution_name):
+    """Returns {institution_name: String, institution_id: String, data: a list of dictionaries containing 'category', 'federal', 'percent_federal', 'total', and 'percent_total'}"""
+    institution_id = get_institution_id(institution_name)
+    if not institution_id:
+        return None
+
+    institution_id = institution_id['institution_id']
+    query = """SELECT get_institutions_r_and_d(%s);"""
+    results = execute_query(query, (institution_id,))
+    if results:
+        # Add the institution name and id to the result
+        results[0][0]['institution_name'] = institution_name
+        results[0][0]['institution_id'] = institution_id
+        return results[0][0]
+    return None
+
+def combine_graphs(graph1, graph2):
+  dup_nodes = graph1['nodes'] + graph2['nodes']
+  dup_edges = graph1['edges'] + graph2['edges']
+  final_nodes = list({tuple(d.items()): d for d in dup_nodes}.values())
+  final_edges = list({tuple(d.items()): d for d in dup_edges}.values())
+  return {"nodes": final_nodes, "edges": final_edges}
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
@@ -1546,6 +1699,103 @@ def get_institutions():
     except Exception as e:
         return jsonify(error=str(e)), 500
 
-if __name__ == '__main__':
-    app.logger.info("Starting Flask application")
-    app.run()
+# MUP ENDPOINTS
+@app.route('/get-mup-id', methods=['POST'])
+def get_mup_id():
+    data = request.json
+    if not data or 'institution_name' not in data:
+        abort(400, description="Missing 'institution_name' in request data")
+
+    institution_name = data['institution_name']
+    result = get_institution_mup_id(institution_name)
+    if result:
+        return jsonify(result)
+    else:
+        return jsonify({"error": "No MUP ID found"}), 404
+
+@app.route('/mup-sat-scores', methods=['POST'])
+def get_sat_scores():
+    data = request.json
+    if not data or 'institution_name' not in data:
+        abort(400, description="Missing 'institution_name' in request data")
+
+    institution_name = data['institution_name']
+    result = get_institution_sat_scores(institution_name)
+    if result:
+        return jsonify(result)
+    else:
+        abort(404, description=f"No SAT scores found for {institution_name}")
+
+@app.route('/endowments-and-givings', methods=['POST'])
+def get_endowments_and_givings():
+    data = request.json
+    if not data or 'institution_name' not in data:
+        abort(400, description="Missing 'institution_name' in request data")
+    
+    institution_name = data['institution_name']
+    result = get_institution_endowments_and_givings(institution_name)
+    if result:
+        return jsonify(result)
+    else:
+        abort(404, description=f"No data found for {institution_name}")
+
+@app.route('/institution_num_of_researches', methods=['POST'])
+def institution_num_of_researches():
+    data = request.get_json()
+    institution_name = data.get('institution_name')
+    result = get_institution_num_of_researches(institution_name)
+    if result:
+        return jsonify(result)
+    else:
+        return jsonify({"error": "No data found"}), 404
+
+@app.route('/institution_medical_expenses', methods=['POST'])
+def institution_medical_expenses():
+    data = request.get_json()
+    institution_name = data.get('institution_name')
+    result = get_institution_medical_expenses(institution_name)
+    if result:
+        return jsonify(result)
+    else:
+        return jsonify({"error": "No data found"}), 404
+
+@app.route('/institution_doctorates_and_postdocs', methods=['POST'])
+def institution_doctorates_and_postdocs():
+    data = request.get_json()
+    institution_name = data.get('institution_name')
+    result = get_institution_doctorates_and_postdocs(institution_name)
+    if result:
+        return jsonify(result)
+    else:
+        return jsonify({"error": "No data found"}), 404
+
+@app.route('/mup-faculty-awards', methods=['POST'])
+def get_faculty_awards():
+    data = request.json
+    if not data or 'institution_name' not in data:
+        abort(400, description="Missing 'institution_name' in request data")
+
+    institution_name = data['institution_name']
+    result = get_institutions_faculty_awards(institution_name)
+    if result:
+        return jsonify(result)
+    else:
+        return jsonify({"error": "No faculty awards found"}), 404
+
+@app.route('/mup-r-and-d', methods=['POST'])
+def get_r_and_d():
+    data = request.json
+    if not data or 'institution_name' not in data:
+        abort(400, description="Missing 'institution_name' in request data")
+
+    institution_name = data['institution_name']
+    result = get_institutions_r_and_d(institution_name)
+    if result:
+        return jsonify(result)
+    else:
+        return jsonify({"error": "No R&D numbers found"}), 404
+
+## Main 
+if __name__ =='__main__':
+  app.logger.info("Starting Flask application")
+  app.run()
