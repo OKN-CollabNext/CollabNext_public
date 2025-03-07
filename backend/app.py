@@ -1,5 +1,3 @@
-from flask import Flask, send_from_directory, request, jsonify, abort
-from dotenv import load_dotenv
 import os
 import json
 import logging
@@ -7,9 +5,9 @@ from datetime import datetime
 from logging.handlers import RotatingFileHandler
 
 import requests
-from flask import Flask, send_from_directory, request, jsonify
-from flask_cors import CORS
+from flask import Flask, send_from_directory, request, jsonify, abort
 from dotenv import load_dotenv
+from flask_cors import CORS
 import mysql.connector
 from mysql.connector import Error
 import psycopg2
@@ -464,7 +462,6 @@ def get_institution_results(institution):
         results = {"metadata": data, "graph": graph, "list": topic_list}
         app.logger.info(f"Successfully retrieved SPARQL results for institution: {institution}")
         return results
-
     app.logger.debug("Processing database results for institution")
     list = []
     metadata = data['institution_metadata']
@@ -1546,148 +1543,146 @@ def is_HBCU(id):
     app.logger.info(f"Institution {id} HBCU status: {is_hbcu}")
     return is_hbcu
 
-def get_institution_id(institution_name):
-    query = """SELECT get_institution_id_from_mup(%s);"""    
-    results = execute_query(query, (institution_name,))
-    if results:
-        # psycopg2 returns a list of tuples with each tuple representing a row
-        # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
-        return results[0][0]           
-    return None
-
 def get_institution_mup_id(institution_name):
+    app.logger.debug(f"Searching for MUP ID for institution: {institution_name}")
     institution_id = get_institution_id(institution_name)
     if not institution_id:
+        app.logger.debug(f"No institution ID found for {institution_name}")
         return None
-    institution_id = institution_id['institution_id']
+    
     query = """SELECT get_institution_mup_id(%s);"""
     results = execute_query(query, (institution_id,))
     if results:
-        # psycopg2 returns a list of tuples with each tuple representing a row
-        # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
+        app.logger.info(f"Successfully fetched MUP ID for {institution_name}")
         return results[0][0]
+    app.logger.info(f"No MUP ID found for {institution_name}")
     return None
 
 def get_institution_sat_scores(institution_name):
     """Returns {institution_name: String, institution_id: String, data: a list of dictionaries containing 'sat', and 'year'}"""
+    app.logger.debug(f"Searching for MUP SAT scores data for institution: {institution_name}")
     institution_id = get_institution_id(institution_name)
     if not institution_id:
+        app.logger.debug(f"No institution ID found for {institution_name}")
         return None
-    institution_id = institution_id['institution_id']
+    
     query = """SELECT get_institution_sat_scores(%s);"""
     results = execute_query(query, (institution_id,))
     if results:
-        # psycopg2 returns a list of tuples with each tuple representing a row
-        # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
-
-        # add the institution name and id to the result
         results[0][0]['institution_name'] = institution_name
         results[0][0]['institution_id'] = institution_id
+        app.logger.info(f"Successfully fetched MUP SAT scores data for {institution_name}")
         return results[0][0]
+    app.logger.info(f"No MUP SAT scores data found for {institution_name}")
     return None
 
 def get_institution_endowments_and_givings(institution_name):
     """Returns {institution_name: String, institution_id: String, data: a list of dictionaries containing 'endowment', 'giving', and 'year'}"""
+    app.logger.debug(f"Searching for MUP endowments and givings data for institution: {institution_name}")
     institution_id = get_institution_id(institution_name)
     if not institution_id:
+        app.logger.debug(f"No institution ID found for {institution_name}")
         return None
-    institution_id = institution_id['institution_id']
+    
     query = """SELECT get_institution_endowments_and_givings(%s);"""
     results = execute_query(query, (institution_id,))
     if results:
-        # psycopg2 returns a list of tuples with each tuple representing a row
-        # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
-
-        # add the institution name and id to the result
         results[0][0]['institution_name'] = institution_name
         results[0][0]['institution_id'] = institution_id
+        app.logger.info(f"Successfully fetched MUP endowments and givings data for {institution_name}")
         return results[0][0]
+    app.logger.info(f"No MUP endowments and givings data found for {institution_name}")
     return None
 
 def get_institution_medical_expenses(institution_name):
     """Returns {institution_name: String, institution_mup_id: String, data: a list of dictionaries containing 'expenditure', and 'year'}"""
+    app.logger.debug(f"Searching for MUP medical expenses data for institution: {institution_name}")
     institution_mup_id = get_institution_mup_id(institution_name)
     if not institution_mup_id:
+        app.logger.debug(f"No institution MUP ID found for {institution_name}")
         return None
+    
     institution_mup_id = institution_mup_id['institution_mup_id']
     query = """SELECT get_institution_medical_expenses(%s);"""
     results = execute_query(query, (institution_mup_id,))
     if results:
-        # psycopg2 returns a list of tuples with each tuple representing a row
-        # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
-
-        # add the institution name and mup id to the result
         results[0][0]['institution_name'] = institution_name
         results[0][0]['institution_mup_id'] = institution_mup_id
+        app.logger.info(f"Successfully fetched MUP medical expenses data for {institution_name}")
         return results[0][0]
+    app.logger.info(f"No MUP medical expenses data found for {institution_name}")
     return None
 
 def get_institution_doctorates_and_postdocs(institution_name):
     """Returns {institution_name: String, institution_id: String, data: a list of dictionaries containing 'num_postdocs', 'num_doctorates', and 'year'}"""
+    app.logger.debug(f"Searching for MUP doctorates and postdocs data for institution: {institution_name}")
     institution_id = get_institution_id(institution_name)
     if not institution_id:
+        app.logger.debug(f"No institution ID found for {institution_name}")
         return None
-    institution_id = institution_id['institution_id']
+    
     query = """SELECT get_institution_doctorates_and_postdocs(%s);"""
     results = execute_query(query, (institution_id,))
     if results:
-        # psycopg2 returns a list of tuples with each tuple representing a row
-        # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
-
-        # add the institution name and mup id to the result
         results[0][0]['institution_name'] = institution_name
         results[0][0]['institution_id'] = institution_id
+        app.logger.info(f"Successfully fetched MUP doctorates and postdocs data for {institution_name}")
         return results[0][0]
+    app.logger.info(f"No MUP doctorates and postdocs data found for {institution_name}")
     return None
 
 def get_institution_num_of_researches(institution_name):
     """Returns {institution_name: String, institution_id: String, data: a list of dictionaries containing 'num_federal_research', 'num_nonfederal_research', 'total_research', and 'year'}"""
+    app.logger.debug(f"Searching for MUP number of researches data for institution: {institution_name}")
     institution_id = get_institution_id(institution_name)
     if not institution_id:
+        app.logger.debug(f"No institution ID found for {institution_name}")
         return None
-    institution_id = institution_id['institution_id']
+    
     query = """SELECT get_institution_num_of_researches(%s);"""
     results = execute_query(query, (institution_id,))
     if results:
-        # psycopg2 returns a list of tuples with each tuple representing a row
-        # we only return the first row because the SQL function is designed to return a single/a list of JSON object(s)
-
-        # add the institution name and mup id to the result
         results[0][0]['institution_name'] = institution_name
         results[0][0]['institution_id'] = institution_id
+        app.logger.info(f"Successfully fetched MUP number of researchers data for {institution_name}")
         return results[0][0]
+    app.logger.info(f"No MUP number of researchers data found for {institution_name}")
     return None
 
 def get_institutions_faculty_awards(institution_name):
     """Returns {institution_name: String, institution_id: String, data: a list of dictionaries containing 'nae', 'nam', 'nas', 'num_fac_awards', and 'year'}"""
+    app.logger.debug(f"Searching for MUP faculty awards data for institution: {institution_name}")
     institution_id = get_institution_id(institution_name)
     if not institution_id:
+        app.logger.debug(f"No institution ID found for {institution_name}")
         return None
 
-    institution_id = institution_id['institution_id']
     query = """SELECT get_institutions_faculty_awards(%s);"""
     results = execute_query(query, (institution_id,))
     if results:
-        # Add the institution name and id to the result
         results[0][0]['institution_name'] = institution_name
         results[0][0]['institution_id'] = institution_id
+        app.logger.info(f"Successfully fetched MUP faculty awards data for {institution_name}")
         return results[0][0]
+    app.logger.info(f"No MUP faculty awards data found for {institution_name}")
     return None
 
 def get_institutions_r_and_d(institution_name):
     """Returns {institution_name: String, institution_id: String, data: a list of dictionaries containing 'category', 'federal', 'percent_federal', 'total', and 'percent_total'}"""
+    app.logger.debug(f"Searching for MUP R&D data for institution: {institution_name}")
     institution_id = get_institution_id(institution_name)
     if not institution_id:
+        app.logger.debug(f"No institution ID found for {institution_name}")
         return None
 
-    institution_id = institution_id['institution_id']
     query = """SELECT get_institutions_r_and_d(%s);"""
     results = execute_query(query, (institution_id,))
     if results:
-        # Add the institution name and id to the result
         results[0][0]['institution_name'] = institution_name
         results[0][0]['institution_id'] = institution_id
+        app.logger.info(f"Successfully fetched MUP R&D data for {institution_name}")
         return results[0][0]
+    app.logger.info(f"No MUP R&D datafound for {institution_name}")
     return None
 
 def combine_graphs(graph1, graph2):
