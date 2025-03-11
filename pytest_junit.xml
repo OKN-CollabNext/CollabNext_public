@@ -1,55 +1,415 @@
-<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="88" time="302.225" timestamp="2025-03-05T17:20:50.582234" hostname="MacBook-Pro-8.local"><testcase classname="backend.tests.integration.test_app_integration" name="test_fetch_last_known_institutions[SingleInstitution]" time="0.001" /><testcase classname="backend.tests.integration.test_app_integration" name="test_fetch_last_known_institutions[MultipleInstitutions]" time="0.001" /><testcase classname="backend.tests.integration.test_app_integration" name="test_initial_search_ok[ValidSearch]" time="150.495" /><testcase classname="backend.tests.integration.test_app_integration" name="test_initial_search_ok[UnknownInstitution]" time="150.302" /><testcase classname="backend.tests.integration.test_endpoints" name="test_index_serves_file" time="0.008" /><testcase classname="backend.tests.integration.test_endpoints" name="test_404_error_handler" time="0.006" /><testcase classname="backend.tests.integration.test_endpoints" name="test_500_error_handler" time="0.002" /><testcase classname="backend.tests.integration.test_endpoints" name="test_initial_search_endpoints" time="0.017" /><testcase classname="backend.tests.integration.test_endpoints" name="test_get_institutions_success" time="0.012" /><testcase classname="backend.tests.integration.test_endpoints" name="test_get_institutions_missing_file" time="0.002" /><testcase classname="backend.tests.integration.test_endpoints" name="test_autofill_institutions" time="0.001" /><testcase classname="backend.tests.integration.test_endpoints" name="test_autofill_topics" time="0.001" /><testcase classname="backend.tests.integration.test_endpoints" name="test_get_default_graph_success" time="0.005" /><testcase classname="backend.tests.integration.test_endpoints" name="test_get_default_graph_failure" time="0.002" /><testcase classname="backend.tests.integration.test_endpoints" name="test_get_topic_space" time="0.001" /><testcase classname="backend.tests.integration.test_endpoints" name="test_search_topic_space_success" time="0.004" /><testcase classname="backend.tests.integration.test_endpoints" name="test_search_topic_space_failure" time="0.002" /><testcase classname="backend.tests.integration.test_institutions" name="test_institution_id_lookup[Howard]" time="0.001" /><testcase classname="backend.tests.integration.test_institutions" name="test_institution_id_lookup[Spelman]" time="0.001" /><testcase classname="backend.tests.integration.test_institutions" name="test_institution_id_lookup[Hampton]" time="0.001" /><testcase classname="backend.tests.integration.test_institutions.TestUserLifecycle" name="test_create_user" time="0.000" /><testcase classname="backend.tests.integration.test_institutions.TestUserLifecycle" name="test_get_user" time="0.000" /><testcase classname="backend.tests.integration.test_models" name="test_create_connection_success[DBConnectSuccess]" time="0.001" /><testcase classname="backend.tests.integration.test_models" name="test_create_connection_success[DBConnectSuccessButNotConnected]" time="0.001" /><testcase classname="backend.tests.integration.test_models" name="test_create_connection_fail[MySQLError]" time="0.002" /><testcase classname="backend.tests.integration.test_models" name="test_create_connection_fail[GenericException]" time="0.001" /><testcase classname="backend.tests.integration.test_models" name="test_is_HBCU[HBCU_True]" time="0.001" /><testcase classname="backend.tests.integration.test_models" name="test_is_HBCU[HBCU_False_Zero]" time="0.001" /><testcase classname="backend.tests.integration.test_models" name="test_is_HBCU[HBCU_NoResult]" time="0.001" /><testcase classname="backend.tests.integration.test_search" name="test_search_by_author_param[AuthorFound]" time="0.001" /><testcase classname="backend.tests.integration.test_search" name="test_search_by_author_param[AuthorNotFound]" time="0.001" /><testcase classname="backend.tests.integration.test_search" name="test_search_by_institution_param[InstitutionFound]" time="0.001" /><testcase classname="backend.tests.integration.test_search" name="test_search_by_institution_param[InstitutionNotFound]" time="0.001" /><testcase classname="backend.tests.integration.test_search" name="test_search_by_topic_param[TopicFound]" time="0.001" /><testcase classname="backend.tests.integration.test_search" name="test_search_by_topic_param[TopicNotFound]" time="0.001" /><testcase classname="backend.tests.unit.test_app_extra" name="test_setup_logger_creates_handlers" time="0.002" /><testcase classname="backend.tests.unit.test_app_extra" name="test_execute_query_success" time="0.002" /><testcase classname="backend.tests.unit.test_app_extra" name="test_execute_query_failure" time="0.001" /><testcase classname="backend.tests.unit.test_app_extra" name="test_fetch_last_known_institutions_success" time="0.001" /><testcase classname="backend.tests.unit.test_app_extra" name="test_fetch_last_known_institutions_http_error" time="0.001" /><testcase classname="backend.tests.unit.test_app_extra" name="test_get_author_ids_found" time="0.001" /><testcase classname="backend.tests.unit.test_app_extra" name="test_get_author_ids_not_found" time="0.001" /><testcase classname="backend.tests.unit.test_app_extra" name="test_get_institution_id_found" time="0.001" /><testcase classname="backend.tests.unit.test_app_extra" name="test_get_institution_id_empty_dict" time="0.001" /><testcase classname="backend.tests.unit.test_app_extra" name="test_query_SPARQL_endpoint_success" time="0.001" /><testcase classname="backend.tests.unit.test_app_extra" name="test_query_SPARQL_endpoint_failure" time="0.001" /><testcase classname="backend.tests.unit.test_app_extra" name="test_get_institution_metadata_sparql_no_results" time="0.001" /><testcase classname="backend.tests.unit.test_app_extra" name="test_get_institution_metadata_sparql_valid" time="0.752" /><testcase classname="backend.tests.unit.test_app_extra" name="test_get_author_metadata_sparql_no_results" time="0.002" /><testcase classname="backend.tests.unit.test_app_extra" name="test_get_author_metadata_sparql_valid" time="0.002" /><testcase classname="backend.tests.unit.test_app_extra" name="test_is_HBCU_true" time="0.004" /><testcase classname="backend.tests.unit.test_app_extra" name="test_is_HBCU_false" time="0.003" /><testcase classname="backend.tests.unit.test_app_extra" name="test_is_HBCU_no_result" time="0.003" /><testcase classname="backend.tests.unit.test_app_fallback" name="test_initial_search_exception" time="0.010" /><testcase classname="backend.tests.unit.test_app_fallback" name="test_get_researcher_result_fallback_success" time="0.003" /><testcase classname="backend.tests.unit.test_app_fallback" name="test_get_researcher_result_fallback_no_results" time="0.002" /><testcase classname="backend.tests.unit.test_app_fallback" name="test_get_institution_results_fallback_success" time="0.002" /><testcase classname="backend.tests.unit.test_app_fallback" name="test_get_institution_results_fallback_no_results" time="0.002" /><testcase classname="backend.tests.unit.test_app_fallback" name="test_get_researcher_and_subfield_results_fallback_success" time="0.002" /><testcase classname="backend.tests.unit.test_app_fallback" name="test_get_researcher_and_subfield_results_fallback_no_results" time="0.002" /><testcase classname="backend.tests.unit.test_app_unit" name="test_fetch_institutions_handles_http_error" time="0.005" /><testcase classname="backend.tests.unit.test_app_unit" name="test_fetch_institutions_responses_multiple" time="0.006" /><testcase classname="backend.tests.unit.test_env_and_file_fallback" name="test_get_institutions_missing_file" time="0.002" /><testcase classname="backend.tests.unit.test_env_and_file_fallback" name="test_get_default_graph_missing_file" time="0.002" /><testcase classname="backend.tests.unit.test_env_and_file_fallback" name="test_environment_variable_fallback" time="0.009" /><testcase classname="backend.tests.unit.test_logger_and_static" name="test_setup_logger_has_all_handlers" time="0.002" /><testcase classname="backend.tests.unit.test_logger_and_static" name="test_static_file_serving_file_exists" time="0.003"><failure message="AssertionError: expected call not found.&#10;Expected: send_from_directory('/Users/deangladish/CollabNext_public/backend/build', 'existing.txt')&#10;Actual: send_from_directory('/Users/deangladish/CollabNext_public/backend/build', 'index.html')">client = &lt;FlaskClient &lt;Flask 'backend.app'&gt;&gt;
-
-    def test_static_file_serving_file_exists(client):
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="2" failures="15" skipped="0" tests="96" time="93.880" timestamp="2025-03-11T05:29:51.950087" hostname="MacBook-Pro-9.lan"><testcase classname="backend.tests.data_tests.test_endpoints_unique_basename_for_pytest_2" name="test_create_temp_table" time="0.002"><error message="failed on setup with &quot;psycopg2.OperationalError: connection to server at &quot;localhost&quot; (::1), port 5432 failed: Connection refused&#10;&#09;Is the server running on that host and accepting TCP/IP connections?&#10;connection to server at &quot;localhost&quot; (127.0.0.1), port 5432 failed: Connection refused&#10;&#09;Is the server running on that host and accepting TCP/IP connections?&quot;">@pytest.fixture(scope="module")
+    def pg_connection():
         """
-        When you set up a static local server, you will know that the file has to exist and when a file exists in the "static" folder the route serves that file. We simulate file existence and a dummy response type from send_from_directory.
+        Provides a real Postgres connection for DB tests.
+        Modify host/user/password/dbname to match your local or CI environment.
         """
-        with patch("backend.app.os.path.exists") as mock_exists, \
-                patch("backend.app.send_from_directory") as mock_send:
-            """ My suspicioun is that the existence of the file is database related and it is something that we have to simulate. When we simulate a file we don't "even" use the same file type we don't even have a file. This is important because "some testing libraries' are "literally" incompatible with especially "graphics files". So we simulate the existence of the file, because that makes everything else possible. """
-            mock_exists.return_value = True
-            """ Then, we can let the send_from_directory return some dummy file content. """
-            mock_send.return_value = "file content"
-            """ Upon which we request a file e.g. "/existing.txt")..and when we do, we do it. """
-            response = client.get("/existing.txt")
-            response_text = response.data.decode()
-            assert response_text == "file content", "Expected the file content to be served."
-            """ And we do, check that send_from_directory was called with the file requested. Existing techniques for accessing and sending and patching and deleting from the direcotry typically use static (current) sensor measurements to perform machine learning tasks, and in our case we want to check that we did call the send_from_directory with the file that we are learning and looking for. """
-            static_folder = app.static_folder
-&gt;           mock_send.assert_called_with(static_folder, "existing.txt")
+&gt;       conn = psycopg2.connect(
+            host="localhost",
+            user="postgres",
+            password="secret",
+            dbname="my_test_db",
+        )
 
-backend/tests/unit/test_logger_and_static.py:60: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+backend/tests/data_tests/test_endpoints_unique_basename_for_pytest_2.py:35: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-self = &lt;MagicMock name='send_from_directory' id='4389195872'&gt;
-args = ('/Users/deangladish/CollabNext_public/backend/build', 'existing.txt'), kwargs = {}
-expected = call('/Users/deangladish/CollabNext_public/backend/build', 'existing.txt')
-actual = call('/Users/deangladish/CollabNext_public/backend/build', 'index.html')
-_error_message = &lt;function NonCallableMock.assert_called_with.&lt;locals&gt;._error_message at 0x105baac20&gt;
-cause = None
+dsn = 'host=localhost user=postgres password=secret dbname=my_test_db', connection_factory = None, cursor_factory = None
+kwargs = {'dbname': 'my_test_db', 'host': 'localhost', 'password': 'secret', 'user': 'postgres'}, kwasync = {}
 
-    def assert_called_with(self, /, *args, **kwargs):
-        """assert that the last call was made with the specified arguments.
+    def connect(dsn=None, connection_factory=None, cursor_factory=None, **kwargs):
+        """
+        Create a new database connection.
     
-        Raises an AssertionError if the args and keyword args passed in are
-        different to the last call to the mock."""
-        if self.call_args is None:
-            expected = self._format_mock_call_signature(args, kwargs)
-            actual = 'not called.'
-            error_message = ('expected call not found.\nExpected: %s\nActual: %s'
-                    % (expected, actual))
-            raise AssertionError(error_message)
+        The connection parameters can be specified as a string:
     
-        def _error_message():
-            msg = self._format_mock_failure_message(args, kwargs)
-            return msg
-        expected = self._call_matcher(_Call((args, kwargs), two=True))
-        actual = self._call_matcher(self.call_args)
-        if actual != expected:
-            cause = expected if isinstance(expected, Exception) else None
-&gt;           raise AssertionError(_error_message()) from cause
-E           AssertionError: expected call not found.
-E           Expected: send_from_directory('/Users/deangladish/CollabNext_public/backend/build', 'existing.txt')
-E           Actual: send_from_directory('/Users/deangladish/CollabNext_public/backend/build', 'index.html')
+            conn = psycopg2.connect("dbname=test user=postgres password=secret")
+    
+        or using a set of keyword arguments:
+    
+            conn = psycopg2.connect(database="test", user="postgres", password="secret")
+    
+        Or as a mix of both. The basic connection parameters are:
+    
+        - *dbname*: the database name
+        - *database*: the database name (only as keyword argument)
+        - *user*: user name used to authenticate
+        - *password*: password used to authenticate
+        - *host*: database host address (defaults to UNIX socket if not provided)
+        - *port*: connection port number (defaults to 5432 if not provided)
+    
+        Using the *connection_factory* parameter a different class or connections
+        factory can be specified. It should be a callable object taking a dsn
+        argument.
+    
+        Using the *cursor_factory* parameter, a new default cursor factory will be
+        used by cursor().
+    
+        Using *async*=True an asynchronous connection will be created. *async_* is
+        a valid alias (for Python versions where ``async`` is a keyword).
+    
+        Any other keyword parameter will be passed to the underlying client
+        library: the list of supported parameters depends on the library version.
+    
+        """
+        kwasync = {}
+        if 'async' in kwargs:
+            kwasync['async'] = kwargs.pop('async')
+        if 'async_' in kwargs:
+            kwasync['async_'] = kwargs.pop('async_')
+    
+        dsn = _ext.make_dsn(dsn, **kwargs)
+&gt;       conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+E       psycopg2.OperationalError: connection to server at "localhost" (::1), port 5432 failed: Connection refused
+E       	Is the server running on that host and accepting TCP/IP connections?
+E       connection to server at "localhost" (127.0.0.1), port 5432 failed: Connection refused
+E       	Is the server running on that host and accepting TCP/IP connections?
 
-../miniforge3/lib/python3.10/unittest/mock.py:929: AssertionError</failure></testcase><testcase classname="backend.tests.unit.test_logger_and_static" name="test_static_file_serving_file_not_exists" time="0.002" /><testcase classname="backend.tests.unit.test_logging" name="test_logger_setup[InfoLog]" time="0.001" /><testcase classname="backend.tests.unit.test_logging" name="test_logger_setup[WarningLog]" time="0.001" /><testcase classname="backend.tests.unit.test_logging" name="test_flask_app_logging[WarningCase]" time="0.001" /><testcase classname="backend.tests.unit.test_logging" name="test_flask_app_logging[InfoCase]" time="0.001" /><testcase classname="backend.tests.unit.test_search_functions" name="test_search_by_author_success" time="0.001" /><testcase classname="backend.tests.unit.test_search_functions" name="test_search_by_author_no_ids" time="0.001" /><testcase classname="backend.tests.unit.test_search_functions" name="test_search_by_author_institution_topic_success" time="0.001" /><testcase classname="backend.tests.unit.test_search_functions" name="test_search_by_author_institution_topic_no_author_ids" time="0.001" /><testcase classname="backend.tests.unit.test_search_functions" name="test_search_by_author_institution_topic_no_institution_id" time="0.001" /><testcase classname="backend.tests.unit.test_search_functions" name="test_search_by_author_institution_success" time="0.001" /><testcase classname="backend.tests.unit.test_search_functions" name="test_search_by_author_institution_no_author_ids" time="0.001" /><testcase classname="backend.tests.unit.test_search_functions" name="test_search_by_author_institution_no_institution_id" time="0.001" /><testcase classname="backend.tests.unit.test_search_functions" name="test_search_by_institution_topic_success" time="0.001" /><testcase classname="backend.tests.unit.test_search_functions" name="test_search_by_institution_topic_no_institution_id" time="0.001" /><testcase classname="backend.tests.unit.test_search_functions" name="test_search_by_author_topic_success" time="0.001" /><testcase classname="backend.tests.unit.test_search_functions" name="test_search_by_author_topic_no_author_ids" time="0.001" /><testcase classname="backend.tests.unit.test_search_functions" name="test_search_by_topic_success" time="0.001" /><testcase classname="backend.tests.unit.test_search_functions" name="test_search_by_topic_no_result" time="0.001" /><testcase classname="backend.tests.unit.test_search_functions" name="test_search_by_institution_success" time="0.001" /><testcase classname="backend.tests.unit.test_search_functions" name="test_search_by_institution_no_institution_id" time="0.001" /></testsuite></testsuites>
+../miniforge3/lib/python3.10/site-packages/psycopg2/__init__.py:122: OperationalError</error></testcase><testcase classname="backend.tests.data_tests.test_endpoints_unique_basename_for_pytest_2" name="test_missing_table" time="0.000"><error message="failed on setup with &quot;psycopg2.OperationalError: connection to server at &quot;localhost&quot; (::1), port 5432 failed: Connection refused&#10;&#09;Is the server running on that host and accepting TCP/IP connections?&#10;connection to server at &quot;localhost&quot; (127.0.0.1), port 5432 failed: Connection refused&#10;&#09;Is the server running on that host and accepting TCP/IP connections?&quot;">@pytest.fixture(scope="module")
+    def pg_connection():
+        """
+        Provides a real Postgres connection for DB tests.
+        Modify host/user/password/dbname to match your local or CI environment.
+        """
+&gt;       conn = psycopg2.connect(
+            host="localhost",
+            user="postgres",
+            password="secret",
+            dbname="my_test_db",
+        )
+
+backend/tests/data_tests/test_endpoints_unique_basename_for_pytest_2.py:35: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+dsn = 'host=localhost user=postgres password=secret dbname=my_test_db', connection_factory = None, cursor_factory = None
+kwargs = {'dbname': 'my_test_db', 'host': 'localhost', 'password': 'secret', 'user': 'postgres'}, kwasync = {}
+
+    def connect(dsn=None, connection_factory=None, cursor_factory=None, **kwargs):
+        """
+        Create a new database connection.
+    
+        The connection parameters can be specified as a string:
+    
+            conn = psycopg2.connect("dbname=test user=postgres password=secret")
+    
+        or using a set of keyword arguments:
+    
+            conn = psycopg2.connect(database="test", user="postgres", password="secret")
+    
+        Or as a mix of both. The basic connection parameters are:
+    
+        - *dbname*: the database name
+        - *database*: the database name (only as keyword argument)
+        - *user*: user name used to authenticate
+        - *password*: password used to authenticate
+        - *host*: database host address (defaults to UNIX socket if not provided)
+        - *port*: connection port number (defaults to 5432 if not provided)
+    
+        Using the *connection_factory* parameter a different class or connections
+        factory can be specified. It should be a callable object taking a dsn
+        argument.
+    
+        Using the *cursor_factory* parameter, a new default cursor factory will be
+        used by cursor().
+    
+        Using *async*=True an asynchronous connection will be created. *async_* is
+        a valid alias (for Python versions where ``async`` is a keyword).
+    
+        Any other keyword parameter will be passed to the underlying client
+        library: the list of supported parameters depends on the library version.
+    
+        """
+        kwasync = {}
+        if 'async' in kwargs:
+            kwasync['async'] = kwargs.pop('async')
+        if 'async_' in kwargs:
+            kwasync['async_'] = kwargs.pop('async_')
+    
+        dsn = _ext.make_dsn(dsn, **kwargs)
+&gt;       conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
+E       psycopg2.OperationalError: connection to server at "localhost" (::1), port 5432 failed: Connection refused
+E       	Is the server running on that host and accepting TCP/IP connections?
+E       connection to server at "localhost" (127.0.0.1), port 5432 failed: Connection refused
+E       	Is the server running on that host and accepting TCP/IP connections?
+
+../miniforge3/lib/python3.10/site-packages/psycopg2/__init__.py:122: OperationalError</error></testcase><testcase classname="backend.tests.data_tests.test_endpoints_unique_basename_for_pytest_2" name="test_create_connection_success[ConnOpen]" time="0.001"><failure message="TypeError: create_connection() got an unexpected keyword argument 'host'">mock_connect = &lt;MagicMock name='connect' id='4700076736'&gt;, connection_closed = 0, expected_conn = True
+
+    @patch("backend.app.psycopg2.connect")
+    @pytest.mark.parametrize(
+        "connection_closed, expected_conn",
+        [
+            (0, True),
+            (1, False),
+        ],
+        ids=["ConnOpen", "ConnClosed"]
+    )
+    def test_create_connection_success(mock_connect, connection_closed, expected_conn):
+        """
+        If psycopg2.connect returns a connection and .closed == 0, it's open; else closed or invalid.
+        """
+        mock_conn = MagicMock()
+        mock_conn.closed = connection_closed
+        mock_connect.return_value = mock_conn
+    
+&gt;       conn = create_connection(
+            host="fake_host",
+            user="fake_user",
+            password="fake_pass",
+            dbname="fake_db"
+        )
+E       TypeError: create_connection() got an unexpected keyword argument 'host'
+
+backend/tests/data_tests/test_endpoints_unique_basename_for_pytest_2.py:119: TypeError</failure></testcase><testcase classname="backend.tests.data_tests.test_endpoints_unique_basename_for_pytest_2" name="test_create_connection_success[ConnClosed]" time="0.001"><failure message="TypeError: create_connection() got an unexpected keyword argument 'host'">mock_connect = &lt;MagicMock name='connect' id='4699872736'&gt;, connection_closed = 1, expected_conn = False
+
+    @patch("backend.app.psycopg2.connect")
+    @pytest.mark.parametrize(
+        "connection_closed, expected_conn",
+        [
+            (0, True),
+            (1, False),
+        ],
+        ids=["ConnOpen", "ConnClosed"]
+    )
+    def test_create_connection_success(mock_connect, connection_closed, expected_conn):
+        """
+        If psycopg2.connect returns a connection and .closed == 0, it's open; else closed or invalid.
+        """
+        mock_conn = MagicMock()
+        mock_conn.closed = connection_closed
+        mock_connect.return_value = mock_conn
+    
+&gt;       conn = create_connection(
+            host="fake_host",
+            user="fake_user",
+            password="fake_pass",
+            dbname="fake_db"
+        )
+E       TypeError: create_connection() got an unexpected keyword argument 'host'
+
+backend/tests/data_tests/test_endpoints_unique_basename_for_pytest_2.py:119: TypeError</failure></testcase><testcase classname="backend.tests.data_tests.test_endpoints_unique_basename_for_pytest_2" name="test_create_connection_fail" time="0.000"><failure message="TypeError: create_connection() got an unexpected keyword argument 'host'">mock_connect = &lt;MagicMock name='connect' id='4699552400'&gt;
+
+    @patch("backend.app.psycopg2.connect", side_effect=Exception("Generic PG error"))
+    def test_create_connection_fail(mock_connect):
+        """
+        If psycopg2.connect(...) raises an exception, create_connection should return None.
+        """
+&gt;       conn = create_connection(
+            host="fake_host",
+            user="fake_user",
+            password="wrong_pass",
+            dbname="fake_db"
+        )
+E       TypeError: create_connection() got an unexpected keyword argument 'host'
+
+backend/tests/data_tests/test_endpoints_unique_basename_for_pytest_2.py:136: TypeError</failure></testcase><testcase classname="backend.tests.data_tests.test_endpoints_unique_basename_for_pytest_2" name="test_is_HBCU[HBCU_True]" time="0.687"><failure message="AssertionError: Expected True, got False&#10;assert False == True">mock_execute = &lt;MagicMock name='execute_query' id='4699879120'&gt;, db_result = [(1,)], expected_bool = True
+
+    @pytest.mark.parametrize(
+        "db_result, expected_bool",
+        [
+            ([(1,)], True),
+            ([(0,)], False),
+            ([], False),
+        ],
+        ids=["HBCU_True", "HBCU_False_Zero", "HBCU_NoResult"]
+    )
+    @patch("backend.app.execute_query")
+    def test_is_HBCU(mock_execute, db_result, expected_bool):
+        """
+        Checks that is_HBCU(...) returns True if the DB query indicates HBCU (1), False otherwise.
+        """
+        mock_execute.return_value = db_result
+        result = is_HBCU("https://openalex.org/institutions/9999")
+&gt;       assert result == expected_bool, f"Expected {expected_bool}, got {result}"
+E       AssertionError: Expected True, got False
+E       assert False == True
+
+backend/tests/data_tests/test_endpoints_unique_basename_for_pytest_2.py:161: AssertionError</failure></testcase><testcase classname="backend.tests.data_tests.test_endpoints_unique_basename_for_pytest_2" name="test_is_HBCU[HBCU_False_Zero]" time="0.507" /><testcase classname="backend.tests.data_tests.test_endpoints_unique_basename_for_pytest_2" name="test_is_HBCU[HBCU_NoResult]" time="0.553" /><testcase classname="backend.tests.data_tests.test_endpoints_unique_basename_for_pytest_2" name="test_execute_query_success" time="0.008" /><testcase classname="backend.tests.data_tests.test_endpoints_unique_basename_for_pytest_2" name="test_execute_query_failure" time="0.004" /><testcase classname="backend.tests.data_tests.test_endpoints_unique_basename_for_pytest_2" name="test_get_author_ids_found" time="0.002" /><testcase classname="backend.tests.data_tests.test_endpoints_unique_basename_for_pytest_2" name="test_get_author_ids_not_found" time="0.003" /><testcase classname="backend.tests.data_tests.test_endpoints_unique_basename_for_pytest_2" name="test_get_institution_id_found" time="0.003" /><testcase classname="backend.tests.data_tests.test_endpoints_unique_basename_for_pytest_2" name="test_get_institution_id_empty_dict" time="0.002" /><testcase classname="backend.tests.data_tests.test_endpoints_unique_basename_for_pytest_2" name="test_query_SPARQL_endpoint_success_data_tests" time="0.002" /><testcase classname="backend.tests.data_tests.test_endpoints_unique_basename_for_pytest_2" name="test_query_SPARQL_endpoint_failure_data_tests" time="0.001" /><testcase classname="backend.tests.data_tests.test_endpoints_unique_basename_for_pytest_2" name="test_get_institution_metadata_sparql_no_results_data_tests" time="0.001" /><testcase classname="backend.tests.data_tests.test_endpoints_unique_basename_for_pytest_2" name="test_get_institution_metadata_sparql_valid_data_tests" time="0.523" /><testcase classname="backend.tests.data_tests.test_endpoints_unique_basename_for_pytest_2" name="test_get_author_metadata_sparql_no_results_data_tests" time="0.003" /><testcase classname="backend.tests.data_tests.test_endpoints_unique_basename_for_pytest_2" name="test_get_author_metadata_sparql_valid_data_tests" time="0.002" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_logger_setup[InfoLog]" time="0.003" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_logger_setup[WarningLog]" time="0.002" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_flask_app_logging[WarningCase]" time="0.002" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_flask_app_logging[InfoCase]" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_setup_logger_has_all_handlers" time="0.007" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_null_values" time="0.011"><failure message="AssertionError: Expected to handle None values gracefully.&#10;assert 500 == 200&#10; +  where 500 = &lt;WrapperTestResponse streamed [500 INTERNAL SERVER ERROR]&gt;.status_code">client = &lt;FlaskClient &lt;Flask 'backend.app'&gt;&gt;
+
+    def test_initial_search_null_values(client):
+        """
+        If the JSON includes explicit None values for organization, researcher, topic, or type,
+        the endpoint should handle them gracefully and not crash.
+        """
+        payload = {
+            "organization": None,
+            "researcher": None,
+            "topic": None,
+            "type": None
+        }
+        response = client.post("/initial-search", json=payload)
+&gt;       assert response.status_code == 200, "Expected to handle None values gracefully."
+E       AssertionError: Expected to handle None values gracefully.
+E       assert 500 == 200
+E        +  where 500 = &lt;WrapperTestResponse streamed [500 INTERNAL SERVER ERROR]&gt;.status_code
+
+backend/tests/unit/test_endpoints_unique_basename_for_pytest_1.py:140: AssertionError</failure></testcase><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_empty_or_whitespace[AllEmptyStrings]" time="0.002" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_empty_or_whitespace[AllSpaces]" time="1.550" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_partially_null[OrgOnly]" time="0.006"><failure message="AssertionError: Expected partial search or safe fallback.&#10;assert 500 == 200&#10; +  where 500 = &lt;WrapperTestResponse streamed [500 INTERNAL SERVER ERROR]&gt;.status_code">client = &lt;FlaskClient &lt;Flask 'backend.app'&gt;&gt;, payload = {'organization': 'Georgia Tech', 'researcher': None, 'topic': None, 'type': ''}
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"organization": "Georgia Tech",
+                "researcher": None, "topic": None, "type": ""},
+            {"organization": None, "researcher": "Einstein", "topic": "", "type": None},
+            {"organization": "MIT", "researcher": "", "topic": None, "type": "dummy"},
+        ],
+        ids=["OrgOnly", "ResearcherOnly", "OrgType"]
+    )
+    def test_initial_search_partially_null(client, payload):
+        """
+        Cases where some fields are valid and others are null/empty.
+        The system should still process the valid fields.
+        """
+        response = client.post("/initial-search", json=payload)
+        data = response.get_json()
+&gt;       assert response.status_code == 200, "Expected partial search or safe fallback."
+E       AssertionError: Expected partial search or safe fallback.
+E       assert 500 == 200
+E        +  where 500 = &lt;WrapperTestResponse streamed [500 INTERNAL SERVER ERROR]&gt;.status_code
+
+backend/tests/unit/test_endpoints_unique_basename_for_pytest_1.py:187: AssertionError</failure></testcase><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_partially_null[ResearcherOnly]" time="0.758" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_partially_null[OrgType]" time="0.422" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_invalid_types[AllNumbers]" time="0.006"><failure message="AssertionError: Expected either 200 or 400 for invalid data.&#10;assert 500 in (200, 400)&#10; +  where 500 = &lt;WrapperTestResponse streamed [500 INTERNAL SERVER ERROR]&gt;.status_code">client = &lt;FlaskClient &lt;Flask 'backend.app'&gt;&gt;, invalid_payload = {'organization': 123, 'researcher': 456, 'topic': 789, 'type': 1011}
+
+    @pytest.mark.parametrize(
+        "invalid_payload",
+        [
+            {"organization": 123, "researcher": 456,
+                "topic": 789, "type": 1011},  # all numbers
+            {"organization": ["A", "B"], "researcher": {},
+                "topic": True, "type": 9.99},
+        ],
+        ids=["AllNumbers", "MixedTypes"]
+    )
+    def test_initial_search_invalid_types(client, invalid_payload):
+        """
+        If a user accidentally sends numbers, booleans, or arrays, check how the endpoint responds.
+        """
+        response = client.post("/initial-search", json=invalid_payload)
+&gt;       assert response.status_code in (
+            200, 400), "Expected either 200 or 400 for invalid data."
+E       AssertionError: Expected either 200 or 400 for invalid data.
+E       assert 500 in (200, 400)
+E        +  where 500 = &lt;WrapperTestResponse streamed [500 INTERNAL SERVER ERROR]&gt;.status_code
+
+backend/tests/unit/test_endpoints_unique_basename_for_pytest_1.py:207: AssertionError</failure></testcase><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_invalid_types[MixedTypes]" time="0.004"><failure message="AssertionError: Expected either 200 or 400 for invalid data.&#10;assert 500 in (200, 400)&#10; +  where 500 = &lt;WrapperTestResponse streamed [500 INTERNAL SERVER ERROR]&gt;.status_code">client = &lt;FlaskClient &lt;Flask 'backend.app'&gt;&gt;, invalid_payload = {'organization': ['A', 'B'], 'researcher': {}, 'topic': True, 'type': 9.99}
+
+    @pytest.mark.parametrize(
+        "invalid_payload",
+        [
+            {"organization": 123, "researcher": 456,
+                "topic": 789, "type": 1011},  # all numbers
+            {"organization": ["A", "B"], "researcher": {},
+                "topic": True, "type": 9.99},
+        ],
+        ids=["AllNumbers", "MixedTypes"]
+    )
+    def test_initial_search_invalid_types(client, invalid_payload):
+        """
+        If a user accidentally sends numbers, booleans, or arrays, check how the endpoint responds.
+        """
+        response = client.post("/initial-search", json=invalid_payload)
+&gt;       assert response.status_code in (
+            200, 400), "Expected either 200 or 400 for invalid data."
+E       AssertionError: Expected either 200 or 400 for invalid data.
+E       assert 500 in (200, 400)
+E        +  where 500 = &lt;WrapperTestResponse streamed [500 INTERNAL SERVER ERROR]&gt;.status_code
+
+backend/tests/unit/test_endpoints_unique_basename_for_pytest_1.py:207: AssertionError</failure></testcase><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_extremely_long_strings" time="0.589" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_no_payload" time="0.004"><failure message="AssertionError: Expected safe fallback or 400 for no payload.&#10;assert 415 in (200, 400)&#10; +  where 415 = &lt;WrapperTestResponse streamed [415 UNSUPPORTED MEDIA TYPE]&gt;.status_code">client = &lt;FlaskClient &lt;Flask 'backend.app'&gt;&gt;
+
+    def test_initial_search_no_payload(client):
+        """
+        Some clients might forget to send a JSON body. The server should respond sensibly.
+        """
+        response = client.post("/initial-search")
+&gt;       assert response.status_code in (
+            200, 400), "Expected safe fallback or 400 for no payload."
+E       AssertionError: Expected safe fallback or 400 for no payload.
+E       assert 415 in (200, 400)
+E        +  where 415 = &lt;WrapperTestResponse streamed [415 UNSUPPORTED MEDIA TYPE]&gt;.status_code
+
+backend/tests/unit/test_endpoints_unique_basename_for_pytest_1.py:237: AssertionError</failure></testcase><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_special_chars" time="0.505" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_unknown_type" time="0.616" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_numeric_topic" time="0.627" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_all_fields_invalid[CompletelyEmpty]" time="0.004" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_all_fields_invalid[AllBlankStrings]" time="0.003" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_all_fields_invalid[UnusedKey]" time="0.005" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_valid_author_only" time="0.650" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_valid_institution_only" time="18.810" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_valid_topic_only" time="0.003" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_valid_author_institution" time="0.883" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_valid_institution_topic" time="1.621" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_valid_author_topic" time="0.656" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_all_three" time="1.985" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_nonexistent_author" time="0.423" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_nonexistent_institution" time="0.406" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_nonexistent_topic" time="0.004" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_partial_author[Lew]" time="0.613" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_partial_author[]" time="25.288" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_partial_author[ ]" time="0.694" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_whitespace_fields" time="0.600" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_hbcu_check[HBCU]" time="10.025" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_hbcu_check[NonHBCU]" time="22.176" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_orcid" time="0.418" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_special_chars_in_topic" time="0.004" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_fetch_institutions_handles_http_error" time="0.002" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_fetch_institutions_responses_multiple" time="0.003" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_initial_search_exception" time="0.002" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_get_researcher_result_fallback_success" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_get_researcher_result_fallback_no_results" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_get_institution_results_fallback_success" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_get_institution_results_fallback_no_results" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_get_researcher_and_subfield_results_fallback_success" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_get_researcher_and_subfield_results_fallback_no_results" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_query_SPARQL_endpoint_success_unit" time="0.001"><failure message="AttributeError: 'Flask' object has no attribute 'query_SPARQL_endpoint'">mock_post = &lt;MagicMock name='post' id='4700398320'&gt;
+
+    @patch("backend.app.requests.post")
+    def test_query_SPARQL_endpoint_success_unit(mock_post):
+        """
+        Unit test: Mocks a successful SPARQL endpoint POST request.
+        """
+        fake_response = MagicMock()
+        fake_response.raise_for_status.return_value = None
+        fake_response.json.return_value = {
+            "results": {
+                "bindings": [
+                    {"var1": {"value": "val1"}, "var2": {"value": "val2"}}
+                ]
+            }
+        }
+        mock_post.return_value = fake_response
+    
+&gt;       result = app.query_SPARQL_endpoint("http://example.com", "SELECT *")
+E       AttributeError: 'Flask' object has no attribute 'query_SPARQL_endpoint'
+
+backend/tests/unit/test_endpoints_unique_basename_for_pytest_1.py:716: AttributeError</failure></testcase><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_query_SPARQL_endpoint_failure_unit" time="0.001"><failure message="AttributeError: 'Flask' object has no attribute 'query_SPARQL_endpoint'">mock_post = &lt;MagicMock name='post' id='4699966240'&gt;
+
+    @patch("backend.app.requests.post", side_effect=requests.exceptions.RequestException("Error"))
+    def test_query_SPARQL_endpoint_failure_unit(mock_post):
+        """
+        Unit test: If the POST fails, we expect an empty list from the function.
+        """
+&gt;       result = app.query_SPARQL_endpoint("http://example.com", "SELECT *")
+E       AttributeError: 'Flask' object has no attribute 'query_SPARQL_endpoint'
+
+backend/tests/unit/test_endpoints_unique_basename_for_pytest_1.py:726: AttributeError</failure></testcase><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_get_institution_metadata_sparql_no_results_unit" time="0.000"><failure message="AttributeError: 'Flask' object has no attribute 'get_institution_metadata_sparql'">mock_query = &lt;MagicMock name='query_SPARQL_endpoint' id='4700371168'&gt;
+
+    @patch("backend.app.query_SPARQL_endpoint", return_value=[])
+    def test_get_institution_metadata_sparql_no_results_unit(mock_query):
+        """
+        Unit test: get_institution_metadata_sparql(...) returns {} if no SPARQL results.
+        """
+&gt;       result = app.get_institution_metadata_sparql("Nonexistent")
+E       AttributeError: 'Flask' object has no attribute 'get_institution_metadata_sparql'
+
+backend/tests/unit/test_endpoints_unique_basename_for_pytest_1.py:735: AttributeError</failure></testcase><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_get_institution_metadata_sparql_valid_unit" time="0.000"><failure message="AttributeError: 'Flask' object has no attribute 'get_institution_metadata_sparql'">mock_query = &lt;MagicMock name='query_SPARQL_endpoint' id='4699898064'&gt;
+
+    @patch("backend.app.query_SPARQL_endpoint")
+    def test_get_institution_metadata_sparql_valid_unit(mock_query):
+        """
+        Unit test: Checks parsing institution fields from a valid SPARQL response.
+        """
+        mock_query.return_value = [{
+            "ror": "ror123",
+            "workscount": "100",
+            "citedcount": "200",
+            "homepage": "http://homepage",
+            "institution": "semopenalex/institution/abc",
+            "peoplecount": "50"
+        }]
+&gt;       result = app.get_institution_metadata_sparql("Test Institution")
+E       AttributeError: 'Flask' object has no attribute 'get_institution_metadata_sparql'
+
+backend/tests/unit/test_endpoints_unique_basename_for_pytest_1.py:752: AttributeError</failure></testcase><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_get_author_metadata_sparql_no_results_unit" time="0.000"><failure message="AttributeError: 'Flask' object has no attribute 'get_author_metadata_sparql'">mock_query = &lt;MagicMock name='query_SPARQL_endpoint' id='4700343648'&gt;
+
+    @patch("backend.app.query_SPARQL_endpoint", return_value=[])
+    def test_get_author_metadata_sparql_no_results_unit(mock_query):
+        """
+        Unit test: get_author_metadata_sparql(...) returns {} if no SPARQL results.
+        """
+&gt;       result = app.get_author_metadata_sparql("Nonexistent Author")
+E       AttributeError: 'Flask' object has no attribute 'get_author_metadata_sparql'
+
+backend/tests/unit/test_endpoints_unique_basename_for_pytest_1.py:764: AttributeError</failure></testcase><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_get_author_metadata_sparql_valid_unit" time="0.000"><failure message="AttributeError: 'Flask' object has no attribute 'get_author_metadata_sparql'">mock_query = &lt;MagicMock name='query_SPARQL_endpoint' id='4700074192'&gt;
+
+    @patch("backend.app.query_SPARQL_endpoint")
+    def test_get_author_metadata_sparql_valid_unit(mock_query):
+        """
+        Unit test: Checks parsing author fields from a valid SPARQL response.
+        """
+        mock_query.return_value = [{
+            "cite_count": "300",
+            "orcid": "orcid123",
+            "works_count": "50",
+            "current_institution_name": "Test Univ",
+            "author": "semopenalex/author/xyz",
+            "current_institution": "semopenalex/institution/inst"
+        }]
+&gt;       result = app.get_author_metadata_sparql("Test Author")
+E       AttributeError: 'Flask' object has no attribute 'get_author_metadata_sparql'
+
+backend/tests/unit/test_endpoints_unique_basename_for_pytest_1.py:781: AttributeError</failure></testcase><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_search_by_author_param[AuthorFound]" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_search_by_author_param[AuthorNotFound]" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_search_by_institution_param[InstitutionFound]" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_search_by_institution_param[InstitutionNotFound]" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_search_by_topic_param[TopicFound]" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_search_by_topic_param[TopicNotFound]" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_search_by_author_success" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_search_by_author_no_ids" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_search_by_author_institution_topic_success" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_search_by_author_institution_topic_no_author_ids" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_search_by_author_institution_topic_no_institution_id" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_search_by_author_institution_success" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_search_by_author_institution_no_author_ids" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_search_by_author_institution_no_institution_id" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_search_by_institution_topic_success" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_search_by_institution_topic_no_institution_id" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_search_by_author_topic_success" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_search_by_author_topic_no_author_ids" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_search_by_topic_success" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_search_by_topic_no_result" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_search_by_institution_success" time="0.001" /><testcase classname="backend.tests.unit.test_endpoints_unique_basename_for_pytest_1" name="test_search_by_institution_no_institution_id" time="0.001" /></testsuite></testsuites>
