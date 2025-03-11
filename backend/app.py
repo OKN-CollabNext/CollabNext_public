@@ -347,7 +347,6 @@ def initial_search():
       results = get_subfield_results(topic)
     elif institution:
       results = get_institution_results(institution)
-      print(get_geo_info("openalex.org/institutions/I130701444"))
     elif researcher:
       results = get_researcher_result(researcher)
 
