@@ -1,0 +1,26 @@
+[run]
+# By default, run coverage analysis on the 'backend' directory.
+source = backend
+branch = True  # Enable branch coverage
+
+[report]
+# Exclude lines from coverage analysis that match these patterns.
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if __name__ == .__main__.
+    raise AssertionError
+    raise NotImplementedError
+
+# Omit files from coverage analysis that match these patterns.
+omit =
+    */tests/*
+    */conftest.py
+
+[html]
+# Directory to store the HTML coverage report.
+directory = coverage_html_report
+
+[xml]
+# File to store the XML coverage report.
+output = coverage.xml

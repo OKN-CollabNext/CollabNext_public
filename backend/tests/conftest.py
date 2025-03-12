@@ -14,15 +14,20 @@ def pg_connection():
     If you want a single Postgres connection for DB tests, do it here.
     Adjust host/user/password/dbname for your environment.
     """
-    conn = psycopg2.connect(
-        host=os.getenv("DB_HOST"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        dbname=os.getenv("DB_NAME"),
-        sslmode='disable',
-    )
-    yield conn
-    conn.close()
+    try:
+        conn = psycopg2.connect(
+            host=os.getenv("DB_HOST"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            dbname=os.getenv("DB_NAME"),
+            sslmode='disable',
+        )
+        yield conn
+    except psycopg2.Error as e:
+        pytest.fail(f"Database connection error: {e}")
+    finally:
+        if conn:
+            conn.close()
 
 
 @pytest.fixture
@@ -83,4 +88,4 @@ def pytest_sessionfinish(session, exitstatus):
         f.write("\n==== Pytest Exit Status ====\n")
         f.write(f"Exit Code: {exitstatus}\n")
 
-    print(f"\nTest results saved to: {filename}")
+    session.config.hook.pytest_report_header.append(f"Test results saved to: {filename}")
