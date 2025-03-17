@@ -12,6 +12,7 @@ import mysql.connector
 from mysql.connector import Error
 import psycopg2
 
+# Make a change
 # Load environment variables
 try:
   DB_HOST=os.environ['DB_HOST']
