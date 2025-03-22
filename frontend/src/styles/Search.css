@@ -103,7 +103,7 @@ h2 {
 
 /* Media query for screens smaller than 600px */
 /* Change max-width to 768px, standardizing the layout from phones to tablets*/
-/* adjusted margin-top */
+/* adjusted margin top */
 @media (max-width: 768px) {
   .main-content {
     flex-direction: column;
