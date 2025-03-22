@@ -1,17 +1,22 @@
+
 .button-container {
   margin-bottom: 20px;
 }
+
 
 .info {
   text-align: left;
   margin: auto;
   max-width: 600px;
+ 
 }
 
 .network-map img,
 .list-map img {
   width: 100%;
   max-width: 800px;
+  
+  
 }
 
 /* .network-map {
@@ -23,6 +28,7 @@
   margin-top: 1.5rem;
   flex-direction: row;
   margin-left: 2.5rem;
+  
 }
 
 .sidebar {
@@ -57,10 +63,11 @@
   color: black;
   cursor: default;
   border: 2px solid black;
+  
 }
-
+/*deleted the width attribute, causes mobile response issues */
 .content {
-  width: calc(100vw - 300px);
+  /*width: calc(100vw - 300px);*/
   padding: 0px 20px;
 }
 
@@ -95,11 +102,17 @@ h2 {
 }
 
 /* Media query for screens smaller than 600px */
-@media (max-width: 450px) {
+/* Change max-width to 768px, standardizing the layout from phones to tablets*/
+/* adjusted margin top */
+@media (max-width: 768px) {
   .main-content {
     flex-direction: column;
     margin-left: 0rem;
+    margin-top: .5rem;
+   
   }
+   
+
 
   .sidebar {
     width: 100%;
@@ -131,4 +144,6 @@ h2 {
   #cyto {
     height: 150px;
   }
+  
 }
+

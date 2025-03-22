@@ -23,7 +23,7 @@
 }
 
 /* Media query for screens smaller than 600px */
-@media (max-width: 450px) {
+@media (max-width: 768px) {
   .container {
     width: 100%;
     padding: 0.5rem;
