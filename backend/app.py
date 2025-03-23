@@ -326,6 +326,11 @@ def initial_search():
   graph : the graph for the search in the form {nodes: [], edges: []}
   list : the list view for the search
   """
+
+  request_data = request.get_json()
+  page = request_data.get('page', 1)
+  per_page = request_data.get('per_page', 10)
+
   institution = request.json.get('organization')
   researcher = request.json.get('researcher')
   researcher = researcher.title()
@@ -346,7 +351,7 @@ def initial_search():
     elif topic:
       results = get_subfield_results(topic)
     elif institution:
-      results = get_institution_results(institution)
+      results = get_institution_results(institution, page, per_page)
     elif researcher:
       results = get_researcher_result(researcher)
 
@@ -445,7 +450,7 @@ def get_researcher_result(researcher):
     app.logger.info(f"Successfully built result for researcher: {researcher}")
     return {"metadata": metadata, "graph": graph, "list": list}
 
-def get_institution_results(institution):
+def get_institution_results(institution, page=1, per_page=10):
     """
     Gets the results when user only inputs an institution
     Uses database to get result, defaults to SPARQL if institution is not in database
@@ -462,7 +467,6 @@ def get_institution_results(institution):
         app.logger.info(f"Successfully retrieved SPARQL results for institution: {institution}")
         return results
     app.logger.debug("Processing database results for institution")
-    list = []
     metadata = data['institution_metadata']
     
     metadata['homepage'] = metadata['url']
@@ -477,8 +481,13 @@ def get_institution_results(institution):
     edges = []
     institution_id = metadata['openalex_url']
     nodes.append({ 'id': institution_id, 'label': institution, 'type': 'INSTITUTION' })
-    
-    for entry in data['data']:
+
+    total_topics = len(data['data'])
+    start = (page - 1) * per_page
+    end = start + per_page
+
+    list = []
+    for entry in data['data'][start:end]:
         subfield = entry['topic_subfield']
         number = entry['num_of_authors']
         list.append((subfield, number))
@@ -490,7 +499,16 @@ def get_institution_results(institution):
     
     graph = {"nodes": nodes, "edges": edges}
     app.logger.info(f"Successfully built result for institution: {institution}")
-    return {"metadata": metadata, "graph": graph, "list": list}
+    return {
+        "metadata": metadata,
+        "metadata_pagination": {
+            "total_pages": (total_topics + per_page - 1) // per_page,
+            "current_page": page,
+            "total_topics": total_topics,
+        },
+        "graph": graph,
+        "list": list
+    }
 
 def get_subfield_results(topic):
     """
