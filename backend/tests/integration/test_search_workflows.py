@@ -506,26 +506,30 @@ def test_author_search_result_schema():
             {"topic": "Math", "num_of_works": 3}
         ]
     }
-    
-    with patch("backend.app.search_by_author", return_value=mock_result):
-        result = search_by_author("Test Author")
-        
-        # Validate schema structure
-        assert "author_metadata" in result
-        assert "data" in result
-        
-        # Validate author_metadata fields
-        metadata = result["author_metadata"]
-        assert "orcid" in metadata
-        assert "openalex_url" in metadata
-        assert "last_known_institution" in metadata
-        assert "num_of_works" in metadata
-        assert "num_of_citations" in metadata
-        
-        # Validate data items
-        for item in result["data"]:
-            assert "topic" in item
-            assert "num_of_works" in item
+
+    # Fix: Patch get_author_ids and execute_query, not search_by_author.
+    from unittest.mock import patch
+    """ And when I patch, I depend on the underlying functions instead of high-level Application Programming Interface functions for accurate testing at a micro-leveling of the "alias", import patch.  """
+    with patch("backend.app.get_author_ids", return_value=[{"author_id": "1234"}]):
+        with patch("backend.app.execute_query", return_value=[(mock_result,)]):
+            result = search_by_author("Test Author")
+
+            # Validate schema structure
+            assert "author_metadata" in result
+            assert "data" in result
+
+            # Validate author_metadata fields
+            metadata = result["author_metadata"]
+            assert "orcid" in metadata
+            assert "openalex_url" in metadata
+            assert "last_known_institution" in metadata
+            assert "num_of_works" in metadata
+            assert "num_of_citations" in metadata
+
+            # Validate data items
+            for item in result["data"]:
+                assert "topic" in item
+                assert "num_of_works" in item
 
 
 def test_institution_search_result_schema():
@@ -544,25 +548,24 @@ def test_institution_search_result_schema():
             {"topic_subfield": "Biology", "num_of_authors": 20},
         ],
     }
-    
-    with patch("backend.app.search_by_institution", return_value=mock_result):
-        result = search_by_institution("Test University")
-        
-        # Validate schema structure
-        assert "institution_metadata" in result
-        assert "data" in result
-        
-        # Validate institution_metadata fields
-        metadata = result["institution_metadata"]
-        assert "institution_name" in metadata
-        assert "openalex_url" in metadata
-        assert "num_of_authors" in metadata
-        assert "num_of_works" in metadata
-        
-        # Validate data items
-        for item in result["data"]:
-            assert "topic_subfield" in item
-            assert "num_of_authors" in item
+
+    from unittest.mock import patch
+    with patch("backend.app.get_institution_id", return_value=123):
+        with patch("backend.app.execute_query", return_value=[(mock_result,)]):
+            result = search_by_institution("Test University")
+
+            assert "institution_metadata" in result
+            assert "data" in result
+
+            metadata = result["institution_metadata"]
+            assert "institution_name" in metadata
+            assert "openalex_url" in metadata
+            assert "num_of_authors" in metadata
+            assert "num_of_works" in metadata
+
+            for item in result["data"]:
+                assert "topic_subfield" in item
+                assert "num_of_authors" in item
 
 
 def test_topic_search_result_schema():
@@ -583,27 +586,24 @@ def test_topic_search_result_schema():
             {"institution_name": "State University", "num_of_authors": 100},
         ]
     }
-    
-    with patch("backend.app.search_by_topic", return_value=mock_result):
+
+    from unittest.mock import patch
+    with patch("backend.app.execute_query", return_value=[(mock_result,)]):
         result = search_by_topic("Chemistry")
-        
-        # Validate schema structure
+
         assert "subfield_metadata" in result
         assert "totals" in result
         assert "data" in result
-        
-        # Validate subfield_metadata fields
+
         for item in result["subfield_metadata"]:
             assert "topic" in item
             assert "subfield_url" in item
-        
-        # Validate totals fields
+
         totals = result["totals"]
         assert "total_num_of_works" in totals
         assert "total_num_of_citations" in totals
         assert "total_num_of_authors" in totals
-        
-        # Validate data items
+
         for item in result["data"]:
             assert "institution_name" in item
             assert "num_of_authors" in item

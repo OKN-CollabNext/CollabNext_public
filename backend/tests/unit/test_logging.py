@@ -66,36 +66,35 @@ def test_flask_app_logging(caplog, flask_log_message, flask_log_level):
 
 
 def test_setup_logger_has_all_handlers(mock_log_path):
-    """
-    Check that setup_logger() attaches at least 5 handlers:
-      DEBUG, INFO, WARNING, ERROR, CRITICAL.
-    """
     with patch("backend.app.os.path.exists") as mock_exists, \
             patch("backend.app.os.makedirs") as mock_makedirs, \
             patch("backend.app.RotatingFileHandler") as mock_handler:
-        
-        # Setup mocks
+
         mock_exists.return_value = False
-        mock_handler_instance = MagicMock()
-        mock_handler.return_value = mock_handler_instance
-        
-        # Call the function under test
-        test_logger = setup_logger()
-        
-        # Verify directory creation
+
+        """ Each time RotatingFileHandler is called, return a new MagicMock()
+        whose '.level' is set to something similar: an actual int """
+        def _handler_side_effect(*args, **kwargs):
+            """ And that's, the correct mock logging definitional function event-driven attributes, at the level of the log, for which we can handle all that appears as a side effect (all those paths paid off).  """
+            handler_mock = MagicMock()
+            handler_mock.level = logging.DEBUG  # or logging.NOTSET, etc.
+            return handler_mock
+
+        mock_handler.side_effect = _handler_side_effect
+
+        test_logger = setup_logger()  # This calls RotatingFileHandler internally
+
+        # Now you can do your checks safely without breaking logging
         mock_makedirs.assert_called_once_with(mock_log_path)
-        
-        # Verify handler creation and configuration
-        assert mock_handler.call_count >= 5, "Should create at least 5 handlers"
-        assert len(test_logger.handlers) >= 5, "Expected at least five handlers."
-        
-        # Verify log levels
-        handler_levels = [handler.level for handler in test_logger.handlers]
-        assert logging.DEBUG in handler_levels, "No DEBUG handler found."
-        assert logging.INFO in handler_levels, "No INFO handler found."
-        assert logging.WARNING in handler_levels, "No WARNING handler found."
-        assert logging.ERROR in handler_levels, "No ERROR handler found."
-        assert logging.CRITICAL in handler_levels, "No CRITICAL handler found."
+        assert mock_handler.call_count >= 5
+        assert len(test_logger.handlers) >= 5
+
+        handler_levels = [h.level for h in test_logger.handlers]
+        assert logging.DEBUG in handler_levels
+        assert logging.INFO in handler_levels
+        assert logging.WARNING in handler_levels
+        assert logging.ERROR in handler_levels
+        assert logging.CRITICAL in handler_levels
 
 
 # def test_setup_logger_azure_environment():
@@ -106,16 +105,16 @@ def test_setup_logger_has_all_handlers(mock_log_path):
 #             patch("backend.app.os.path.exists") as mock_exists, \
 #             patch("backend.app.os.makedirs") as mock_makedirs, \
 #             patch("backend.app.RotatingFileHandler") as mock_handler:
-        
+
 #         # Setup Azure environment
 #         mock_env.return_value = "some-azure-site"
 #         mock_exists.return_value = True
 #         mock_handler_instance = MagicMock()
 #         mock_handler.return_value = mock_handler_instance
-        
+
 #         # Call the function under test
 #         setup_logger()
-        
+
 #         # Verify Azure log path
 #         mock_handler.assert_called()
 #         call_args = mock_handler.call_args_list[0]

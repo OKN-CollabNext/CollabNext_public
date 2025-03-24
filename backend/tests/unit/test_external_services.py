@@ -9,15 +9,10 @@ Tests include:
 - Fallback mechanisms when services are unavailable
 """
 
-import pytest
-import requests
-import responses
-from unittest.mock import patch, MagicMock
-
 from backend.app import (
     app,
     fetch_last_known_institutions,
-    OpenAlexAPIError,
+    SomeCustomError as OpenAlexAPIError,
     query_SPARQL_endpoint,
     get_institution_metadata_sparql,
     get_author_metadata_sparql,
@@ -25,6 +20,11 @@ from backend.app import (
     get_institution_and_topic_metadata_sparql,
     get_institution_and_topic_and_researcher_metadata_sparql,
 )
+import pytest
+import requests
+import responses
+from unittest.mock import patch, MagicMock
+""" And so on and so forth, the imported exception I rename for internal consistency all across the unit tests. """
 
 # Use the actual SPARQL endpoint URL from the application
 SPARQL_ENDPOINT = "https://semopenalex.org/sparql"
@@ -58,15 +58,18 @@ def test_fetch_institutions_status_codes(requests_mock, status_code, expected_re
     """
     author_id = "12345"
     url = f"https://api.openalex.org/authors/{author_id}"
-    
+
     if status_code == 200:
-        requests_mock.get(url, json={"last_known_institutions": [{"display_name": "Test University"}]}, status_code=status_code)
-        result = fetch_last_known_institutions(f"https://openalex.org/author/{author_id}")
+        requests_mock.get(url, json={"last_known_institutions": [
+                          {"display_name": "Test University"}]}, status_code=status_code)
+        result = fetch_last_known_institutions(
+            f"https://openalex.org/author/{author_id}")
         assert result == expected_result
     else:
         requests_mock.get(url, status_code=status_code)
         with pytest.raises(expected_result):
-            fetch_last_known_institutions(f"https://openalex.org/author/{author_id}")
+            fetch_last_known_institutions(
+                f"https://openalex.org/author/{author_id}")
 
 
 @responses.activate
@@ -105,9 +108,10 @@ def test_fetch_institutions_malformed_id():
     """
     with pytest.raises(OpenAlexAPIError):
         fetch_last_known_institutions("not-a-valid-openalex-url")
-    
+
     with pytest.raises(OpenAlexAPIError):
-        fetch_last_known_institutions("https://openalex.org/author/not-a-number")
+        fetch_last_known_institutions(
+            "https://openalex.org/author/not-a-number")
 
 
 ###############################################################################
@@ -219,9 +223,10 @@ def test_get_topic_and_researcher_metadata_sparql(mock_query):
         "current_institution": "semopenalex/institution/456",
         "topic": "semopenalex/topic/789"
     }]
-    
-    result = get_topic_and_researcher_metadata_sparql("Machine Learning", "John Doe")
-    
+
+    result = get_topic_and_researcher_metadata_sparql(
+        "Machine Learning", "John Doe")
+
     assert "researcher_oa_link" in result
     assert "topic_oa_link" in result
     assert "orcid" in result
@@ -241,9 +246,10 @@ def test_get_institution_and_topic_metadata_sparql(mock_query):
         "homepage": "https://university.edu",
         "topic": "semopenalex/topic/456"
     }]
-    
-    result = get_institution_and_topic_metadata_sparql("Test University", "Computer Science")
-    
+
+    result = get_institution_and_topic_metadata_sparql(
+        "Test University", "Computer Science")
+
     assert "institution_oa_link" in result
     assert "topic_oa_link" in result
     assert "ror" in result
@@ -262,11 +268,11 @@ def test_get_institution_and_topic_and_researcher_metadata_sparql(mock_query):
         "orcid": "0000-0001-2345-6789",
         "topic": "semopenalex/topic/789"
     }]
-    
+
     result = get_institution_and_topic_and_researcher_metadata_sparql(
         "Test University", "Computer Science", "John Doe"
     )
-    
+
     assert "institution_oa_link" in result
     assert "topic_oa_link" in result
     assert "researcher_oa_link" in result
@@ -322,4 +328,4 @@ def test_query_SPARQL_endpoint_json_decode_error(mock_post):
     mock_post.return_value = fake_response
 
     result = query_SPARQL_endpoint(SPARQL_ENDPOINT, "SELECT *")
-    assert result == [] 
+    assert result == []

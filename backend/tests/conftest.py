@@ -6,14 +6,16 @@ import psycopg2
 from datetime import datetime
 
 _test_outcomes = []
+_test_finish_message = []
 
 
 @pytest.fixture(scope="module")
-def pg_connection():
+def pg_connection():  # pragma: no cover
     """
     If you want a single Postgres connection for DB tests, do it here.
-    Adjust host/user/password/dbname for your environment.
+    Adjust host/user/password/dbname for your environment. But it really depends on which database setup fixture you want to go, from coverage to indicate external dependency.
     """
+    conn = None
     try:
         conn = psycopg2.connect(
             host=os.getenv("DB_HOST"),
@@ -31,7 +33,7 @@ def pg_connection():
 
 
 @pytest.fixture
-def pg_cursor(pg_connection):
+def pg_cursor(pg_connection):  # pragma: no cover
     cur = pg_connection.cursor()
     try:
         yield cur
@@ -45,7 +47,7 @@ def pytest_collection_modifyitems(config, items):
     for an 'integration' marker. If you still want to skip DB tests
     when SKIP_DB=true, you can adjust logic here as needed.
     """
-    if os.getenv("SKIP_DB", "false").lower() == "true":
+    if os.getenv("SKIP_DB", "false").lower() == "true":  # pragma: no cover
         skip_db = pytest.mark.skip(
             reason="SKIP_DB=true: skipping DB-related tests."
         )
@@ -66,19 +68,14 @@ def pytest_runtest_makereport(item, call):
         _test_outcomes.append((item.nodeid, result.outcome))
 
 
-def pytest_sessionfinish(session, exitstatus):
+def pytest_sessionfinish(session, exitstatus):  # pragma: no cover
     """
-    Called after the entire test run completes. We write our collected
+    Store the ..pytest session finish message (in)directly for reporting. Called after the entire test run completes. We write our collected
     test outcomes to a timestamped text file, e.g. "20250305_145045_test_run.txt".
     """
-
     # Build a timestamped filename like 20250305_145045_test_run.txt
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"{timestamp}_test_run.txt"
-
-    # If you want to avoid overwriting an existing file, you can check here:
-    # if os.path.exists(filename):
-    #     # handle naming collision, e.g., add a random suffix
 
     with open(filename, "w") as f:
         f.write("==== Pytest Results ====\n\n")
@@ -88,4 +85,12 @@ def pytest_sessionfinish(session, exitstatus):
         f.write("\n==== Pytest Exit Status ====\n")
         f.write(f"Exit Code: {exitstatus}\n")
 
-    session.config.hook.pytest_report_header.append(f"Test results saved to: {filename}")
+    # Instead of trying to append to the hook function, we store our message in a list for better results.
+    _test_finish_message.append(f"Test results saved to: {filename}")
+
+
+def pytest_report_header(config):  # pragma: no cover
+    """
+    This hook returns the additional line dumps that appear in the pytest report header.
+    """
+    return _test_finish_message if _test_finish_message else []
