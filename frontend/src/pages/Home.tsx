@@ -26,7 +26,10 @@ const validateSchema = Yup.object().shape({
 });
 
 const DESCRIPTION_TEXT =
-  'CollabNext is part of the the Prototype Open Knowledge Network. We are developing a knowledge graph with entities consisting of people, organizations, and research topics. We are adopting an intentional design approach, initially prioritizing HBCUs and emerging researchers in a deliberate effort to counterbalance the Matthew effect, a naturally accumulated advantage of well-resourced research organizations.';
+  'FAIR WARNING!  This tool is still in a pre-beta stage and is being actively developed. We ask for your patience since we expect you will run into bugs, data errors, and other issues. We welcome your feedback using the link at the bottom of this page.';
+const DESCRIPTION_TEXT2 =
+  'CollabNext is part of the Prototype Open Knowledge Network. We are developing a knowledge graph with entities consisting of people, organizations, and research topics that can help to answer questions such as: "Who is working on what research topic and where are they?"'
+const DESCRIPTION_TEXT3 = 'We are adopting an intentional design approach, initially prioritizing HBCUs and emerging researchers in a deliberate effort to counterbalance the Matthew effect, a naturally accumulated advantage of well - resourced research organizations.';
 
 const initialValues = {
   institution: '',
@@ -70,6 +73,8 @@ const Home = () => {
           lineHeight='1.6'
         >
           {DESCRIPTION_TEXT}
+          <br /><br />{DESCRIPTION_TEXT2}
+          <br /><br />{DESCRIPTION_TEXT3}
         </Text>
       </Box>
 
