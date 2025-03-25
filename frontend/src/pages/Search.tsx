@@ -42,6 +42,10 @@ const Search = () => {
   const [suggestedInstitutions, setSuggestedInstitutions] = useState([]);
   const [suggestedTopics, setSuggestedTopics] = useState([]);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(25);
+  const [totalPages, setTotalPages] = useState(1);
+
   const navigate = useNavigate();
   // const toast = useToast();
 
@@ -70,11 +74,15 @@ const Search = () => {
       institutionType,
       topicType,
       researcherType,
+      page,
+      per_page,
     }: {
       universityName: string;
       institutionType: string;
       topicType: string;
       researcherType: string;
+      page: number,
+      per_page: number,
     },
   ) => {
     fetch(`${baseUrl}/initial-search`, {
@@ -85,11 +93,15 @@ const Search = () => {
         type: institutionType,
         topic: topicType,
         researcher: researcherType,
+        page: page,
+        per_page: per_page
       }),
     })
       .then((res) => res.json())
       .then((data) => {
         console.log(data);
+        setTotalPages(data.metadata_pagination?.total_pages || 1);
+        setCurrentPage(data.metadata_pagination?.current_page || 1);
         const dataObj =
           search === 'institution'
             ? {
@@ -206,11 +218,25 @@ const Search = () => {
       });
   };
 
+const handlePageChange = (newPage: number) => {
+    if (newPage > 0 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+      handleSearch(
+        universityName,
+        institutionType,
+        topicType,
+        researcherType,
+        newPage
+      );
+    }
+  };
+
   const handleSearch = (
     newUniversityName: string,
     newInstitutionType: string,
     newTopicType: string,
     newResearcherType: string,
+    page: number = 1,
   ) => {
     setIsLoading(true);
     const params = new URLSearchParams(window.location.search);
@@ -237,6 +263,8 @@ const Search = () => {
         institutionType: newInstitutionType,
         topicType: newTopicType,
         researcherType: newResearcherType,
+        page: page,
+        per_page: itemsPerPage,
       });
     } else if (
       (newTopicType && newResearcherType) ||
@@ -254,6 +282,8 @@ const Search = () => {
         institutionType: newInstitutionType,
         topicType: newTopicType,
         researcherType: newResearcherType,
+        page: page,
+        per_page: itemsPerPage,
       });
     } else if (newTopicType || newUniversityName || newResearcherType) {
       const search = newTopicType
@@ -266,6 +296,8 @@ const Search = () => {
         institutionType: newInstitutionType,
         topicType: newTopicType,
         researcherType: newResearcherType,
+        page: page,
+        per_page: itemsPerPage,
       });
     } else {
       // Default graph request
@@ -364,6 +396,7 @@ const Search = () => {
               institutionType,
               topicType,
               researcherType,
+              1
             );
           }}
           className='sidebar'
@@ -598,7 +631,9 @@ const Search = () => {
           ) : isNetworkMap === 'list' ? (
             <div>
               {data?.search === 'institution' ? (
-                <InstitutionMetadata data={data} setTopic={setTopicType} />
+                <InstitutionMetadata data={data} setTopic={setTopicType} currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}/>
               ) : data?.search === 'topic' ? (
                 <TopicMetadata data={data} setInstitution={setUniversityName} />
               ) : data?.search === 'researcher' ? (

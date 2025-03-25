@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Box, Flex, Text } from '@chakra-ui/react';
+import { Box, Button, Flex, Text } from '@chakra-ui/react';
 
 import { ResearchDataInterface } from '../utils/interfaces';
 import MUPDataVisualizer from './MUPDataVisualizer';
@@ -15,9 +15,15 @@ ${JSON.stringify(json)}
 const InstitutionMetadata = ({
   data,
   setTopic,
+  currentPage,
+  totalPages,
+  onPageChange,
 }: {
   data: ResearchDataInterface;
   setTopic: React.Dispatch<React.SetStateAction<string>>;
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
 }) => {
   const structuredData: WithContext<Organization> = {
     "@context": "https://schema.org",
@@ -49,7 +55,6 @@ const InstitutionMetadata = ({
         className='list-map'
       >
         <Box w={{lg: '34%'}}>
-          <button className='topButton'>List Map</button>
           <h2>
             {data?.institution_name}
             {data?.is_hbcu ? ' - HBCU' : ''}
@@ -106,6 +111,25 @@ const InstitutionMetadata = ({
             ))}
           </Box>
         </Box>
+      </Flex>
+      <Flex justifyContent="center" mt={4} gap={2} alignItems="center">
+        <Button
+            onClick={() => onPageChange(currentPage - 1)}
+            isDisabled={currentPage === 1}
+            size="sm"
+        >
+          Previous
+        </Button>
+        <Text fontSize="sm">
+            Page {currentPage} of {totalPages}
+        </Text>
+        <Button
+            onClick={() => onPageChange(currentPage + 1)}
+            isDisabled={currentPage === totalPages}
+            size="sm"
+        >
+            Next
+        </Button>
       </Flex>
 
       <Box 
