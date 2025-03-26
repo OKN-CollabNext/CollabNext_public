@@ -14,6 +14,7 @@ import psycopg2
 
 # Make a change
 # Load environment variables
+#this is just comment 
 try:
   DB_HOST=os.environ['DB_HOST']
   DB_PORT= int(os.environ['DB_PORT'])
