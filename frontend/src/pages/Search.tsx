@@ -649,6 +649,8 @@ const handlePageChange = (newPage: number) => {
                 <TopicInstitutionMetadata
                   data={data}
                   setResearcher={setResearcherType}
+                  currentPage={currentPage} totalPages={totalPages}
+                  onPageChange={handlePageChange}
                 />
               ) : (
                 <AllThreeMetadata data={data} />

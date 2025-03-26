@@ -329,7 +329,7 @@ def initial_search():
 
   request_data = request.get_json()
   page = request_data.get('page', 1)
-  per_page = request_data.get('per_page', 10)
+  per_page = request_data.get('per_page',25)
 
   institution = request.json.get('organization')
   researcher = request.json.get('researcher')
@@ -345,7 +345,7 @@ def initial_search():
     elif institution and researcher:
       results = get_institution_and_researcher_results(institution, researcher)
     elif institution and topic:
-      results = get_institution_and_subfield_results(institution, topic)
+      results = get_institution_and_subfield_results(institution, topic, page, per_page)
     elif researcher and topic:
       results = get_researcher_and_subfield_results(researcher, topic)
     elif topic:
@@ -627,7 +627,7 @@ def get_researcher_and_subfield_results(researcher, topic):
     app.logger.info(f"Successfully built result for researcher: {researcher} and topic: {topic}")
     return {"metadata": metadata, "graph": graph, "list": list}
 
-def get_institution_and_subfield_results(institution, topic):
+def get_institution_and_subfield_results(institution, topic, page=1, per_page=25):
     """
     Gets the results when user inputs an institution and subfield
     Uses database to get result, defaults to SPARQL if institution is not in database
@@ -677,7 +677,11 @@ def get_institution_and_subfield_results(institution, topic):
     nodes.append({ 'id': institution_id, 'label': institution, 'type': 'INSTITUTION' })
     edges.append({ 'id': f"""{institution_id}-{subfield_id}""", 'start': institution_id, 'end': subfield_id, "label": "researches", "start_type": "INSTITUTION", "end_type": "TOPIC"})
     
-    for entry in data['data']:
+    total_topics = len(data['data'])
+    start = (page - 1) * per_page
+    end = start + per_page
+
+    for entry in data['data'][start:end]:
         author_id = entry['author_id']
         author_name = entry['author_name']
         number = entry['num_of_works']
@@ -690,7 +694,16 @@ def get_institution_and_subfield_results(institution, topic):
     graph = {"nodes": nodes, "edges": edges}
     metadata['people_count'] = len(list)
     app.logger.info(f"Successfully built result for institution: {institution} and topic: {topic}")
-    return {"metadata": metadata, "graph": graph, "list": list}
+    return {
+        "metadata": metadata,
+        "metadata_pagination": {
+            "total_pages": (total_topics + per_page - 1) // per_page,
+            "current_page": page,
+            "total_topics": total_topics,
+        },
+        "graph": graph,
+        "list": list
+    }
 
 def get_institution_and_researcher_results(institution, researcher):
     """
