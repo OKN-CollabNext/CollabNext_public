@@ -635,16 +635,25 @@ const handlePageChange = (newPage: number) => {
                 totalPages={totalPages}
                 onPageChange={handlePageChange}/>
               ) : data?.search === 'topic' ? (
-                <TopicMetadata data={data} setInstitution={setUniversityName} />
+                <TopicMetadata data={data} setInstitution={setUniversityName} currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange} />
               ) : data?.search === 'researcher' ? (
-                <ResearcherMetadata data={data} setTopic={setTopicType} />
+                <ResearcherMetadata data={data} setTopic={setTopicType} currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}/>
               ) : data?.search === 'researcher-institution' ? (
                 <InstitutionResearcherMetaData
                   data={data}
                   setTopic={setTopicType}
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
                 />
               ) : data?.search === 'topic-researcher' ? (
-                <TopicResearcherMetadata data={data} />
+                <TopicResearcherMetadata data={data} currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange} />
               ) : data?.search === 'topic-institution' ? (
                 <TopicInstitutionMetadata
                   data={data}
@@ -653,7 +662,9 @@ const handlePageChange = (newPage: number) => {
                   onPageChange={handlePageChange}
                 />
               ) : (
-                <AllThreeMetadata data={data} />
+                <AllThreeMetadata data={data} currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange} />
               )}
             </div>
           ) : (
