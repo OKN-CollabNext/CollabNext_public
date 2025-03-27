@@ -258,7 +258,7 @@ def search_by_institution(institution_name):
         app.logger.warning(f"No institution ID found for {institution_name}")
         return None
 
-    query = """SELECT search_by_institution(%s);"""
+    query = """SELECT search_by_institution_copy(%s);"""
     results = execute_query(query, (institution_id,))
     if results:
         app.logger.info(f"Found results for institution search: {institution_name}")
@@ -286,8 +286,10 @@ def search_by_author(author_name):
 
 
 ## Creates lists for autofill functionality from the institution and keyword csv files
-with open('institutions.csv', 'r') as file:
+with open('institutions.csv', 'r', encoding='UTF-8') as file:
     autofill_inst_list = file.read().split(',\n')
+    for i in range(0, len(autofill_inst_list)):
+        autofill_inst_list[i] = autofill_inst_list[i].replace('"', '')
 with open('subfields.csv', 'r') as file:
     autofill_subfields_list = file.read().split('\n')
 SUBFIELDS = True
@@ -469,7 +471,6 @@ def get_institution_results(institution, page=1, per_page=10):
         return results
     app.logger.debug("Processing database results for institution")
     metadata = data['institution_metadata']
-    
     metadata['homepage'] = metadata['url']
     metadata['works_count'] = metadata['num_of_works']
     metadata['name'] = metadata['institution_name']
@@ -480,8 +481,7 @@ def get_institution_results(institution, page=1, per_page=10):
     app.logger.debug("Building graph structure")
     nodes = []
     edges = []
-    institution_id = metadata['openalex_url']
-    nodes.append({ 'id': institution_id, 'label': institution, 'type': 'INSTITUTION' })
+    # institution_id = metadata['openalex_url']
 
     total_topics = len(data['data'])
     start = (page - 1) * per_page
@@ -492,11 +492,11 @@ def get_institution_results(institution, page=1, per_page=10):
         subfield = entry['topic_subfield']
         number = entry['num_of_authors']
         list.append((subfield, number))
-        nodes.append({'id': subfield, 'label': subfield, 'type': "TOPIC"})
-        number_id = subfield + ":" + str(number)
-        nodes.append({'id': number_id, 'label': number, 'type': "NUMBER"})
-        edges.append({ 'id': f"""{institution_id}-{subfield}""", 'start': institution_id, 'end': subfield, "label": "researches", "start_type": "INSTITUTION", "end_type": "TOPIC"})
-        edges.append({ 'id': f"""{subfield}-{number_id}""", 'start': subfield, 'end': number_id, "label": "number", "start_type": "TOPIC", "end_type": "NUMBER"})
+        nodes.append({'id': subfield, 'label': subfield, 'type': "SUBFIELD"})
+        subfield_metadata = data['subfield_metadata']
+        for topic in subfield_metadata[subfield]:
+            nodes.append({'id': topic['topic_display_name'], 'label': topic['topic_display_name'], 'type': "TOPIC"})
+            edges.append({ 'id': f"""{subfield}-{topic['topic_display_name']}""", 'start': subfield, 'end': topic['topic_display_name'], "label": "has_topic", "start_type": "SUBFIELD", "end_type": "TOPIC"})
     
     graph = {"nodes": nodes, "edges": edges}
     app.logger.info(f"Successfully built result for institution: {institution}")
