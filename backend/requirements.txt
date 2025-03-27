@@ -1,0 +1,11 @@
+Flask==2.2.2
+Flask-Cors
+gunicorn
+Werkzeug==2.2.2
+requests
+python-dotenv
+flask-cors
+mysql-connector-python
+pandas
+psycopg2
+psycopg2-binary
