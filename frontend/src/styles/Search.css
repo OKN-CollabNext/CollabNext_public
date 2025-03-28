@@ -5,11 +5,12 @@
 
 
 .info {
-  text-align: left;
+  text-align: center;
   margin: auto;
   max-width: 600px;
  
 }
+
 
 .network-map img,
 .list-map img {
@@ -65,9 +66,11 @@
   border: 2px solid black;
   
 }
-/*deleted the width attribute, causes mobile response issues */
+
+/* adjusted width from vw-300px to 100% to fix distorted width of Network map*/
 .content {
-  /*width: calc(100vw - 300px);*/
+  /*width: calc(100vw - 30%);*/
+  width: 100%;
   padding: 0px 20px;
 }
 
