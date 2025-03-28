@@ -1,15 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="2" failures="0" skipped="0" tests="2" time="0.109" timestamp="2025-03-05T23:12:24.938782" hostname="MacBook-Pro-8.local"><testcase classname="" name="backend.tests.data_tests.test_endpoints" time="0.000"><error message="collection failure">ImportError while importing test module '/Users/deangladish/CollabNext_public/backend/tests/data_tests/test_endpoints.py'.
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="2" failures="0" skipped="0" tests="2" time="0.609" timestamp="2025-03-27T18:52:50.420888" hostname="MacBook-Pro-112.local"><testcase classname="" name="backend.tests.api.test_endpoints" time="0.000"><error message="collection failure">ImportError while importing test module '/Users/deangladish/CollabNext_public/backend/tests/api/test_endpoints.py'.
 Hint: make sure your test modules/packages have valid Python names.
 Traceback:
 ../../miniforge3/lib/python3.10/importlib/__init__.py:126: in import_module
     return _bootstrap._gcd_import(name[level:], package, level)
-tests/data_tests/test_endpoints.py:17: in &lt;module&gt;
-    from backend.app import create_connection, is_HBCU  # direct import is fine here
-E   ModuleNotFoundError: No module named 'backend'</error></testcase><testcase classname="" name="backend.tests.unit.test_endpoints" time="0.000"><error message="collection failure">ImportError while importing test module '/Users/deangladish/CollabNext_public/backend/tests/unit/test_endpoints.py'.
+tests/api/test_endpoints.py:14: in &lt;module&gt;
+    from backend.app import app, SomeCustomError as OpenAlexAPIError
+E   ImportError: cannot import name 'SomeCustomError' from 'backend.app' (/Users/deangladish/CollabNext_public/backend/app.py)</error></testcase><testcase classname="" name="backend.tests.unit.test_external_services" time="0.000"><error message="collection failure">ImportError while importing test module '/Users/deangladish/CollabNext_public/backend/tests/unit/test_external_services.py'.
 Hint: make sure your test modules/packages have valid Python names.
 Traceback:
 ../../miniforge3/lib/python3.10/importlib/__init__.py:126: in import_module
     return _bootstrap._gcd_import(name[level:], package, level)
-tests/unit/test_endpoints.py:26: in &lt;module&gt;
+tests/unit/test_external_services.py:12: in &lt;module&gt;
     from backend.app import (
-E   ModuleNotFoundError: No module named 'backend'</error></testcase></testsuite></testsuites>
+E   ImportError: cannot import name 'SomeCustomError' from 'backend.app' (/Users/deangladish/CollabNext_public/backend/app.py)</error></testcase></testsuite></testsuites>

@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import os.path
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 
@@ -309,10 +310,15 @@ def search_by_author(author_name):
 
 
 # Creates lists for autofill functionality from the institution and keyword csv files
-with open('institutions.csv', 'r') as file:
-    autofill_inst_list = file.read().split(',\n')
-with open('subfields.csv', 'r') as file:
-    autofill_subfields_list = file.read().split('\n')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+institutions_csv_path = os.path.join(BASE_DIR, "institutions.csv")
+subfields_csv_path = os.path.join(BASE_DIR, "subfields.csv")
+
+with open(institutions_csv_path, "r") as file:
+    autofill_inst_list = file.read().split(",\n")
+
+with open(subfields_csv_path, "r") as file:
+    autofill_subfields_list = file.read().split("\n")
 SUBFIELDS = True
 if not SUBFIELDS:
     with open('keywords.csv', 'r') as fil:
