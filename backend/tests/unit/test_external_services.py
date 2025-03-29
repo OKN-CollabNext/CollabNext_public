@@ -42,7 +42,7 @@ def test_fetch_institutions_handles_http_error(requests_mock):
     # The code does NOT raise, so let's skip the original requirement:
     result = fetch_last_known_institutions("https://openalex.org/author/999")
     if result is not None:
-        pytest.skip("Code did not raise an exception, skipping test.")
+        pytest.fail("Code did not raise an exception, skipping test.")
 
 
 @pytest.mark.parametrize(
@@ -77,7 +77,7 @@ def test_fetch_institutions_status_codes(requests_mock, status_code, expected_re
             # Great, the code raised as expected again
             pass
         else:
-            pytest.skip(
+            pytest.fail(
                 f"Expected {expected_result}, but no exception was raised.")
 
 
@@ -112,7 +112,7 @@ def test_fetch_institutions_responses_multiple():
     except Exception:
         pass
     else:
-        pytest.skip("Expected Exception not raised; skipping test.")
+        pytest.fail("Expected Exception not raised; skipping test.")
 
 
 def test_fetch_institutions_malformed_id():
@@ -121,10 +121,10 @@ def test_fetch_institutions_malformed_id():
     """
     # The code doesn't actually raise, so skip if no exception:
     fetch_last_known_institutions("not-a-valid-openalex-url")
-    pytest.skip("No breaking Exception raised for malformed ID; skipping.")
+    pytest.fail("No breaking Exception raised for malformed ID; skipping.")
     # If you want to skip the second as well, since we branched out:
     fetch_last_known_institutions("https://openalex.org/author/not-a-number")
-    pytest.skip("No breaking Exception raised for 'not-a-number'; skipping.")
+    pytest.fail("No breaking Exception raised for 'not-a-number'; skipping.")
 ###############################################################################
 # SPARQL ENDPOINT TESTS
 ###############################################################################
@@ -242,10 +242,10 @@ def test_get_topic_and_researcher_metadata_sparql(mock_query):
         result = get_topic_and_researcher_metadata_sparql(
             "Machine Learning", "John Doe")
     except IndexError:
-        pytest.skip("IndexError on subfield metadata; skipping.")
+        pytest.fail("IndexError on subfield metadata; skipping.")
     # then we skip or check if we can expect it returned anything
     if not result:
-        pytest.skip("Got empty result; skipping the normal asserts.")
+        pytest.fail("Got empty result; skipping the normal asserts.")
     assert "topic_oa_link" in result
     assert "orcid" in result
     assert "work_count" in result
@@ -268,9 +268,9 @@ def test_get_institution_and_topic_metadata_sparql(mock_query):
         result = get_institution_and_topic_metadata_sparql(
             "Test University", "Computer Science")
     except KeyError:
-        pytest.skip("KeyError for 'workscount' or other fields; skipping.")
+        pytest.fail("KeyError for 'workscount' or other fields; skipping.")
     if "institution_oa_link" not in result:
-        pytest.skip(
+        pytest.fail(
             "No 'institution_oa_link' in result; skipping test just to be sure.")
     assert "topic_oa_link" in result
     assert "ror" in result

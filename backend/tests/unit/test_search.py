@@ -53,9 +53,9 @@ def test_initial_search_null_values(client):
         200, 400, 415, 500), "Expected safe fallback or 400/415/500."
     data = response.get_json()
     if data is None:
-        pytest.skip("Got None for Null-values test.")
+        pytest.fail("Got None for Null-values test.")
     if not isinstance(data, dict):
-        pytest.skip(f"Expected dict, got {type(data)}. Skipping test.")
+        pytest.fail(f"Expected dict, got {type(data)}. Skipping test.")
 
 
 @pytest.mark.parametrize(
@@ -102,9 +102,9 @@ def test_initial_search_partially_null(client, payload):
     assert response.status_code in (
         200, 500), "Expected partial search or 500 fallback."
     if data is None:
-        pytest.skip("No JSON returned; skipping partial null test.")
+        pytest.fail("No JSON returned; skipping partial null test.")
     if not isinstance(data, dict):
-        pytest.skip(f"Expected dict, got {type(data)}; skipping.")
+        pytest.fail(f"Expected dict, got {type(data)}; skipping.")
 
 
 @pytest.mark.parametrize(
@@ -126,9 +126,9 @@ def test_initial_search_invalid_types(client, invalid_payload):
         200, 400, 500), "Expected 200 or 400 or 500 for invalid data."
     data = response.get_json()
     if data is None:
-        pytest.skip("Got None for invalid types; skipping.")
+        pytest.fail("Got None for invalid types; skipping.")
     if not isinstance(data, dict):
-        pytest.skip(f"Expected dict, got {type(data)}; skipping.")
+        pytest.fail(f"Expected dict, got {type(data)}; skipping.")
 
 
 def test_initial_search_extremely_long_strings(client):
