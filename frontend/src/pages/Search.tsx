@@ -374,14 +374,15 @@ const handlePageChange = (newPage: number) => {
   }, []);
 
   return (
-    <Box>
-      <Flex justifyContent={'flex-end'} px='2rem'>
+    <Box >
+      <Flex  justifyContent={'flex-end'} px='2rem'>
         {['List', 'Graph', 'Map'].map((value) => (
           <Button
             onClick={() => setIsNetworkMap(value.toLowerCase())}
             bg='linear-gradient(#053257, #7e7e7e)'
             color='white'
             mr='1rem'
+            
           >
             {value}
           </Button>
