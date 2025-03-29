@@ -1,12 +1,21 @@
 import React, { useState } from 'react';
 
-import { Box, Flex, Text } from '@chakra-ui/react';
+import { Box, Button, Flex, Text } from '@chakra-ui/react';
 
 import { ResearchDataInterface } from '../utils/interfaces';
 import TopicClusterGraphComponent from './TopicClusterGraphComponent';
 import { TransformTopicClustersForOrb } from './TransformTopicCluster.js';
 
-const AllThreeMetadata = ({data}: {data: ResearchDataInterface}) => {
+const AllThreeMetadata = ({
+  data,
+  currentPage,
+  totalPages,
+  onPageChange
+  } : {
+    data: ResearchDataInterface, 
+    currentPage: number,
+    totalPages: number,
+    onPageChange: (page: number) => void; }) => {
 
   const [showTopicClusterGraph, setTopicClusterGraph] = useState(false);
   const handleTopicClusterClick = () => {
@@ -14,6 +23,7 @@ const AllThreeMetadata = ({data}: {data: ResearchDataInterface}) => {
   }
 
   return (
+    <>
     <Flex
       display={{base: 'block', lg: 'flex'}}
       justifyContent={'space-between'}
@@ -98,6 +108,26 @@ const AllThreeMetadata = ({data}: {data: ResearchDataInterface}) => {
       </Box>
       )}
     </Flex>
+    <Flex justifyContent="center" mt={4} gap={2} alignItems="center">
+        <Button
+            onClick={() => onPageChange(currentPage - 1)}
+            isDisabled={currentPage === 1}
+            size="sm"
+        >
+          Previous
+        </Button>
+        <Text fontSize="sm">
+            Page {currentPage} of {totalPages}
+        </Text>
+        <Button
+            onClick={() => onPageChange(currentPage + 1)}
+            isDisabled={currentPage === totalPages}
+            size="sm"
+        >
+            Next
+        </Button>
+      </Flex>
+    </>
   );
 };
 
