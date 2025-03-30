@@ -364,6 +364,7 @@ def initial_search():
     page = request_data.get('page', 1)
     per_page = request_data.get('per_page', 25)
 
+
     institution = request.json.get('organization')
     researcher = request.json.get('researcher')
     researcher = researcher.title()
@@ -484,6 +485,7 @@ def get_researcher_result(researcher, page=1, per_page=20):
     nodes.append({'id': metadata['openalex_url'],
                  'label': researcher, "type": "AUTHOR"})
 
+
     total_topics = len(data['data'])
     start = (page - 1) * per_page
     end = start + per_page
@@ -576,7 +578,6 @@ def get_institution_results(institution, page=1, per_page=10):
         "list": list
     }
 
-
 def get_subfield_results(topic, page=1, per_page=20):
     """
     Gets the results when user only inputs a subfield
@@ -627,12 +628,14 @@ def get_subfield_results(topic, page=1, per_page=20):
 
     graph = {"nodes": nodes, "edges": edges}
     app.logger.info(f"Successfully built result for topic: {topic}")
+
     return {"metadata": metadata,
             "metadata_pagination": {
                 "total_pages": (total_topics + per_page - 1) // per_page,
                 "current_page": page,
                 "total_topics": total_topics,
             }, "graph": graph, "list": list}
+
 
 
 def get_researcher_and_subfield_results(researcher, topic, page=1, per_page=20):
@@ -692,6 +695,7 @@ def get_researcher_and_subfield_results(researcher, topic, page=1, per_page=20):
     edges = []
     researcher_id = metadata['researcher_oa_link']
     subfield_id = metadata['topic_oa_link']
+
     nodes.append({'id': last_known_institution,
                  'label': last_known_institution, 'type': 'INSTITUTION'})
     edges.append({'id': f"""{researcher_id}-{last_known_institution}""", 'start': researcher_id,
@@ -700,6 +704,7 @@ def get_researcher_and_subfield_results(researcher, topic, page=1, per_page=20):
     nodes.append({'id': subfield_id, 'label': topic, 'type': 'TOPIC'})
     edges.append({'id': f"""{researcher_id}-{subfield_id}""", 'start': researcher_id,
                  'end': subfield_id, "label": "researches", "start_type": "AUTHOR", "end_type": "TOPIC"})
+
 
     total_topics = len(data['data'])
     start = (page - 1) * per_page
@@ -717,6 +722,7 @@ def get_researcher_and_subfield_results(researcher, topic, page=1, per_page=20):
                      "label": "citedBy", "start_type": "WORK", "end_type": "NUMBER"})
 
     graph = {"nodes": nodes, "edges": edges}
+
     app.logger.info(
         f"Successfully built result for researcher: {researcher} and topic: {topic}")
     return {"metadata": metadata,
@@ -725,7 +731,6 @@ def get_researcher_and_subfield_results(researcher, topic, page=1, per_page=20):
                 "current_page": page,
                 "total_topics": total_topics,
             }, "graph": graph, "list": list}
-
 
 def get_institution_and_subfield_results(institution, topic, page=1, per_page=20):
     """
@@ -776,11 +781,13 @@ def get_institution_and_subfield_results(institution, topic, page=1, per_page=20
     edges = []
     subfield_id = metadata['topic_oa_link']
     institution_id = metadata['institution_oa_link']
+
     nodes.append({'id': subfield_id, 'label': topic, 'type': 'TOPIC'})
     nodes.append(
         {'id': institution_id, 'label': institution, 'type': 'INSTITUTION'})
     edges.append({'id': f"""{institution_id}-{subfield_id}""", 'start': institution_id,
                  'end': subfield_id, "label": "researches", "start_type": "INSTITUTION", "end_type": "TOPIC"})
+
 
     total_topics = len(data['data'])
     start = (page - 1) * per_page
@@ -800,8 +807,10 @@ def get_institution_and_subfield_results(institution, topic, page=1, per_page=20
 
     graph = {"nodes": nodes, "edges": edges}
     metadata['people_count'] = len(list)
+
     app.logger.info(
         f"Successfully built result for institution: {institution} and topic: {topic}")
+
     return {
         "metadata": metadata,
         "metadata_pagination": {
@@ -812,7 +821,6 @@ def get_institution_and_subfield_results(institution, topic, page=1, per_page=20
         "graph": graph,
         "list": list
     }
-
 
 def get_institution_and_researcher_results(institution, researcher, page=1, per_page=20):
     """
@@ -861,6 +869,7 @@ def get_institution_and_researcher_results(institution, researcher, page=1, per_
     nodes = []
     edges = []
     author_id = metadata['researcher_oa_link']
+
     nodes.append(
         {'id': institution, 'label': institution, 'type': 'INSTITUTION'})
     edges.append({'id': f"""{author_id}-{institution}""", 'start': author_id, 'end': institution,
@@ -955,6 +964,7 @@ def get_institution_researcher_subfield_results(institution, researcher,
     institution_id = metadata['institution_oa_link']
     researcher_id = metadata['researcher_oa_link']
     subfield_id = metadata['topic_oa_link']
+
     nodes.append(
         {'id': institution_id, 'label': institution, 'type': 'INSTITUTION'})
     edges.append({'id': f"""{researcher_id}-{institution_id}""", 'start': researcher_id,
@@ -963,6 +973,7 @@ def get_institution_researcher_subfield_results(institution, researcher,
     nodes.append({'id': subfield_id, 'label': topic, 'type': 'TOPIC'})
     edges.append({'id': f"""{researcher_id}-{subfield_id}""", 'start': researcher_id,
                  'end': subfield_id, "label": "researches", "start_type": "AUTHOR", "end_type": "TOPIC"})
+
 
     total_topics = len(data['data'])
     start = (page - 1) * per_page
@@ -980,6 +991,7 @@ def get_institution_researcher_subfield_results(institution, researcher,
                      "label": "citedBy", "start_type": "WORK", "end_type": "NUMBER"})
 
     graph = {"nodes": nodes, "edges": edges}
+
     app.logger.info(
         f"Successfully built result for researcher: {researcher}, institution: {institution}, and topic: {topic}")
 
@@ -989,6 +1001,7 @@ def get_institution_researcher_subfield_results(institution, researcher,
                 "current_page": page,
                 "total_topics": total_topics,
             }, "graph": graph, "list": list}
+
 
 
 def query_SPARQL_endpoint(endpoint_url, query):
