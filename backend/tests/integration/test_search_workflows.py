@@ -12,7 +12,6 @@ Tests include:
 - search_by_author_institution_topic
 - Fallback logic for search functions
 """
-
 import pytest
 from unittest.mock import patch, MagicMock
 from backend.app import (
@@ -27,11 +26,10 @@ from backend.app import (
     search_by_topic,
     search_by_institution,
 )
-
-
 ###############################################################################
 # SEARCH FUNCTION TESTS
 ###############################################################################
+
 
 @pytest.mark.parametrize(
     "author_name, get_author_ids_result, search_by_author_result, final_expected",
@@ -66,20 +64,12 @@ from backend.app import (
     ids=["AuthorFound", "AuthorNotFound"]
 )
 @patch("backend.app.execute_query")
-def test_search_by_author_param(
-    mock_exec, author_name, get_author_ids_result, search_by_author_result, final_expected
-):
-    """
-    Testing search_by_author(...) with different database return scenarios (mocked).
-    """
+def test_search_by_author_param(mock_exec, author_name, get_author_ids_result, search_by_author_result, final_expected):
     if get_author_ids_result is None:
         mock_exec.side_effect = [None]
     else:
-        mock_exec.side_effect = [
-            [(get_author_ids_result)],
-            [(search_by_author_result)]
-        ]
-
+        mock_exec.side_effect = [[(get_author_ids_result)], [
+            (search_by_author_result)]]
     result = search_by_author(author_name)
     if final_expected:
         assert result is not None
