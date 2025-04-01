@@ -62,7 +62,7 @@ from backend.app import (
     create_connection,
 )
 
-# Set environment variables (as in test_all.py (almost all))
+# Set environment variables
 os.environ["DB_HOST"] = "localhost"
 os.environ["DB_PORT"] = "5432"
 os.environ["DB_NAME"] = "testdb"
@@ -79,7 +79,7 @@ def client():
     with app.test_client() as client:
         yield client
 
-# This fixture just patches file I/O for endpoints that read CSV/JSON files.
+# This fixture patches file I/O for endpoints that read CSV/JSON files.
 
 
 @pytest.fixture(autouse=True)

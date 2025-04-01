@@ -33,9 +33,6 @@ SPARQL_ENDPOINT = "https://semopenalex.org/sparql"
 ###############################################################################
 
 def test_fetch_institutions_handles_http_error(requests_mock):
-    """
-    Confirm that a non-200 status code triggers an exception when fetching from OpenAlex.
-    """
     requests_mock.get("https://api.openalex.org/authors/999", status_code=500)
     result = fetch_last_known_institutions("https://openalex.org/author/999")
     assert result == []
@@ -51,9 +48,6 @@ def test_fetch_institutions_handles_http_error(requests_mock):
     ids=["Success", "NotFound", "ServerError"]
 )
 def test_fetch_institutions_status_codes(requests_mock, status_code, expected_result):
-    """
-    Test handling of different HTTP status codes in fetch_last_known_institutions.
-    """
     author_id = "12345"
     url = f"https://api.openalex.org/authors/{author_id}"
     requests_mock.get(
@@ -65,9 +59,6 @@ def test_fetch_institutions_status_codes(requests_mock, status_code, expected_re
 
 @responses.activate
 def test_fetch_institutions_responses_multiple():
-    """
-    Test handling multiple mocked HTTP calls to OpenAlex API.
-    """
     responses.add(
         responses.GET,
         "https://api.openalex.org/authors/555",
@@ -89,9 +80,6 @@ def test_fetch_institutions_responses_multiple():
 
 
 def test_fetch_institutions_malformed_id():
-    """
-    Test that malformed OpenAlex IDs are handled properly.
-    """
     result = fetch_last_known_institutions("not-a-valid-openalex-url")
     assert result == []
 
@@ -116,17 +104,10 @@ def test_fetch_last_known_institutions_non_200(mock_get):
 
 @patch("backend.app.requests.post")
 def test_query_SPARQL_endpoint_success(mock_post):
-    """
-    Test successful SPARQL endpoint query with mocked response.
-    """
     fake_response = MagicMock()
     fake_response.raise_for_status.return_value = None
     fake_response.json.return_value = {
-        "results": {
-            "bindings": [
-                {"var1": {"value": "val1"}, "var2": {"value": "val2"}}
-            ]
-        }
+        "results": {"bindings": [{"var1": {"value": "val1"}, "var2": {"value": "val2"}}]}
     }
     mock_post.return_value = fake_response
     result = query_SPARQL_endpoint(SPARQL_ENDPOINT, "SELECT *")
@@ -136,31 +117,21 @@ def test_query_SPARQL_endpoint_success(mock_post):
 
 @patch("backend.app.requests.post", side_effect=requests.exceptions.RequestException("Error"))
 def test_query_SPARQL_endpoint_failure(mock_post):
-    """
-    Test SPARQL endpoint query failure with mocked exception.
-    """
     result = query_SPARQL_endpoint(SPARQL_ENDPOINT, "SELECT *")
     assert result == []
 
 
 @patch("backend.app.query_SPARQL_endpoint", return_value=[])
 def test_get_institution_metadata_sparql_no_results(mock_query):
-    """
-    Test get_institution_metadata_sparql returns empty dict when no results.
-    """
     result = get_institution_metadata_sparql("Nonexistent")
     assert result == {}
 
 
 @patch("backend.app.query_SPARQL_endpoint")
 def test_get_institution_metadata_sparql_valid(mock_query):
-    """
-    Test parsing institution fields from a valid SPARQL response.
-    """
     mock_query.return_value = [{
         "ror": "ror123",
         "workscount": "100",
-        # "cite_count": "200",
         "citedcount": "200",
         "homepage": "http://homepage",
         "institution": "semopenalex/institution/abc",
@@ -175,20 +146,13 @@ def test_get_institution_metadata_sparql_valid(mock_query):
 
 @patch("backend.app.query_SPARQL_endpoint", return_value=[])
 def test_get_author_metadata_sparql_no_results(mock_query):
-    """
-    Test get_author_metadata_sparql returns empty dict when no results.
-    """
     result = get_author_metadata_sparql("Nonexistent Author")
     assert result == {}
 
 
 @patch("backend.app.query_SPARQL_endpoint")
 def test_get_author_metadata_sparql_valid(mock_query):
-    """
-    Test parsing author fields from a valid SPARQL response.
-    """
     mock_query.return_value = [{
-        # "citedcount": "300",
         "cite_count": "300",
         "orcid": "orcid123",
         "works_count": "50",

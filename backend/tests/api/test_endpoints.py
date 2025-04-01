@@ -1,7 +1,6 @@
 """
 API Endpoint Tests
 
-This file contains tests for the API endpoints of the application.
 Tests include:
 - /initial-search endpoint with various input combinations
 - /get-institutions endpoint
@@ -12,18 +11,15 @@ Tests include:
 """
 
 from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, mock_open
 from backend.app import app, combine_graphs, is_HBCU
 import pytest
 import json
-from unittest.mock import patch, MagicMock, mock_open
 """ Rename the exception as it has been imported and importable, to reflect more genuinely its origin as I have customized it. We could do so redefine and rename the SomeCustomError in the `backend.app`, however, as OpenAlexAPIError. """
 
 
 @pytest.fixture
 def client():
-    """
-    Common Flask test client fixture for endpoint tests.
-    """
     with app.test_client() as test_client:
         yield test_client
 
@@ -33,21 +29,9 @@ def client():
 ###############################################################################
 
 def test_initial_search_null_values(client):
-    """
-    If the JSON includes explicit None values for organization, researcher, topic, or type,
-    the endpoint should handle them gracefully and not crash.
-    """
-    payload = {
-        "organization": None,
-        "researcher": None,
-        "topic": None,
-        "type": None
-    }
+    payload = {"organization": None,
+               "researcher": None, "topic": None, "type": None}
     response = client.post("/initial-search", json=payload)
-    """ Yes we did, we widened the allowed response statuses such that we can better reflect the errors on the client that we deem possible. """
-    # If it's a dict with "error" or anything else, we Allow It:
-    # else pass. Or, we use an empty dictionary as a last resort if the
-    # get_json() thing returns NOne
     data = response.get_json() or {}
     assert response.status_code in (200, 400, 415, 500)
     assert isinstance(data, dict)
@@ -56,25 +40,18 @@ def test_initial_search_null_values(client):
 @pytest.mark.parametrize(
     "org, researcher, topic, typ",
     [
-        ("", "", "", ""),           # All empty
-        ("   ", "   ", "   ", ""),  # Just spaces
+        ("", "", "", ""),
+        ("   ", "   ", "   ", ""),
     ],
     ids=["AllEmptyStrings", "AllSpaces"]
 )
 def test_initial_search_empty_or_whitespace(client, org, researcher, topic, typ):
-    """
-    Passing empty strings or only whitespace is a common edge case.
-    """
-    payload = {
-        "organization": org,
-        "researcher": researcher,
-        "topic": topic,
-        "type": typ
-    }
+    payload = {"organization": org, "researcher": researcher,
+               "topic": topic, "type": typ}
     response = client.post("/initial-search", json=payload)
     data = response.get_json()
-    assert response.status_code == 200, "Should gracefully handle empty/whitespace."
-    assert isinstance(data, dict), "Expected a dictionary as a response."
+    assert response.status_code == 200
+    assert isinstance(data, dict)
 
 
 @pytest.mark.parametrize(
@@ -88,10 +65,6 @@ def test_initial_search_empty_or_whitespace(client, org, researcher, topic, typ)
     ids=["OrgOnly", "ResearcherOnly", "OrgType"]
 )
 def test_initial_search_partially_null(client, payload):
-    """
-    Cases where some fields are valid and others are null/empty.
-    The system should still process the valid fields.
-    """
     response = client.post("/initial-search", json=payload)
     data = response.get_json() or {}
     assert response.status_code in (200, 500)
@@ -101,17 +74,13 @@ def test_initial_search_partially_null(client, payload):
 @pytest.mark.parametrize(
     "invalid_payload",
     [
-        {"organization": 123, "researcher": 456,
-            "topic": 789, "type": 1011},  # all numbers
+        {"organization": 123, "researcher": 456, "topic": 789, "type": 1011},
         {"organization": ["A", "B"], "researcher": {},
             "topic": True, "type": 9.99},
     ],
     ids=["AllNumbers", "MixedTypes"]
 )
 def test_initial_search_invalid_types(client, invalid_payload):
-    """
-    If a user accidentally sends numbers, booleans, or arrays, check how the endpoint responds.
-    """
     response = client.post("/initial-search", json=invalid_payload)
     data = response.get_json() or {}
     assert response.status_code in (200, 400, 500)
@@ -119,10 +88,7 @@ def test_initial_search_invalid_types(client, invalid_payload):
 
 
 def test_initial_search_extremely_long_strings(client):
-    """
-    Large strings can cause performance or storage issues. Ensure the system handles them gracefully.
-    """
-    huge_string = "A" * 5000  # 5,000 characters
+    huge_string = "A" * 5000
     payload = {"organization": huge_string, "researcher": huge_string,
                "topic": huge_string, "type": "dummy"}
     response = client.post("/initial-search", json=payload)
@@ -132,13 +98,7 @@ def test_initial_search_extremely_long_strings(client):
 
 
 def test_initial_search_no_payload(client):
-    """
-    Some clients might forget to send a JSON body. The server should respond sensibly.
-    """
     response = client.post("/initial-search")
-    # When no JSON is provided, Flask will raise a 400
-    # So we accept 400 here. Like the DuoLingo owl,
-    # you know what comes next!
     assert response.status_code in (200, 400, 415, 500)
     if response.is_json:
         data = response.get_json() or {}
@@ -146,9 +106,6 @@ def test_initial_search_no_payload(client):
 
 
 def test_initial_search_special_chars(client):
-    """
-    Test handling of special characters in input fields.
-    """
     payload = {"organization": "Univ!@#$%^&*()_+|", "researcher": "",
                "topic": "", "type": ""}
     response = client.post("/initial-search", json=payload)
@@ -158,9 +115,6 @@ def test_initial_search_special_chars(client):
 
 
 def test_initial_search_unknown_type(client):
-    """
-    Test handling of unknown values for the "type" field.
-    """
     payload = {"organization": "Test Org", "researcher": "Test Author",
                "topic": "Test Topic", "type": "SOMETHING_RANDOM"}
     response = client.post("/initial-search", json=payload)
@@ -170,9 +124,6 @@ def test_initial_search_unknown_type(client):
 
 
 def test_initial_search_numeric_topic(client):
-    """
-    Test handling of numeric values in the "topic" field.
-    """
     payload = {"organization": "Test Org",
                "researcher": "Test Author", "topic": "42", "type": ""}
     response = client.post("/initial-search", json=payload)
@@ -184,16 +135,13 @@ def test_initial_search_numeric_topic(client):
 @pytest.mark.parametrize(
     "payload",
     [
-        {},  # completely empty
+        {},
         {"organization": "", "researcher": "", "topic": "", "type": ""},
         {"notARealKey": "notUsed"}
     ],
     ids=["CompletelyEmpty", "AllBlankStrings", "UnusedKey"]
 )
 def test_initial_search_all_fields_invalid(client, payload):
-    """
-    Test handling of completely empty payload or payload with invalid keys.
-    """
     response = client.post("/initial-search", json=payload)
     data = response.get_json() or {}
     assert response.status_code in (200, 400, 500)
@@ -201,15 +149,8 @@ def test_initial_search_all_fields_invalid(client, payload):
 
 
 def test_initial_search_valid_author_only(client):
-    """
-    Test search with valid author only.
-    """
-    payload = {
-        "researcher": "Jane Doe",
-        "organization": "",
-        "topic": "",
-        "type": ""
-    }
+    payload = {"researcher": "Jane Doe",
+               "organization": "", "topic": "", "type": ""}
     response = client.post("/initial-search", json=payload)
     assert response.status_code == 200
     data = response.get_json()
@@ -217,15 +158,8 @@ def test_initial_search_valid_author_only(client):
 
 
 def test_initial_search_valid_institution_only(client):
-    """
-    Test search with valid institution only.
-    """
-    payload = {
-        "researcher": "",
-        "organization": "Harvard University",
-        "topic": "",
-        "type": ""
-    }
+    payload = {"researcher": "",
+               "organization": "Harvard University", "topic": "", "type": ""}
     response = client.post("/initial-search", json=payload)
     assert response.status_code == 200
     data = response.get_json()
@@ -233,15 +167,8 @@ def test_initial_search_valid_institution_only(client):
 
 
 def test_initial_search_valid_topic_only(client):
-    """
-    Test search with valid topic only.
-    """
-    payload = {
-        "researcher": "",
-        "organization": "",
-        "topic": "Biochemistry",
-        "type": ""
-    }
+    payload = {"researcher": "", "organization": "",
+               "topic": "Biochemistry", "type": ""}
     response = client.post("/initial-search", json=payload)
     assert response.status_code == 200
     data = response.get_json()
@@ -249,15 +176,8 @@ def test_initial_search_valid_topic_only(client):
 
 
 def test_initial_search_valid_author_institution(client):
-    """
-    Test search with valid author and institution.
-    """
-    payload = {
-        "researcher": "John Smith",
-        "organization": "MIT",
-        "topic": "",
-        "type": "HBCU"
-    }
+    payload = {"researcher": "John Smith",
+               "organization": "MIT", "topic": "", "type": "HBCU"}
     response = client.post("/initial-search", json=payload)
     assert response.status_code == 200
     data = response.get_json()
@@ -265,15 +185,8 @@ def test_initial_search_valid_author_institution(client):
 
 
 def test_initial_search_valid_institution_topic(client):
-    """
-    Test search with valid institution and topic.
-    """
-    payload = {
-        "researcher": "",
-        "organization": "Stanford University",
-        "topic": "Astrophysics",
-        "type": ""
-    }
+    payload = {"researcher": "", "organization": "Stanford University",
+               "topic": "Astrophysics", "type": ""}
     response = client.post("/initial-search", json=payload)
     assert response.status_code == 200
     data = response.get_json()
@@ -281,15 +194,8 @@ def test_initial_search_valid_institution_topic(client):
 
 
 def test_initial_search_valid_author_topic(client):
-    """
-    Test search with valid author and topic.
-    """
-    payload = {
-        "researcher": "Alice Brown",
-        "organization": "",
-        "topic": "Machine Learning",
-        "type": ""
-    }
+    payload = {"researcher": "Alice Brown", "organization": "",
+               "topic": "Machine Learning", "type": ""}
     response = client.post("/initial-search", json=payload)
     assert response.status_code == 200
     data = response.get_json()
@@ -297,15 +203,8 @@ def test_initial_search_valid_author_topic(client):
 
 
 def test_initial_search_all_three(client):
-    """
-    Test search with all three valid (author, institution, topic).
-    """
-    payload = {
-        "researcher": "Carlos Garcia",
-        "organization": "Howard University",
-        "topic": "Mathematics",
-        "type": "HBCU"
-    }
+    payload = {"researcher": "Carlos Garcia",
+               "organization": "Howard University", "topic": "Mathematics", "type": "HBCU"}
     response = client.post("/initial-search", json=payload)
     assert response.status_code == 200
     data = response.get_json()
@@ -313,15 +212,8 @@ def test_initial_search_all_three(client):
 
 
 def test_initial_search_nonexistent_author(client):
-    """
-    Test search with nonexistent author.
-    """
-    payload = {
-        "researcher": "Fake McNotReal",
-        "organization": "",
-        "topic": "",
-        "type": ""
-    }
+    payload = {"researcher": "Fake McNotReal",
+               "organization": "", "topic": "", "type": ""}
     response = client.post("/initial-search", json=payload)
     assert response.status_code == 200
     data = response.get_json()
@@ -329,15 +221,8 @@ def test_initial_search_nonexistent_author(client):
 
 
 def test_initial_search_nonexistent_institution(client):
-    """
-    Test search with nonexistent institution.
-    """
-    payload = {
-        "researcher": "",
-        "organization": "NoSuch Institute",
-        "topic": "",
-        "type": ""
-    }
+    payload = {"researcher": "",
+               "organization": "NoSuch Institute", "topic": "", "type": ""}
     response = client.post("/initial-search", json=payload)
     assert response.status_code == 200
     data = response.get_json()
@@ -345,15 +230,8 @@ def test_initial_search_nonexistent_institution(client):
 
 
 def test_initial_search_nonexistent_topic(client):
-    """
-    Test search with nonexistent topic.
-    """
-    payload = {
-        "researcher": "",
-        "organization": "",
-        "topic": "Quantum Flubber",
-        "type": ""
-    }
+    payload = {"researcher": "", "organization": "",
+               "topic": "Quantum Flubber", "type": ""}
     response = client.post("/initial-search", json=payload)
     assert response.status_code == 200
     data = response.get_json()
@@ -362,32 +240,17 @@ def test_initial_search_nonexistent_topic(client):
 
 @pytest.mark.parametrize("partial_author", ["Lew", "", " "])
 def test_initial_search_partial_author(client, partial_author):
-    """
-    Test search with partial author name.
-    """
-    payload = {
-        "researcher": partial_author,
-        "organization": "Cornell University" if partial_author == "" else "",
-        "topic": "",
-        "type": ""
-    }
+    payload = {"researcher": partial_author,
+               "organization": "Cornell University" if partial_author == "" else "", "topic": "", "type": ""}
     response = client.post("/initial-search", json=payload)
     assert response.status_code == 200
     data = response.get_json()
-    assert isinstance(
-        data, dict), "Expected a safe JSON response for partial/empty author name."
+    assert isinstance(data, dict)
 
 
 def test_initial_search_whitespace_fields(client):
-    """
-    Test search with whitespace fields.
-    """
-    payload = {
-        "researcher": " ",
-        "organization": " ",
-        "topic": " ",
-        "type": ""
-    }
+    payload = {"researcher": " ",
+               "organization": " ", "topic": " ", "type": ""}
     response = client.post("/initial-search", json=payload)
     assert response.status_code == 200
     data = response.get_json()
@@ -403,15 +266,8 @@ def test_initial_search_whitespace_fields(client):
     ids=["HBCU", "NonHBCU"]
 )
 def test_initial_search_hbcu_check(client, org, expected_hbcu_status):
-    """
-    Test HBCU check.
-    """
-    payload = {
-        "researcher": "",
-        "organization": org,
-        "topic": "",
-        "type": "HBCU" if expected_hbcu_status else ""
-    }
+    payload = {"researcher": "", "organization": org, "topic": "",
+               "type": "HBCU" if expected_hbcu_status else ""}
     response = client.post("/initial-search", json=payload)
     assert response.status_code == 200
     data = response.get_json()
@@ -419,15 +275,8 @@ def test_initial_search_hbcu_check(client, org, expected_hbcu_status):
 
 
 def test_initial_search_orcid(client):
-    """
-    Test search with ORCID.
-    """
-    payload = {
-        "researcher": "0000-0002-1825-0097",
-        "organization": "",
-        "topic": "",
-        "type": ""
-    }
+    payload = {"researcher": "0000-0002-1825-0097",
+               "organization": "", "topic": "", "type": ""}
     response = client.post("/initial-search", json=payload)
     assert response.status_code == 200
     data = response.get_json()
@@ -435,15 +284,8 @@ def test_initial_search_orcid(client):
 
 
 def test_initial_search_special_chars_in_topic(client):
-    """
-    Test search with special characters in topic.
-    """
-    payload = {
-        "researcher": "",
-        "organization": "",
-        "topic": "Biology/Genomics!",
-        "type": ""
-    }
+    payload = {"researcher": "", "organization": "",
+               "topic": "Biology/Genomics!", "type": ""}
     response = client.post("/initial-search", json=payload)
     assert response.status_code == 200
     data = response.get_json()
@@ -451,16 +293,9 @@ def test_initial_search_special_chars_in_topic(client):
 
 
 def test_initial_search_exception(client):
-    """
-    Test handling of exceptions in the /initial-search endpoint.
-    """
     with patch("backend.app.get_institution_researcher_subfield_results", side_effect=Exception("Test exception")):
-        response = client.post("/initial-search", json={
-            "organization": "Test Inst",
-            "researcher": "Test Author",
-            "topic": "Test Topic",
-            "type": "dummy"
-        })
+        response = client.post("/initial-search", json={"organization": "Test Inst",
+                               "researcher": "Test Author", "topic": "Test Topic", "type": "dummy"})
         data = response.get_json()
         assert data == {"error": "An unexpected error occurred"}
 
@@ -470,11 +305,7 @@ def test_initial_search_exception(client):
 ###############################################################################
 
 def test_get_institutions_success(client):
-    """
-    Test successful retrieval of institutions.
-    """
     response = client.get("/get-institutions")
-    # The endpoint returns a dictionary with key "institutions"
     data = response.get_json() or {}
     assert response.status_code in (200, 500)
     assert isinstance(data, dict)
@@ -484,13 +315,9 @@ def test_get_institutions_success(client):
 
 @patch("backend.app.execute_query", return_value=None)
 def test_get_institutions_no_data(mock_execute_query, client):
-    """
-    Test handling of no data from the database.
-    """
     response = client.get("/get-institutions")
     data = response.get_json() or {}
     assert response.status_code in (200, 500)
-    # Expecting an empty list inside the dictionary:
     assert "institutions" in data
     assert isinstance(data["institutions"], list)
     assert len(data["institutions"]) == 0
@@ -498,9 +325,6 @@ def test_get_institutions_no_data(mock_execute_query, client):
 
 @patch("backend.app.execute_query", side_effect=Exception("Database error"))
 def test_get_institutions_error(mock_execute_query, client):
-    """
-    Test handling of database errors.
-    """
     response = client.get("/get-institutions")
     assert response.status_code == 500
 ###############################################################################
@@ -1111,3 +935,113 @@ def test_mup_r_and_d_no_data(client, mocker):
     assert resp.status_code == 404
     data = resp.get_json()
     assert "No R&D numbers found" in data["error"]
+# !!=== Additional Coverage Tests ===!! These are quite "important" in the sense that
+# we have to make it possible to computationally wrangle these crucial error handlers
+# and missing payloads as well as the utility functions.
+
+
+def test_404_handler(client):
+    # And so we check in and request a non-existent route; just to see how our
+    # 404 event error handler returns index.html (thus 200)
+    response = client.get("/nonexistent-route")
+    assert response.status_code == 200
+    # And so we have experience with checking that the returned content does
+    # look like HTML (determined that the macOS struggle is a legitimate thing that
+    # necessitates a system that is up and running and that can generate HTML)
+    assert b"<!DOCTYPE html>" in response.data or b"<html" in response.data
+
+
+def test_500_handler(client):
+    # Also, we  need to make this make sense so we add in this route that
+    # temporarily raises an exception always and forever
+    @app.route("/trigger-error")
+    def trigger_error():
+        raise Exception("Forced error for testing")
+    response = client.get("/trigger-error")
+    assert response.status_code == 500
+    assert b"Internal Server Error" in response.data
+
+
+def test_get_institutions_file_error(client):
+    # Furthermore, we have to do a lot of caching. That means that the results
+    # that we have are going to require us to require a file Input / Output
+    # error to occur in get_institutions by patching, the builtins.open
+    with patch("builtins.open", side_effect=Exception("File not found")):
+        response = client.get("/get-institutions")
+        data = response.get_json() or {}
+        assert response.status_code == 500
+        assert "error" in data
+
+
+def test_get_mup_id_missing_payload(client):
+    # And then we want to test out what is the required key that is missing
+    # and this is a pragmatic update because what it does is it gets the
+    # /get-mup-id going in remembrance of the Center, for Measuring University
+    # Performance and fixing the bugs .
+    response = client.post("/get-mup-id", json={})
+    assert response.status_code == 400
+
+
+def test_endowments_and_givings_missing_payload(client):
+    # Furthermore the missing "institution_name" has got to trigger a
+    # 400 error and if it only runs 10 minutes over, you should and ought to
+    # press Command + C or Ctrl + C becuase you know that that's a win, for
+    # allowing the main function to be tested optimistically.
+    response = client.post("/endowments-and-givings", json={})
+    assert response.status_code == 400
+
+
+def test_institution_num_of_researches_missing_payload(client):
+    # Then, there's no need to start fixing the bugs until we have the payload;
+    # when the payload is missing, then the route itself also has to return
+    # an error or so they say here, 404 is "something that is expected".
+    response = client.post("/institution_num_of_researches", json={})
+    assert response.status_code == 404
+
+
+def test_institution_medical_expenses_missing_payload(client):
+    response = client.post("/institution_medical_expenses", json={})
+    assert response.status_code == 404
+
+
+def test_institution_doctorates_and_postdocs_missing_payload(client):
+    response = client.post("/institution_doctorates_and_postdocs", json={})
+    assert response.status_code == 404
+
+
+def test_mup_faculty_awards_missing_payload(client):
+    response = client.post("/mup-faculty-awards", json={})
+    assert response.status_code == 400
+
+
+def test_mup_r_and_d_missing_payload(client):
+    response = client.post("/mup-r-and-d", json={})
+    assert response.status_code == 400
+
+# Now, test the Utility functions.####
+
+
+def test_combine_graphs_extra():
+    g1 = {"nodes": [{"id": "A", "label": "A"}], "edges": [
+        {"id": "A-B", "start": "A", "end": "B"}]}
+    g2 = {"nodes": [{"id": "B", "label": "B"}], "edges": [
+        {"id": "B-C", "start": "B", "end": "C"}]}
+    combined = combine_graphs(g1, g2)
+    node_ids = {node["id"] for node in combined["nodes"]}
+    edge_ids = {edge["id"] for edge in combined["edges"]}
+    assert node_ids == {"A", "B"}
+    assert edge_ids == {"A-B", "B-C"}
+
+
+def test_is_HBCU_simulation_true():
+    with patch("backend.app.create_connection"), \
+            patch("backend.app.query_SQL_endpoint", return_value=[(1,)]):
+        result = is_HBCU("https://openalex.org/institutions/12345")
+        assert result is True
+
+
+def test_is_HBCU_simulation_false():
+    with patch("backend.app.create_connection"), \
+            patch("backend.app.query_SQL_endpoint", return_value=[(0,)]):
+        result = is_HBCU("https://openalex.org/institutions/67890")
+        assert result is False

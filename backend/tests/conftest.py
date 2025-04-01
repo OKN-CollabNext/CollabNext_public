@@ -1,5 +1,6 @@
 # conftest.py
 
+from backend.app import app  # Adjust the import if needed
 import os
 import pytest
 import psycopg2
@@ -7,6 +8,15 @@ from datetime import datetime
 
 _test_outcomes = []
 _test_finish_message = []
+
+
+@pytest.fixture(scope='session', autouse=True)
+def set_base_dir():
+    # Not to be too urgent but and however this..I don't know how else
+    # to put it gbut this sets the BASE_DIR correctly fo rall types of tests.
+    from backend import app
+    app.BASE_DIR = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..'))
 
 
 @pytest.fixture(scope="module")
@@ -94,3 +104,10 @@ def pytest_report_header(config):  # pragma: no cover
     This hook returns the additional line dumps that appear in the pytest report header.
     """
     return _test_finish_message if _test_finish_message else []
+
+
+@pytest.fixture
+def client():
+    app.config["TESTING"] = True
+    with app.test_client() as client:
+        yield client

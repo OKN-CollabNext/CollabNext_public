@@ -320,9 +320,16 @@ with open(os.path.join(BASE_DIR, "subfields.csv"), "r") as file:
     autofill_subfields_list = file.read().split('\n')
 
 SUBFIELDS = True
-if not SUBFIELDS:
-    with open(os.path.join(BASE_DIR, "keywords.csv"), "r") as fil:
-        autofill_topics_list = fil.read().split("\n")
+
+
+def load_keywords():
+    if not SUBFIELDS:
+        with open(os.path.join(BASE_DIR, "keywords.csv"), "r") as fil:
+            return fil.read().split("\n")
+    return None
+
+
+autofill_topics_list = load_keywords()
 
 
 @app.route('/', defaults={'path': ''})
@@ -363,7 +370,6 @@ def initial_search():
     request_data = request.get_json()
     page = request_data.get('page', 1)
     per_page = request_data.get('per_page', 25)
-
 
     institution = request.json.get('organization')
     researcher = request.json.get('researcher')
@@ -485,7 +491,6 @@ def get_researcher_result(researcher, page=1, per_page=20):
     nodes.append({'id': metadata['openalex_url'],
                  'label': researcher, "type": "AUTHOR"})
 
-
     total_topics = len(data['data'])
     start = (page - 1) * per_page
     end = start + per_page
@@ -578,6 +583,7 @@ def get_institution_results(institution, page=1, per_page=10):
         "list": list
     }
 
+
 def get_subfield_results(topic, page=1, per_page=20):
     """
     Gets the results when user only inputs a subfield
@@ -635,7 +641,6 @@ def get_subfield_results(topic, page=1, per_page=20):
                 "current_page": page,
                 "total_topics": total_topics,
             }, "graph": graph, "list": list}
-
 
 
 def get_researcher_and_subfield_results(researcher, topic, page=1, per_page=20):
@@ -705,7 +710,6 @@ def get_researcher_and_subfield_results(researcher, topic, page=1, per_page=20):
     edges.append({'id': f"""{researcher_id}-{subfield_id}""", 'start': researcher_id,
                  'end': subfield_id, "label": "researches", "start_type": "AUTHOR", "end_type": "TOPIC"})
 
-
     total_topics = len(data['data'])
     start = (page - 1) * per_page
     end = start + per_page
@@ -731,6 +735,7 @@ def get_researcher_and_subfield_results(researcher, topic, page=1, per_page=20):
                 "current_page": page,
                 "total_topics": total_topics,
             }, "graph": graph, "list": list}
+
 
 def get_institution_and_subfield_results(institution, topic, page=1, per_page=20):
     """
@@ -788,7 +793,6 @@ def get_institution_and_subfield_results(institution, topic, page=1, per_page=20
     edges.append({'id': f"""{institution_id}-{subfield_id}""", 'start': institution_id,
                  'end': subfield_id, "label": "researches", "start_type": "INSTITUTION", "end_type": "TOPIC"})
 
-
     total_topics = len(data['data'])
     start = (page - 1) * per_page
     end = start + per_page
@@ -821,6 +825,7 @@ def get_institution_and_subfield_results(institution, topic, page=1, per_page=20
         "graph": graph,
         "list": list
     }
+
 
 def get_institution_and_researcher_results(institution, researcher, page=1, per_page=20):
     """
@@ -974,7 +979,6 @@ def get_institution_researcher_subfield_results(institution, researcher,
     edges.append({'id': f"""{researcher_id}-{subfield_id}""", 'start': researcher_id,
                  'end': subfield_id, "label": "researches", "start_type": "AUTHOR", "end_type": "TOPIC"})
 
-
     total_topics = len(data['data'])
     start = (page - 1) * per_page
     end = start + per_page
@@ -1001,7 +1005,6 @@ def get_institution_researcher_subfield_results(institution, researcher,
                 "current_page": page,
                 "total_topics": total_topics,
             }, "graph": graph, "list": list}
-
 
 
 def query_SPARQL_endpoint(endpoint_url, query):
@@ -2006,7 +2009,7 @@ def get_institutions():
     Returns the contents of the institutions.csv file as JSON.
     """
     try:
-        with open('institutions.csv', 'r') as file:
+        with open(os.path.join(BASE_DIR, "institutions.csv"), "r") as file:
             institutions = file.read().split(',\n')
         return jsonify(institutions=institutions)
     except Exception as e:
