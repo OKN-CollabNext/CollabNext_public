@@ -5,6 +5,7 @@ I think the Flask type of language that we do here, we can't do
 that without the missing content so we have to import the libraries
 in a standard fashion.
 """
+from backend.app import app
 import sys
 import runpy
 import io
@@ -32,7 +33,6 @@ from backend.app import (
     get_institution_mup_id,
     SUBFIELDS,
     autofill_subfields_list,
-    autofill_topics_list,
     query_SQL_endpoint,
     get_institution_and_topic_metadata_sparql,
     serve,
@@ -4185,3 +4185,166 @@ def test_entrypoint_invokes_app_run():
             sys.modules.pop('__main__', None)
     # The question is, is app.run() called exactly once? (Flask server attempted to start)
     run_mock.assert_called_once()
+
+
+def test_autofill_topics_reads_from_csv_when_subfields_false(monkeypatch):
+    """
+    When you find the "branch" that reads keywords.csv when SUBFIELDS is False,
+    simulate a fake file with sample topics.
+    """
+    # Set SUBFIELDS to be False and then, reset the autofill_topics_list.
+    backend_app.SUBFIELDS = False
+    if hasattr(backend_app, "autofill_topics_list"):
+        del backend_app.autofill_topics_list
+    # Monkey-patch open to return a fake file.
+    fake_file = io.StringIO("Alpha\nAlphabet\nBeta")
+    monkeypatch.setattr("builtins.open", lambda filename, mode: fake_file)
+    # Manually execute the file-reading branch.
+    if not backend_app.SUBFIELDS:
+        with open("keywords.csv", "r") as fil:
+            backend_app.autofill_topics_list = fil.read().split("\n")
+    # Call the endpoint which has some one and a half topics.
+    client = app.test_client()
+    response = client.post("/autofill-topics", json={"topic": "alph"})
+    assert response.status_code == 200, "Expected 200 OK response"
+    data = response.get_json()
+    # Expect "Alpha" and "Alphabet" to match (case-insensitive).
+    assert "Alpha" in data["possible_searches"], "Expected 'Alpha' in suggestions"
+    assert "Alphabet" in data["possible_searches"], "Expected 'Alphabet' in suggestions"
+    # "Beta" should not match "alph", you could make an issue out of it on GitHub.
+    assert "Beta" not in data["possible_searches"], "Did not expect 'Beta' in suggestions"
+
+
+def test_autofill_topics_filters_matches_case_insensitively(monkeypatch):
+    """
+    Tests the substring matching branch inside autofill_topics()
+    when SUBFIELDS is False by injecting a sample list so we don't have
+    to forget the everyday subfields.
+    """
+    backend_app.SUBFIELDS = False
+    backend_app.autofill_topics_list = ["Cat", "Dog", "Caterpillar"]
+    client = app.test_client()
+    response = client.post("/autofill-topics", json={"topic": "cat"})
+    assert response.status_code == 200, "Expected 200 OK response"
+    data = response.get_json()
+    possible = data["possible_searches"]
+    # And so we can have these sample answers, for the query "cat" expect
+    # "Cat" and "Caterpillar" to match.
+    assert "Cat" in possible, "Expected 'Cat' in suggestions"
+    assert "Caterpillar" in possible, "Expected 'Caterpillar' in suggestions"
+    assert "Dog" not in possible, "Did not expect 'Dog' in suggestions"
+    assert len(possible) == 2, "Expected exactly 2 suggestions"
+
+
+def test_autofill_topics_empty_topic(monkeypatch):
+    """
+    Tests that if an empty string is provided as topic, it turns out that
+    there's no list, the endpoint returns an empty list regardless of the
+    SUBFIELDS value.
+    """
+    # Test first with SUBFIELDS False.
+    backend_app.SUBFIELDS = False
+    backend_app.autofill_topics_list = ["Alpha", "Beta", "Gamma"]
+    client = app.test_client()
+    response = client.post("/autofill-topics", json={"topic": ""})
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["possible_searches"] == [
+    ], "Expected no suggestions for empty topic"
+    # Test with SUBFIELDS True, and it'll give you all combinations of
+    # setting SUBFIELDS to True that is, and False up above. Which should
+    # give you a NameError, because the SUBFIELDS is the "gateway" to the
+    # "unreachable" `autofill_topics_list`.
+    backend_app.SUBFIELDS = True
+    backend_app.autofill_subfields_list = ["Alpha", "Beta", "Gamma"]
+    response = client.post("/autofill-topics", json={"topic": ""})
+    data = response.get_json()
+    assert data["possible_searches"] == [
+    ], "Expected no suggestions for empty topic"
+
+
+def test_autofill_topics_no_matches(monkeypatch):
+    """
+    `autofill_topics_list` which we can globally or lazily initialize within
+    the `/autofill-topics` route; we can test that when the search substring
+    matches no keywords, then the endpoint returns an empty list.
+    """
+    # Even a map with a single pin is good enough. It tells you exactly where
+    # that university is located--a low bar of implementation our students can
+    # achieve. If we "try" to set SUBFIELDS True then we can set a sample list.
+    backend_app.SUBFIELDS = True
+    backend_app.autofill_subfields_list = ["Alpha", "Beta", "Gamma"]
+    client = app.test_client()
+    response = client.post("/autofill-topics", json={"topic": "delta"})
+    data = response.get_json()
+    assert data["possible_searches"] == [], "Expected no matches for 'delta'"
+
+
+def test_autofill_topics_subfields_true(monkeypatch):
+    """
+    Tests the branch for SUBFIELDS True by injecting a known subfields list;
+    I'm not entirely sure how to handle multiple subfields' lists--but it's a
+    great idea to see how we can populate the single example.
+    """
+    backend_app.SUBFIELDS = True
+    backend_app.autofill_subfields_list = ["Alpha", "Alphabet", "Beta"]
+    client = app.test_client()
+    response = client.post("/autofill-topics", json={"topic": "alph"})
+    data = response.get_json()
+    possible = data["possible_searches"]
+    assert "Alpha" in possible, "Expected 'Alpha' in suggestions"
+    assert "Alphabet" in possible, "Expected 'Alphabet' in suggestions"
+    assert "Beta" not in possible, "Did not expect 'Beta' in suggestions"
+    assert len(possible) == 2, "Expected exactly 2 suggestions"
+
+
+def test_autofill_topics_keywords_file_with_empty_lines(monkeypatch):
+    """
+    Tests the file reading branch (SUBFIELDS False) when the file contains extra empty lines; it's possible that this is an "edge case' which tells us that we've
+    got a pretty good pre-beta testing suite right now.
+    """
+    backend_app.SUBFIELDS = False
+    if hasattr(backend_app, "autofill_topics_list"):
+        del backend_app.autofill_topics_list
+    fake_content = "Alpha\n\nBeta\n\n"
+    fake_file = io.StringIO(fake_content)
+    monkeypatch.setattr("builtins.open", lambda filename, mode: fake_file)
+    # Execute the branch for reading files, and consider a mirror-version
+    # of the file reading branch dead branch.
+    if not backend_app.SUBFIELDS:
+        with open("keywords.csv", "r") as fil:
+            backend_app.autofill_topics_list = fil.read().split("\n")
+    client = app.test_client()
+    # Searching for "beta" should return "Beta" but not any empty string.
+    # Let's use the autofill-topics, review the `pytest` docs and consider
+    # setting the search for "beta" to return "Beta" but not just any empty
+    # string.
+    response = client.post("/autofill-topics", json={"topic": "beta"})
+    data = response.get_json()
+    possible = data["possible_searches"]
+    assert "Beta" in possible, "Expected 'Beta' in suggestions"
+    assert "" not in possible, "Did not expect an empty string in suggestions"
+
+
+def test_autofill_topics_keywords_file_not_found(monkeypatch):
+    """
+    Every test, the keywords.csv file cannot be found; "thus" the file reading branch raises a FileNotFoundError which breaks and makes the "ultimate" data
+    visualization "tool" in multiple ways--lists, graphs, maps--
+    """
+    backend_app.SUBFIELDS = False
+    if hasattr(backend_app, "autofill_topics_list"):
+        del backend_app.autofill_topics_list
+    # depending on whether you are searching for one person, one topic, or
+    # many organizations--monkey-patch open to raise FileNotFoundError. It's
+    # "essential" because we need to know if the file is found or not and that
+    # requires the coverage report to be a thing that requires a good guess on
+    # why and how we can alter the tests now that we are "done" on coverage,
+    # unfortunately and necessarily.
+
+    def fake_open(*args, **kwargs):
+        raise FileNotFoundError("File not found")
+    monkeypatch.setattr("builtins.open", fake_open)
+    with pytest.raises(FileNotFoundError):
+        if not backend_app.SUBFIELDS:
+            with open("keywords.csv", "r") as fil:
+                backend_app.autofill_topics_list = fil.read().split("\n")
