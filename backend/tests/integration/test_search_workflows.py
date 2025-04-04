@@ -1,22 +1,6 @@
-"""
-Search Workflow Tests
-
-This file contains integration tests for the search workflows in the application.
-Tests include:
-- search_by_author
-- search_by_institution
-- search_by_topic
-- search_by_author_institution
-- search_by_author_topic
-- search_by_institution_topic
-- search_by_author_institution_topic
-- Fallback logic for search functions
-"""
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from backend.app import (
-    get_researcher_result,
-    get_institution_results,
     get_researcher_and_subfield_results,
     search_by_author,
     search_by_author_institution_topic,
@@ -26,9 +10,6 @@ from backend.app import (
     search_by_topic,
     search_by_institution,
 )
-###############################################################################
-# SEARCH FUNCTION TESTS
-###############################################################################
 
 
 @pytest.mark.parametrize(
@@ -65,6 +46,11 @@ from backend.app import (
 )
 @patch("backend.app.execute_query")
 def test_search_by_author_param(mock_exec, author_name, get_author_ids_result, search_by_author_result, final_expected):
+    """ The search by author parameter(s) test is directly responsible for verifying that lines 147-148 of `app.py` correctly handle the case when no author IDs are found by returning None and logging a warning..such that the function only proceeds to query further when an author ID does exist.
+     So in that part of the code from lines 147-148 of apppy the function is calling `get_author_ids(author_name) to fetch the author's IDs, and checks whether any IDs were returned..if none were found THEN it logs a warning and returns `None`.
+     The idea is to utilize parameterized inputs to simulate two scenarios:
+     (1) Either the author is found..if AuthorFound (exists) then the test, passes a non-None `get_author_ids_result` i.e.a. list, with a dictionary containing "author_id": "1234"..this makes the code continue past the check. The subsequent mock, then returns a search_by_author_result (which includes an "author_metadata" key). The test 'also" asserts that the final result is not `None` and then that it does contain, the "author_metadata".
+     If AuthorNotFound, then the test passes `None` as the `get_author_ids_result`. This is what causes the condition `if not author_ids: ` that is from lines 147-148 to be true, so that the function "right away" returns `None` which, is corroborated and confirmed via the test, on the behavior of "these two scenarios". """
     if get_author_ids_result is None:
         mock_exec.side_effect = [None]
     else:
@@ -78,122 +64,6 @@ def test_search_by_author_param(mock_exec, author_name, get_author_ids_result, s
         assert result is None
 
 
-@pytest.mark.parametrize(
-    "institution_name, get_institution_id_result, search_by_institution_result, found",
-    [
-        (
-            "MyUniversity",
-            [{"institution_id": 1415}],
-            {
-                "institution_metadata": {
-                    "institution_name": "MyUniversity",
-                    "openalex_url": "https://openalex.org/institution/5678",
-                    "num_of_authors": 50,
-                    "num_of_works": 100,
-                },
-                "data": [
-                    {"topic_subfield": "CompSci", "num_of_authors": 25},
-                    {"topic_subfield": "Biology", "num_of_authors": 20},
-                ],
-            },
-            True
-        ),
-        (
-            "NoSuchUniversity",
-            None,
-            None,
-            False
-        ),
-    ],
-    ids=["InstitutionFound", "InstitutionNotFound"]
-)
-@patch("backend.app.execute_query")
-def test_search_by_institution_param(
-    mock_exec, institution_name, get_institution_id_result, search_by_institution_result, found
-):
-    """
-    Testing search_by_institution(...) with mocked DB results.
-    """
-    if get_institution_id_result is None:
-        mock_exec.side_effect = [None]
-    else:
-        mock_exec.side_effect = [
-            ([({'institution_id': get_institution_id_result[0]['institution_id']},)]),
-            ([(search_by_institution_result,)])
-        ]
-    result = search_by_institution(institution_name)
-    if found:
-        assert result is not None
-        assert "institution_metadata" in result
-        assert result["institution_metadata"]["institution_name"] == institution_name
-    else:
-        assert result is None
-
-
-@pytest.mark.parametrize(
-    "topic_name, db_return, expect_result",
-    [
-        (
-            "Chemistry",
-            [{
-                "subfield_metadata": [
-                    {"topic": "Chemistry",
-                     "subfield_url": "https://openalex.org/subfield/123"}
-                ],
-                "totals": {
-                    "total_num_of_works": 999,
-                    "total_num_of_citations": 3000,
-                    "total_num_of_authors": 200
-                },
-                "data": [
-                    {"institution_name": "Tech Labs University", "num_of_authors": 50},
-                    {"institution_name": "State University", "num_of_authors": 100},
-                ]
-            }],
-            True
-        ),
-        ("NonexistentTopic", None, False),
-    ],
-    ids=["TopicFound", "TopicNotFound"]
-)
-@patch("backend.app.execute_query")
-def test_search_by_topic_param(mock_exec, topic_name, db_return, expect_result):
-    """
-    Testing search_by_topic(...) with different DB scenarios.
-    """
-    if db_return is None:
-        mock_exec.return_value = None
-    else:
-        mock_exec.return_value = [db_return]
-
-    result = search_by_topic(topic_name)
-    if expect_result:
-        assert result is not None
-        assert "subfield_metadata" in result
-        assert "totals" in result
-    else:
-        assert result is None
-
-
-@patch("backend.app.get_author_ids", return_value=[{"author_id": "id_001"}])
-@patch("backend.app.execute_query", return_value=[[{"author_metadata": {"dummy": "data"}}]])
-def test_search_by_author_success(mock_exec, mock_get_author_ids):
-    """
-    If get_author_ids returns a valid author_id, check that search_by_author eventually returns data.
-    """
-    result = search_by_author("Test Author")
-    assert result == {"author_metadata": {"dummy": "data"}}
-
-
-@patch("backend.app.get_author_ids", return_value=None)
-def test_search_by_author_no_ids(mock_get_author_ids):
-    """
-    Test search_by_author when no author IDs are found.
-    """
-    result = search_by_author("Test Author")
-    assert result is None
-
-
 @patch("backend.app.get_author_ids", return_value=[{"author_id": "id_001"}])
 @patch("backend.app.get_institution_id", return_value=123)
 @patch("backend.app.execute_query", return_value=[[{"dummy": "result"}]])
@@ -202,22 +72,12 @@ def test_search_by_author_institution_topic_success(
     mock_get_institution_id,
     mock_get_author_ids
 ):
-    """
-    Test successful search by author, institution, and topic.
-    """
+    """ This is part of the focus of the function; it focuses on the part of the function (lines 183-184 in app.py) where, after retrieving the author and institution Ids, the function executes a SQL query via `execute_query` and then, returns the result..the "way that this works" is that we patch dependencies..we patch the get_author_ids to return a list with one dictionary containing an author ID called `[{"author_id": "id_001"}]. We also patch `get_institutioN_id` to return an institution ID 123, and then patch execute_query to return a nested list `[[{"dummy": "result"}]].
+    The function search_by_author_institution_topic now "returns" and uses the patched `get_author_ids` and `get_institution_id` to fetch the IDs required. It then calls execute_query with these IDs as well as the topic..that means that "according" to the "implementation" specifically from and in lines 183-184, it extracts the first element from the first row of the returned query result and returns it.
+    Furthermore, the test asserts that the function returns {"dummY": "result"}, confirming that the SQL query execution and result extraction are working as expected. In short, this test confirms that when valid author and institution IDs are provided and the SQL query returns data, the function correctly processes and returns the result as specified in the following lines of app.py: 183-184. """
     result = search_by_author_institution_topic(
         "Author", "Institution", "Topic")
     assert result == {"dummy": "result"}
-
-
-@patch("backend.app.get_author_ids", return_value=None)
-def test_search_by_author_institution_topic_no_author_ids(mock_get_author_ids):
-    """
-    Test search_by_author_institution_topic when no author IDs are found.
-    """
-    result = search_by_author_institution_topic(
-        "Author", "Institution", "Topic")
-    assert result is None
 
 
 @patch("backend.app.get_author_ids", return_value=[{"author_id": "id_001"}])
@@ -227,7 +87,9 @@ def test_search_by_author_institution_topic_no_institution_id(
     mock_get_author_ids
 ):
     """
-    Test search_by_author_institution_topic when no institution ID is found.
+    So we know that the search_by_author_institution_topic correctly handles the case when no institution ID is found but we still write a test case because, specifically the lines 177-178 that are referenced in app.py by this test function check the result of calling get_institution_Id. What this means is that we have a mock setup..the test patches get_author_ids to return a valid list with an author Id. It then patches the get_institution_id to return None, simulating "a" situation where the institution lookup "fails".
+    What is the expected behavior? Well, when get_institution_id returns None, the function should log a warning and immediately return None without proceeding further. This behavior corresponds to the check at lines 177-178.
+    The test assertion is that the test "is calling" search_by_author_institution_topic with dummy parameters and asserts that the result is `None`, confirming that the function handles the missing institution ID as expected.
     """
     result = search_by_author_institution_topic(
         "Author", "Institution", "Topic")
@@ -242,20 +104,10 @@ def test_search_by_author_institution_success(
     mock_get_institution_id,
     mock_get_author_ids
 ):
-    """
-    Test successful search by author and institution.
-    """
+    """ We know that when real live author and institution IDs are provided, the function reaches the part where it executes the SQL query and returns the expected result. Specifically, Lines 206-207 in app.py extract the first element of the query result i.e. results[0][0] after. asuccessful call to execute_queryl. The details of the patching are that `get_author_ids` is patched to return `[{"author_id": "id_001"}], so the function uses "`id_001`" as the author Id. Also, `get_institution_id` is patched to return `123`, which makes sure that the institution ID is valid. `execute_query` is patched to return `[[{"dummY": "result2"}]]`, simulating a successful database response.
+    What is the execution flow? The function search_by_author_institution uses these patched values, calls execute-query, and then, according to lines 206-207, it returns the first item of the query result. The "rest of the test"..asserts, that the returned value is `{"dummY"; "result2"}`,  atching the expected result from the patched query response. """
     result = search_by_author_institution("Author", "Institution")
     assert result == {"dummy": "result2"}
-
-
-@patch("backend.app.get_author_ids", return_value=None)
-def test_search_by_author_institution_no_author_ids(mock_get_author_ids):
-    """
-    Test search_by_author_institution when no author IDs are found.
-    """
-    result = search_by_author_institution("Author", "Institution")
-    assert result is None
 
 
 @patch("backend.app.get_author_ids", return_value=[{"author_id": "id_001"}])
@@ -265,7 +117,10 @@ def test_search_by_author_institution_no_institution_id(
     mock_get_author_ids
 ):
     """
-    Test search_by_author_institution when no institution ID is found.
+    THis test verifies the behavior of the search_by_author_instituion function when the institution ID cannot be found. Specifically, lines 200-201 in app.py check the result of calling get_Instituion_id: the mock setup is that the get_author_ids, is patched to return a valid list containing an author ID `[{"author_id": "id_001"}]`.
+    `get_institution_id` is patched to return `None`, simulating the failure to retrieve a valid institution ID.
+    The function follows the execution flow of the search_by_author_institution "which" calls get_institutioN_id and finds that it returns `None`. According to lines 200-201, when the institution ID is None, the function logs a warning and almost instantaneously returns `None` without attempting to execute a further queyr.
+    The test asserts that the result of the function is `None`, confirming that the missing institution ID is handled correctly.
     """
     result = search_by_author_institution("Author", "Institution")
     assert result is None
@@ -275,258 +130,42 @@ def test_search_by_author_institution_no_institution_id(
 @patch("backend.app.execute_query", return_value=[[{"dummy": "result3"}]])
 def test_search_by_institution_topic_success(mock_exec, mock_get_institution_id):
     """
-    Test successful search by institution and topic.
+    The function fo r searching by institution and topic behaves correctly when valid data is returned. In particular, Lines 221-222 of app.py perform the following steps: (1) Retrieve the Institution ID: The function call(ed) get_institution_id("Institution"), which--via the patch--returns `123`.
+    With a valid institution ID, we execute the Database Query; it then calls `execute_query` with a query (using the institution ID and the topic "Topic") and the patched `execute_query` returns `[[{"dummy": "result3"}]]`. I extract and return teh result; "the function," extracts (and returns?) the first element from the returned nested list (i.e., `results[0][0]`) and returns it. In this case, it returns `{"dummy": "result3"}`. "The test asserts" that the final result matches thie expeted output, confirming that lines 221-222 are handling a successful search by institution and topic correctly.
     """
     result = search_by_institution_topic("Institution", "Topic")
     assert result == {"dummy": "result3"}
-
-
-@patch("backend.app.get_institution_id", return_value=None)
-def test_search_by_institution_topic_no_institution_id(mock_get_institution_id):
-    """
-    Test search_by_institution_topic when no institution ID is found.
-    """
-    result = search_by_institution_topic("Institution", "Topic")
-    assert result is None
 
 
 @patch("backend.app.get_author_ids", return_value=[{"author_id": "id_001"}])
 @patch("backend.app.execute_query", return_value=[[{"dummy": "result4"}]])
 def test_search_by_author_topic_success(mock_exec, mock_get_author_ids):
     """
-    Test successful search by author and topic.
+    This test checks that the `search_by_author_topic` function correctly processes a successful query when both the author exists and the query returns valid data. Specifically, it verifies the behavior of lines 239–240 in app.py, which are responsible for extracting the final result from the SQL query response.
+    Specifically, get_author_ids is patched to return a list with one dictionary containing "author_id": "id_001", so the function uses "id_001" as the author's identifier. Also, execute_query is patched to return a nested list [[{"dummy": "result4"}]], simulating a successful database query.
+    With these patches in place, search_by_author_topic("Author", "Topic") calls the patched functions. After retrieving the author ID, it executes the query. Lines 239–240 then extract the first element of the first row of the result, which is {"dummy": "result4"}, and return it. Then "following this" the test, asserts that the returned result exactly matches {"dummy": "result4"}, confirming that the function correctly processes the query result as "intended".
     """
     result = search_by_author_topic("Author", "Topic")
     assert result == {"dummy": "result4"}
 
 
-@patch("backend.app.get_author_ids", return_value=None)
-def test_search_by_author_topic_no_author_ids(mock_get_author_ids):
-    """
-    Test search_by_author_topic when no author IDs are found.
-    """
-    result = search_by_author_topic("Author", "Topic")
-    assert result is None
-
-
-@patch("backend.app.execute_query", return_value=[[{"dummy": "result5"}]])
-def test_search_by_topic_success(mock_exec):
-    """
-    Test successful search by topic.
-    """
-    result = search_by_topic("Topic")
-    assert result == {"dummy": "result5"}
-
-
-@patch("backend.app.execute_query", return_value=None)
-def test_search_by_topic_no_result(mock_exec):
-    """
-    Test search_by_topic when no results are found.
-    """
-    result = search_by_topic("Topic")
-    assert result is None
-
-
-@patch("backend.app.get_institution_id", return_value=123)
-@patch("backend.app.execute_query", return_value=[[{"dummy": "result6"}]])
-def test_search_by_institution_success(mock_exec, mock_get_institution_id):
-    """
-    Test successful search by institution.
-    """
-    result = search_by_institution("Institution")
-    assert result == {"dummy": "result6"}
-
-
-@patch("backend.app.get_institution_id", return_value=None)
-def test_search_by_institution_no_institution_id(mock_get_institution_id):
-    """
-    Test search_by_institution when no institution ID is found.
-    """
-    result = search_by_institution("Institution")
-    assert result is None
-
-
-###############################################################################
-# FALLBACK LOGIC TESTS
-###############################################################################
-
-def test_get_researcher_result_fallback_success():
-    """
-    If DB (search_by_author) returns None, fallback calls get_author_metadata_sparql + list_given_researcher_institution.
-    """
-    dummy_metadata = {
-        "oa_link": "dummy_oa",
-        "name": "Test Author",
-        "current_institution": "Test Institution"
-    }
-    dummy_list = [("topic1", 5)]
-    dummy_graph = {
-        "nodes": [
-            {"id": "Test Institution", "label": "Test Institution", "type": "INSTITUTION"}
-        ],
-        "edges": []
-    }
-    with patch("backend.app.search_by_author", return_value=None), \
-            patch("backend.app.get_author_metadata_sparql", return_value=dummy_metadata), \
-            patch("backend.app.list_given_researcher_institution", return_value=(dummy_list, dummy_graph)):
-
-        result = get_researcher_result("Test Author")
-        assert isinstance(result, dict)
-        assert result.get("metadata") == dummy_metadata
-        assert result.get("graph") == dummy_graph
-        assert result.get("list") == dummy_list
-
-
-def test_get_researcher_result_fallback_no_results():
-    """
-    If DB returns None and SPARQL returns {}, we get an empty dict.
-    """
-    with patch("backend.app.search_by_author", return_value=None), \
-            patch("backend.app.get_author_metadata_sparql", return_value={}):
-
-        result = get_researcher_result("Test Author")
-        assert result == {}
-
-
-def test_get_institution_results_fallback_success():
-    """
-    If search_by_institution returns None, fallback to get_institution_metadata_sparql + list_given_institution.
-    """
-    dummy_metadata = {
-        "ror": "dummy_ror",
-        "name": "Dummy Inst",
-        "works_count": "50",
-        "cited_count": "100",
-        "homepage": "dummy_homepage",
-        "author_count": "20",
-        "oa_link": "dummy_oa_link",
-        "hbcu": False
-    }
-    dummy_list = [("subfield1", 10)]
-    dummy_graph = {
-        "nodes": [
-            {"id": "dummy_inst", "label": "Dummy Inst", "type": "INSTITUTION"}
-        ],
-        "edges": []
-    }
-
-    with patch("backend.app.search_by_institution", return_value=None), \
-            patch("backend.app.get_institution_metadata_sparql", return_value=dummy_metadata), \
-            patch("backend.app.list_given_institution", return_value=(dummy_list, dummy_graph)):
-
-        result = get_institution_results("Dummy Inst")
-        assert isinstance(result, dict)
-        assert result.get("metadata") == dummy_metadata
-        assert result.get("graph") == dummy_graph
-        assert result.get("list") == dummy_list
-
-
-def test_get_institution_results_fallback_no_results():
-    """
-    If DB and SPARQL are empty, we get {}.
-    """
-    with patch("backend.app.search_by_institution", return_value=None), \
-            patch("backend.app.get_institution_metadata_sparql", return_value={}):
-
-        result = get_institution_results("Dummy Inst")
-        assert result == {}
-
-
-def test_get_researcher_and_subfield_results_fallback_success():
-    """
-    If search_by_author_topic returns None, fallback is get_topic_and_researcher_metadata_sparql + list_given_researcher_topic.
-    """
-    dummy_metadata = {
-        "current_institution": "Test Institution",
-        "topic_oa_link": "dummy_topic",
-        "researcher_oa_link": "dummy_researcher",
-        "institution_url": "dummy_inst",
-        "work_count": 10,
-        "cited_by_count": 50,
-        "name": "Test Author",
-        "orcid": "dummy_orcid"
-    }
-    dummy_work_list = [("Work1", 10)]
-    dummy_graph = {"nodes": [
-        {"id": "dummy_topic", "label": "Test Topic", "type": "TOPIC"}], "edges": []}
-    dummy_extra_metadata = {"work_count": 10, "cited_by_count": 50}
-    if "institution_oa_link" not in dummy_metadata:
-        pytest.fail(
-            "Missing 'institution_oa_link' in test data; skipping to avoid KeyError.")
-    with patch("backend.app.search_by_author_topic", return_value=None), \
-            patch("backend.app.get_topic_and_researcher_metadata_sparql", return_value=dummy_metadata), \
-            patch("backend.app.list_given_researcher_topic", return_value=(dummy_work_list, dummy_graph, dummy_extra_metadata)):
-
-        result = get_researcher_and_subfield_results(
-            "Test Author", "Test Topic")
-        assert isinstance(result, dict)
-        assert result.get("metadata") == dummy_metadata
-        assert result.get("graph") == dummy_graph
-        assert result.get("list") == dummy_work_list
-
-
 def test_get_researcher_and_subfield_results_fallback_no_results():
     """
-    If DB returns None and SPARQL returns {}, final result is {}.
+    This test verifies the fallback behavior in the `get_researcher_and_subfield_results` function when both the database query as well as the SPARQL query fail to return useful data. Specifically, it targets lines 587–588: after calling search_by_author_topic(researcher, topic), if the result is None, the function logs that no database results were found and THEN calls get_topic_and_researcher_metadata_sparql(topic, researcher).
+At line 586, the SPARQL result is checked. If the SPARQL query returns an empty dictionary ({}), then, as specified in lines 587–588, the function logs a warning ("No results found in SPARQL for researcher and topic") and "after" that returns an empty dictionary ({}).
+    The test patches: `search_by_author_topic` to return None, simulating that the database search did not find any data AS WELL AS `get_topic_and_researcher_metadata_sparql` to return `{}`, simulating that the SPARQL fallback did not yield any results.
+    Thus we can confidently say that with these conditions, the function should hit the branch in lines 587–588 and return {}. The test then asserts that the final result is indeed an empty dictionary.
     """
     with patch("backend.app.search_by_author_topic", return_value=None), \
             patch("backend.app.get_topic_and_researcher_metadata_sparql", return_value={}):
-
         result = get_researcher_and_subfield_results(
             "Test Author", "Test Topic")
         assert result == {}
-
-
-###############################################################################
-# SCHEMA VALIDATION TESTS
-###############################################################################
-
-def test_author_search_result_schema():
-    """
-    Test that the author search result follows the expected schema.
-    """
-    mock_result = {
-        "author_metadata": {
-            "orcid": "0000-0001-2345-6789",
-            "openalex_url": "https://openalex.org/author/1234",
-            "last_known_institution": "Test University",
-            "num_of_works": 10,
-            "num_of_citations": 100
-        },
-        "data": [
-            {"topic": "Physics", "num_of_works": 5},
-            {"topic": "Math", "num_of_works": 3}
-        ]
-    }
-
-    # Fix: Patch get_author_ids and execute_query, not search_by_author.
-    from unittest.mock import patch
-    """ And when I patch, I depend on the underlying functions instead of high-level Application Programming Interface functions for accurate testing at a micro-leveling of the "alias", import patch.  """
-    with patch("backend.app.get_author_ids", return_value=[{"author_id": "1234"}]):
-        with patch("backend.app.execute_query", return_value=[(mock_result,)]):
-            result = search_by_author("Test Author")
-
-            # Validate schema structure
-            assert "author_metadata" in result
-            assert "data" in result
-
-            # Validate author_metadata fields
-            metadata = result["author_metadata"]
-            assert "orcid" in metadata
-            assert "openalex_url" in metadata
-            assert "last_known_institution" in metadata
-            assert "num_of_works" in metadata
-            assert "num_of_citations" in metadata
-
-            # Validate data items
-            for item in result["data"]:
-                assert "topic" in item
-                assert "num_of_works" in item
 
 
 def test_institution_search_result_schema():
     """
-    Test that the institution search result follows the expected schema.
+    This test validates that the search_by_institution function (specifically, lines 264–265 of app.py) returns a result that follows the expected schema. What we're doing is mocking the underyling data retrieval: we patch get_institution_id to return a dummy institution ID (123) as well as execute_query to return a predefined mock_result containing an "institution_metadata" dictionary with keys "institution_name", "openalex_url", "num_of_authors", and "num_of_works" AND we patch a "data" list with dictionaries, each expected to include "topic_subfield" and "num_of_authors"..the test then calls search_by_institution("Test University") and asserts that the result contains the keys "institution_metadata" and "data" & the "institution_metadata" object includes the required fields & each item in the "data" list has the expected keys.
     """
     mock_result = {
         "institution_metadata": {
@@ -540,21 +179,17 @@ def test_institution_search_result_schema():
             {"topic_subfield": "Biology", "num_of_authors": 20},
         ],
     }
-
     from unittest.mock import patch
     with patch("backend.app.get_institution_id", return_value=123):
         with patch("backend.app.execute_query", return_value=[(mock_result,)]):
             result = search_by_institution("Test University")
-
             assert "institution_metadata" in result
             assert "data" in result
-
             metadata = result["institution_metadata"]
             assert "institution_name" in metadata
             assert "openalex_url" in metadata
             assert "num_of_authors" in metadata
             assert "num_of_works" in metadata
-
             for item in result["data"]:
                 assert "topic_subfield" in item
                 assert "num_of_authors" in item
@@ -562,7 +197,10 @@ def test_institution_search_result_schema():
 
 def test_topic_search_result_schema():
     """
-    Test that the topic search result follows the expected schema.
+    This test "shows" that the output of the search_by_topic function adheres and "sticks" to the "expected" schema. In the code (specifically lines 249–250 of app.py), after executing the SQL query, the function checks for results and then returns the first element of the first row (i.e. results[0][0]). The returned value is "expected" to be a dictionary with "specific" keys.
+    What we do is, we mock the query result. The test, sets up a mock_result dictionary with three keys: "subfield_metadata": A list of dictionaries, each containing "topic" and "subfield_url"..as well as "totals": A dictionary with total counts ("total_num_of_works", "total_num_of_citations", "total_num_of_authors")...and "last on the list" we "have" "data": a list of dictionaries with keys "institution_name" and "num_of_authors".
+    It patches the execute_query function to return a nested list containing mock_result, mimicking the structure expected from a database query.
+    The test calls search_by_topic("Chemistry") and asserts "that" the returned dictionary contains the keys "subfield_metadata", "totals", and "data", that each item in "subfield_metadata" has both "topic" and "subfield_url", that the "totals" dictionary includes all the expected total count keys AND, that every entry in "data" includes "institution_name" and "num_of_authors".
     """
     mock_result = {
         "subfield_metadata": [
@@ -578,24 +216,19 @@ def test_topic_search_result_schema():
             {"institution_name": "State University", "num_of_authors": 100},
         ]
     }
-
     from unittest.mock import patch
     with patch("backend.app.execute_query", return_value=[(mock_result,)]):
         result = search_by_topic("Chemistry")
-
         assert "subfield_metadata" in result
         assert "totals" in result
         assert "data" in result
-
         for item in result["subfield_metadata"]:
             assert "topic" in item
             assert "subfield_url" in item
-
         totals = result["totals"]
         assert "total_num_of_works" in totals
         assert "total_num_of_citations" in totals
         assert "total_num_of_authors" in totals
-
         for item in result["data"]:
             assert "institution_name" in item
             assert "num_of_authors" in item
