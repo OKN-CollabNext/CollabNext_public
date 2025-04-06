@@ -69,3 +69,5 @@ pytest_junit.xml
 
 #pytest outputs
 backend/tests/output/*
+backend/htmlcov/
+backend/logs/
