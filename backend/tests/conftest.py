@@ -1,10 +1,21 @@
+import os
+from backend.app import app
 from datetime import datetime
 import psycopg2
 import sys
 import pytest
+
+
+@pytest.fixture
+def clean_import_of_app():
+    """Removes 'backend.app' from sys.modules so subsequent tests can force a fresh import."""
+    if "backend.app" in sys.modules:
+        del sys.modules["backend.app"]
+    yield
+
+    # If you want to restore it, we don't need to change something that is working so you can do so after the test
+    # but usually we just leave it deleted so that each test can reimport if it wants.
 # Here's our new import. I have no April Fool's jokes today. There's enough craziness going on that we don't need to make fun of anything else.
-from backend.app import app
-import os
 os.chdir(os.path.join(os.path.dirname(__file__), '..'))
 _test_outcomes = []
 _test_finish_message = []

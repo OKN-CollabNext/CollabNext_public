@@ -1,7 +1,22 @@
+"""
+Logging Test Suite
+
+This module contains tests for the application's logging configuration.
+The tests address:
+  - Logger initialization and configuration.
+  - Think about checking all the different log levels.
+  - Changes with the Flask application's logging.
+  - Configure log handlers.
+"""
+
 import logging
 import pytest
 from unittest.mock import patch, MagicMock
 from backend.app import setup_logger
+
+###############################################################################
+# FIXTURES
+###############################################################################
 
 
 @pytest.fixture
@@ -14,6 +29,10 @@ def mock_log_path():
         mock_env.return_value = None
         yield "logs"
 
+###############################################################################
+# TEST CASES
+###############################################################################
+
 
 def test_setup_logger_has_all_handlers(mock_log_path):
     """ This test inevitably shows that the "same" code on Line 41 in `app.py`—which checks if the log directory exists and creates it if not—is executed as expected. By..patching `os.path.exists`, the test sets `mock_exists.return_value` to `False`, so when the code checks `if not os.path.exists(log_path):` it will always evaluate to `True`. So we can "e-verif"y directory creation ever since, the condition is met--the code should call `os.makedirs(log_path)`. The test asserts this with `mock_makedirs.assert_called_once_with(mock_log_path)`.
@@ -21,20 +40,23 @@ def test_setup_logger_has_all_handlers(mock_log_path):
     with patch("backend.app.os.path.exists") as mock_exists, \
             patch("backend.app.os.makedirs") as mock_makedirs, \
             patch("backend.app.RotatingFileHandler") as mock_handler:
+        # Simulate that the "logs" directory does not exist as you can see by the comment
         mock_exists.return_value = False
+        # Mock out this block here, RotatingFileHandler so we can inspect how many are created
 
         def _handler_side_effect(*args, **kwargs):
             handler_mock = MagicMock()
             handler_mock.level = logging.DEBUG
             return handler_mock
         mock_handler.side_effect = _handler_side_effect
+        # Call the function under test
         test_logger = setup_logger()
+        # Double-check with `pytest` that the logs directory is created
         mock_makedirs.assert_called_once_with(mock_log_path)
-        assert mock_handler.call_count >= 5
+        # Sometimes the logging test suite won't have the file handlers we need... we need enough
+        assert mock_handler.call_count >= 5, "Expected at least 5 rotating file handlers to be configured."
+        # It's really important to have the logger have the majority of these handlers (DEBUG, INFO, WARNING, ERROR, CRITICAL), here
         assert len(test_logger.handlers) >= 5
-        handler_levels = [h.level for h in test_logger.handlers]
-        assert logging.DEBUG in handler_levels
-        assert logging.INFO in handler_levels
-        assert logging.WARNING in handler_levels
-        assert logging.ERROR in handler_levels
-        assert logging.CRITICAL in handler_levels
+        handler_levels = [handler.level for handler in test_logger.handlers]
+        for lvl in [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]:
+            assert lvl in handler_levels, f"Missing handler for log level: {lvl}"
