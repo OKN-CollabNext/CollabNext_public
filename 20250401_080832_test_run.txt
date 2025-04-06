@@ -436,3 +436,4 @@ backend/tests/unit/test_search.py::test_search_by_institution_no_institution_id 
 
 ==== Pytest Exit Status ====
 Exit Code: 1
+
