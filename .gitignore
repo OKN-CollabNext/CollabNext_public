@@ -71,3 +71,4 @@ pytest_junit.xml
 backend/tests/output/*
 backend/htmlcov/
 backend/logs/
+backend/*_test_run.txt
