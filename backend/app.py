@@ -258,7 +258,7 @@ def search_by_institution(institution_name):
         app.logger.warning(f"No institution ID found for {institution_name}")
         return None
 
-    query = """SELECT search_by_institution_copy(%s);"""
+    query = """SELECT search_by_institution(%s);"""
     results = execute_query(query, (institution_id,))
     if results:
         app.logger.info(f"Found results for institution search: {institution_name}")
@@ -435,20 +435,20 @@ def get_researcher_result(researcher):
     app.logger.debug("Building graph structure")
     nodes = []
     edges = []
-    nodes.append({ 'id': last_known_institution, 'label': last_known_institution, 'type': 'INSTITUTION' })
+    # nodes.append({ 'id': last_known_institution, 'label': last_known_institution, 'type': 'INSTITUTION' })
     edges.append({ 'id': f"""{metadata['openalex_url']}-{last_known_institution}""", 'start': metadata['openalex_url'], 'end': last_known_institution, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
-    nodes.append({ 'id': metadata['openalex_url'], 'label': researcher, "type": "AUTHOR"})
+    # nodes.append({ 'id': metadata['openalex_url'], 'label': researcher, "type": "AUTHOR"})
     
     for entry in data['data']:
-        topic = entry['topic']
+        subfield = entry['topic']
         num_works = entry['num_of_works']
-        list.append((topic, num_works))
-        nodes.append({'id': topic, 'label': topic, 'type': "TOPIC"})
-        number_id = topic + ":" + str(num_works)
-        nodes.append({'id': number_id, 'label': num_works, 'type': "NUMBER"})
-        edges.append({ 'id': f"""{metadata['openalex_url']}-{topic}""", 'start': metadata['openalex_url'], 'end': topic, "label": "researches", "start_type": "AUTHOR", "end_type": "TOPIC"})
-        edges.append({ 'id': f"""{metadata['openalex_url']}-{number_id}""", 'start': topic, 'end': number_id, "label": "number", "start_type": "TOPIC", "end_type": "NUMBER"})
-    
+        list.append((subfield, num_works))
+        nodes.append({'id': subfield, 'label': subfield, 'type': "SUBFIELD", 'people': (num_works / metadata['work_count']) * 50 })
+        subfield_metadata = data['subfield_metadata']
+        for topic in subfield_metadata[subfield]:
+            nodes.append({'id': topic['topic_display_name'], 'label': topic['topic_display_name'], 'type': "TOPIC"})
+            edges.append({ 'id': f"""{subfield}-{topic['topic_display_name']}""", 'start': subfield, 'end': topic['topic_display_name'], "label": "has_topic", "start_type": "SUBFIELD", "end_type": "TOPIC"})
+
     graph = {"nodes": nodes, "edges": edges}
     app.logger.info(f"Successfully built result for researcher: {researcher}")
     return {"metadata": metadata, "graph": graph, "list": list}
@@ -492,7 +492,7 @@ def get_institution_results(institution, page=1, per_page=10):
         subfield = entry['topic_subfield']
         number = entry['num_of_authors']
         list.append((subfield, number))
-        nodes.append({'id': subfield, 'label': subfield, 'type': "SUBFIELD"})
+        nodes.append({'id': subfield, 'label': subfield, 'type': "SUBFIELD", 'people': (number / metadata['author_count']) * 100 })
         subfield_metadata = data['subfield_metadata']
         for topic in subfield_metadata[subfield]:
             nodes.append({'id': topic['topic_display_name'], 'label': topic['topic_display_name'], 'type': "TOPIC"})
@@ -709,7 +709,7 @@ def get_institution_and_researcher_results(institution, researcher):
         results = {"metadata": data, "graph": graph, "list": topic_list}
         app.logger.info(f"Successfully retrieved SPARQL results for researcher: {researcher} and institution: {institution}")
         return results
-
+    
     app.logger.debug("Processing database results for institution and researcher")
     list = []
     metadata = {}
@@ -734,20 +734,20 @@ def get_institution_and_researcher_results(institution, researcher):
     nodes = []
     edges = []
     author_id = metadata['researcher_oa_link']
-    nodes.append({ 'id': institution, 'label': institution, 'type': 'INSTITUTION' })
-    edges.append({ 'id': f"""{author_id}-{institution}""", 'start': author_id, 'end': institution, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
-    nodes.append({ 'id': author_id, 'label': researcher, "type": "AUTHOR"})
+    # nodes.append({ 'id': institution, 'label': institution, 'type': 'INSTITUTION' })
+    # edges.append({ 'id': f"""{author_id}-{institution}""", 'start': author_id, 'end': institution, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
+    # nodes.append({ 'id': author_id, 'label': researcher, "type": "AUTHOR"})
     
     for entry in data['data']:
-        topic_name = entry['topic_name']
+        subfield = entry['topic_name']
         num_works = entry["num_of_works"]
-        list.append((topic_name, num_works))
-        nodes.append({'id': topic_name, 'label': topic_name, 'type': "TOPIC"})
-        number_id = topic_name + ":" + str(num_works)
-        nodes.append({'id': number_id, 'label': num_works, 'type': "NUMBER"})
-        edges.append({ 'id': f"""{author_id}-{topic_name}""", 'start': author_id, 'end': topic_name, "label": "researches", "start_type": "AUTHOR", "end_type": "TOPIC"})
-        edges.append({ 'id': f"""{topic_name}-{number_id}""", 'start': topic_name, 'end': number_id, "label": "number", "start_type": "TOPIC", "end_type": "NUMBER"})
-    
+        list.append((subfield, num_works))
+        nodes.append({'id': subfield, 'label': subfield, 'type': "SUBFIELD", 'people': (num_works / metadata['work_count']) * 100 })
+        subfield_metadata = data['subfield_metadata']
+        for topic in subfield_metadata[subfield]:
+            nodes.append({'id': topic['topic_display_name'], 'label': topic['topic_display_name'], 'type': "TOPIC"})
+            edges.append({ 'id': f"""{subfield}-{topic['topic_display_name']}""", 'start': subfield, 'end': topic['topic_display_name'], "label": "has_topic", "start_type": "SUBFIELD", "end_type": "TOPIC"})
+
     graph = {"nodes": nodes, "edges": edges}
     app.logger.info(f"Successfully built result for researcher: {researcher} and institution: {institution}")
     return {"metadata": metadata, "graph": graph, "list": list}
@@ -1152,7 +1152,7 @@ def list_given_institution_topic(institution, institution_id, topic, topic_id):
     ?subfield a <https://semopenalex.org/ontology/Subfield> .
     ?subfield <http://www.w3.org/2004/02/skos/core#prefLabel> "{topic}" .
     ?topic <http://www.w3.org/2004/02/skos/core#broader> ?subfield .
-    << ?work <https://semopenalex.org/ontology/hasTopic> ?topic >> ?p ?o .
+    ?work <https://semopenalex.org/ontology/hasTopic> ?topic .
     {"}"}
     GROUP BY ?author ?name
     """
@@ -1229,7 +1229,7 @@ def list_given_researcher_topic(topic, researcher, institution, topic_id, resear
     ?subfield a <https://semopenalex.org/ontology/Subfield> .
     ?subfield <http://www.w3.org/2004/02/skos/core#prefLabel> "{topic}" .
     ?topic <http://www.w3.org/2004/02/skos/core#broader> ?subfield .
-    << ?work <https://semopenalex.org/ontology/hasTopic> ?topic >> ?p ?o .
+    ?work <https://semopenalex.org/ontology/hasTopic> ?topic .
     {"}"}
     """
     results = query_SPARQL_endpoint(SEMOPENALEX_SPARQL_ENDPOINT, query)

@@ -105,7 +105,7 @@ const GraphComponent = ({graphData, setInstitution, setTopic, setResearcher}) =>
         if (node.data.type === 'SUBFIELD') {
           return {
             ...basicStyle,
-            size: 10,
+            size: node.data.people ?? 10,
             color: '#AA4499',
             zIndex: 1,
           };
