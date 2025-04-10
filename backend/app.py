@@ -473,18 +473,60 @@ def get_institution_results(institution):
     app.logger.info(f"Successfully built result for institution: {institution}")
     return {"metadata": metadata, "graph": graph, "list": list}
 
-def filter_universities_by_coordinates(institution_list):
-    with open("./data/coordinates.json", "r", encoding="utf-8") as json_file:
-        coordinates_data = json.load(json_file)
+@app.route('/geo_info_batch', methods=['POST'])
+def get_geo_info_batch():
+    institutions = request.json.get('institutions', [])
+    results = []
+    if not institutions or not isinstance(institutions, list):
+        return jsonify({'error': 'Invalid or missing "institutions" list'}), 400
 
-    coordinates_dict = {entry["name"]: (entry["lat"], entry["lng"]) for entry in coordinates_data}
-   
-    filtered_institutions = [
-        {"name": inst, "lat": coordinates_dict[inst][0], "lng": coordinates_dict[inst][1]}
-        for inst, num in institution_list if inst in coordinates_dict
-    ]
+    for entry in institutions:
+        if not isinstance(entry, list) or len(entry) != 3:
+            continue  
 
-    return filtered_institutions
+        oa_link, institution_name, authors = entry
+
+        if not oa_link.startswith("https://openalex.org/"):
+            continue  
+
+        institution_id = oa_link.replace("https://openalex.org/", "")
+        api_url = f"https://api.openalex.org/institutions/{institution_id}?select=geo"
+        headers = {'Accept': 'application/json'}
+
+        try:
+            response = requests.get(api_url, headers=headers)
+            if response.status_code != 404:
+                data = response.json()
+                geo = data.get("geo", {})
+                if geo.get("latitude") and geo.get("longitude"):
+                    results.append({
+                        "lat": geo["latitude"],
+                        "lng": geo["longitude"],
+                        "name": institution_name,
+                        "authors": int(authors)
+                    })
+        except Exception as e:
+            app.logger.warning(f"Error fetching geo info for {institution_name}: {e}")
+    return jsonify(results)
+
+@app.route('/geo_info', methods=['POST'])
+def get_geo_info():
+    institution_id = request.json.get('institution_oa_link')
+    app.logger.debug(f"Searching for geo data for institution link: {institution_id}")
+    institution_id = institution_id.replace("https://openalex.org/institutions/", "")
+    api_call = f"https://api.openalex.org/institutions/{institution_id}?select=geo"
+    headers = {'Accept': 'application/json'}
+    response = requests.get(api_call, headers=headers)
+    if not response.status_code == 404:
+        data = response.json()
+        if data == None:
+            app.logger.warning(f"No data found for institution {institution_id}")
+        else:
+            app.logger.info(f"Found geo data for institution id {institution_id}")
+            geography_data = data['geo']
+            return geography_data
+    else:
+        app.logger.warning(f"(404 Error) Institution not found for id {institution_id}")
 
 
 def get_subfield_results(topic):
@@ -516,22 +558,24 @@ def get_subfield_results(topic):
     app.logger.debug("Building graph structure")
     nodes = []
     edges = []
+    coordinates_metadata = []
+
     topic_id = topic
     nodes.append({ 'id': topic_id, 'label': topic, 'type': 'TOPIC' })
-    
     for entry in data['data']:
         institution = entry['institution_name']
         number = entry['num_of_authors']
+        oa_link = entry['institution_id']
         list.append((institution, number))
+        coordinates_metadata.append((oa_link, institution, number))
         nodes.append({ 'id': institution, 'label': institution, 'type': 'INSTITUTION' })
         nodes.append({'id': number, 'label': number, 'type': "NUMBER"})
         edges.append({ 'id': f"""{institution}-{topic_id}""", 'start': institution, 'end': topic_id, "label": "researches", "start_type": "INSTITUTION", "end_type": "TOPIC"})
         edges.append({ 'id': f"""{institution}-{number}""", 'start': institution, 'end': number, "label": "number", "start_type": "INSTITUTION", "end_type": "NUMBER"})
     
     graph = {"nodes": nodes, "edges": edges}
-    coordinates = filter_universities_by_coordinates(list)
     app.logger.info(f"Successfully built result for topic: {topic}")
-    return {"metadata": metadata, "graph": graph, "list": list, "coordinates": coordinates}
+    return {"metadata": metadata, "graph": graph, "list": list, "coordinates": coordinates_metadata}
 
 def get_researcher_and_subfield_results(researcher, topic):
     """

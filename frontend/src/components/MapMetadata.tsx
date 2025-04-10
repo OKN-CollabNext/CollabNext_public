@@ -1,18 +1,18 @@
-import { useEffect } from "react";
-import { Box } from "@chakra-ui/react";
+import { useEffect, useRef, useState } from "react";
+import { Box, Spinner, Center } from "@chakra-ui/react";
 import { ResearchDataInterface } from "../utils/interfaces";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { baseUrl } from "../utils/constants";
 
 const createLegend = (map: L.Map) => {
   const legend = new L.Control({ position: "bottomright" });
 
   legend.onAdd = function () {
     const div = L.DomUtil.create("div");
-
     div.innerHTML = `
       <div style="
-        background: rgba(255, 255, 255, 0.8); /* Semi-transparent white */
+        background: rgba(255, 255, 255, 0.8);
         padding: 10px;
         border-radius: 5px;
         font-size: 14px;
@@ -23,55 +23,27 @@ const createLegend = (map: L.Map) => {
       ">
         <h4 style="margin: 0 0 5px; font-size: 16px; text-align: center;">Marker Legend</h4>
         <table style="width: 100%; border-collapse: collapse;">
-          <tr>
-            <td style="padding: 5px; vertical-align: middle;">
-              <img src="/assets/map_markers/marker-icon-blue.png" style="width: 20px; height: 34px;" />
-            </td>
-            <td style="padding: 5px;">0 - 99</td>
-          </tr>
-          <tr>
-            <td style="padding: 5px; vertical-align: middle;">
-              <img src="/assets/map_markers/marker-icon-green.png" style="width: 20px; height: 34px;" />
-            </td>
-            <td style="padding: 5px;">100 - 999</td>
-          </tr>
-          <tr>
-            <td style="padding: 5px; vertical-align: middle;">
-              <img src="/assets/map_markers/marker-icon-violet.png" style="width: 20px; height: 34px;" />
-            </td>
-            <td style="padding: 5px;">1,000 - 9,999</td>
-          </tr>
-          <tr>
-            <td style="padding: 5px; vertical-align: middle;">
-              <img src="/assets/map_markers/marker-icon-orange.png" style="width: 20px; height: 34px;" />
-            </td>
-            <td style="padding: 5px;">10,000 - 99,999</td>
-          </tr>
-          <tr>
-            <td style="padding: 5px; vertical-align: middle;">
-              <img src="/assets/map_markers/marker-icon-red.png" style="width: 20px; height: 34px;" />
-            </td>
-            <td style="padding: 5px;">100,000+</td>
-          </tr>
+          <tr><td><img src="/assets/map_markers/marker-icon-blue.png" style="width: 20px; height: 34px;" /></td><td>0 - 99</td></tr>
+          <tr><td><img src="/assets/map_markers/marker-icon-green.png" style="width: 20px; height: 34px;" /></td><td>100 - 999</td></tr>
+          <tr><td><img src="/assets/map_markers/marker-icon-violet.png" style="width: 20px; height: 34px;" /></td><td>1,000 - 9,999</td></tr>
+          <tr><td><img src="/assets/map_markers/marker-icon-orange.png" style="width: 20px; height: 34px;" /></td><td>10,000 - 99,999</td></tr>
+          <tr><td><img src="/assets/map_markers/marker-icon-red.png" style="width: 20px; height: 34px;" /></td><td>100,000+</td></tr>
         </table>
       </div>
     `;
-
     return div;
   };
-  legend.addTo(map);
 
+  legend.addTo(map);
   return legend;
 };
 
 const getMarkerIcon = (number: number) => {
-  let color = "blue"; 
-
-  if (number >= 100000) color = "red";       
-  else if (number >= 10000) color = "orange"; 
-  else if (number >= 1000) color = "violet";   
-  else if (number >= 100) color = "green";   
-  else if (number >= 0) color = "blue";     
+  let color = "blue";
+  if (number >= 100000) color = "red";
+  else if (number >= 10000) color = "orange";
+  else if (number >= 1000) color = "violet";
+  else if (number >= 100) color = "green";
 
   return L.icon({
     iconUrl: `/assets/map_markers/marker-icon-${color}.png`,
@@ -83,51 +55,108 @@ const getMarkerIcon = (number: number) => {
 };
 
 const MapMetadata = ({ data }: { data: ResearchDataInterface }) => {
+  const mapRef = useRef<L.Map | null>(null);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    if (!data || !data.coordinates || data.coordinates.length === 0) {
-      console.error("No coordinates available in data");
+    if (data.search !== "topic") {
       return;
     }
-    const coordinates = data.coordinates;
+    if (!data?.coordinates?.length) {
+      console.error("No coordinates in data");
+      setLoading(false);
+      return;
+    }
 
-    let map = L.map("map-container", { zoomControl: false });
-    let legend: L.Control | null = null;
+    const fetchAndRenderMap = async () => {
+      setLoading(true);
 
-    map.setView([coordinates[0].lat, coordinates[0].lng], 5);
+      const institutions = data.coordinates.slice(0, 100);
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap contributors",
-    }).addTo(map);
+      let coordinates: {
+        lat: number;
+        lng: number;
+        name: string;
+        authors: number;
+      }[] = [];
 
+      try {
+        const res = await fetch(`${baseUrl}/geo_info_batch`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ institutions }),
+        });
 
-    data.search === "topic"
-    ? coordinates.forEach((coord) => {
-        const matchedEntry = data.organizations.find(entry => entry[0] === coord.name);
-        const number = matchedEntry ? matchedEntry[1] : "N/A";
-        
+        coordinates = await res.json();
+      } catch (error) {
+        console.error("Failed to fetch batched geo info", error);
+        setLoading(false);
+        return;
+      }
 
-        L.marker([coord.lat, coord.lng], { icon: getMarkerIcon(Number(number)) })
+      if (!coordinates.length) {
+        setLoading(false);
+        return;
+      }
+
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+
+      const container = L.DomUtil.get("map-container");
+      if (container && (container as any)._leaflet_id) {
+        (container as any)._leaflet_id = undefined;
+      }
+
+      const map = L.map("map-container", { zoomControl: false }).setView(
+        [coordinates[0].lat, coordinates[0].lng],
+        5
+      );
+      mapRef.current = map;
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors",
+      }).addTo(map);
+
+      coordinates.forEach(({ lat, lng, name, authors }) => {
+        L.marker([lat, lng], {
+          icon: getMarkerIcon(authors),
+        })
           .addTo(map)
-          .bindPopup(`Organization: ${coord.name} <br> Number of People: ${number}`);
-      })
-      
-    : coordinates.forEach((coord) => {
-        L.marker([coord.lat, coord.lng], { icon: getMarkerIcon(0) })
-          .addTo(map)
-          .bindPopup(`Organization: ${coord.name} <br>Latitude: ${coord.lat} <br> Longitude: ${coord.lng}`);
+          .bindPopup(`Organization: ${name}<br>Authors: ${authors}`);
       });
-  
-    if (data.search == "topic") legend = createLegend(map);
+
+      createLegend(map);
+      setLoading(false);
+    };
+
+    fetchAndRenderMap();
 
     return () => {
-      map.remove(); 
-      if (legend) legend.remove();
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
     };
   }, [data]);
 
   return (
-    <Box width="100%" height="500px">
-      <div id="map-container" style={{ width: "100%", height: "100%" }}></div>
+    <Box width="100%" height="500px" position="relative">
+      {loading && (
+        <Center
+          position="absolute"
+          width="100%"
+          height="100%"
+          top={0}
+          left={0}
+          zIndex={10}
+          background="rgba(255,255,255,0.6)"
+        >
+          <Spinner size="xl" thickness="4px" speed="0.65s" color="blue.500" />
+        </Center>
+      )}
+      <div id="map-container" style={{ width: "100%", height: "100%" }} />
     </Box>
   );
 };

@@ -1,11 +1,11 @@
 export type SearchType =
-  | 'topic'
-  | 'researcher'
-  | 'institution'
-  | 'topic-researcher'
-  | 'researcher-institution'
-  | 'topic-institution'
-  | 'all-three-search';
+  | "topic"
+  | "researcher"
+  | "institution"
+  | "topic-researcher"
+  | "researcher-institution"
+  | "topic-institution"
+  | "all-three-search";
 
 export interface ResearchDataInterface {
   cited_count: string;
@@ -15,7 +15,7 @@ export interface ResearchDataInterface {
   author_count: string;
   institution_url: string;
   open_alex_link: string;
-  graph?: {nodes: any[]; edges: any[]};
+  graph?: { nodes: any[]; edges: any[] };
   is_hbcu: boolean;
   topics: string[][];
   works: string[][];
@@ -27,6 +27,6 @@ export interface ResearchDataInterface {
   orcid_link: string;
   researcher_open_alex_link: string;
   topic_open_alex_link: string;
-  coordinates: { name: string, lat: number; lng: number }[];
+  coordinates: string[][];
   search?: SearchType;
 }
