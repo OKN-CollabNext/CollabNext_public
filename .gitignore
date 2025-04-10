@@ -62,3 +62,13 @@ Desktop.ini
 # Other
 *.log
 
+#coverage files
+.coverage
+coverage.xml
+pytest_junit.xml
+
+#pytest outputs
+backend/tests/output/*
+backend/htmlcov/
+backend/logs/
+backend/*_test_run.txt
