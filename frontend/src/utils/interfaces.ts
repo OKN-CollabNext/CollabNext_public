@@ -18,6 +18,7 @@ export interface ResearchDataInterface {
   graph?: { nodes: any[]; edges: any[] };
   is_hbcu: boolean;
   topics: string[][];
+  coordinates: string[][];
   works: string[][];
   organizations: string[][];
   authors: string[][];

@@ -3,7 +3,7 @@ import "../styles/Search.css";
 import { useEffect, useRef, useState } from "react";
 import { Circles } from "react-loader-spinner";
 import { useNavigate } from "react-router-dom";
-
+import MapMetadata from "../components/MapMetadata";
 import {
   Box,
   Button,
@@ -13,7 +13,7 @@ import {
   list,
   Text,
 } from "@chakra-ui/react";
-import MapMetadata from "../components/MapMetadata";
+
 import AllThreeMetadata from "../components/AllThreeMetadata";
 // import CytoscapeComponent from 'react-cytoscapejs';
 import GraphComponent from "../components/GraphComponent";
@@ -641,6 +641,14 @@ const Search = () => {
                 setResearcher={setResearcherType}
               />
             </div>
+          ) : isNetworkMap === "map" ? (
+            <Box width="100%" height="500px">
+              {data?.search === "topic" ? (
+                <MapMetadata data={data} />
+              ) : (
+                <h1>Map not available!</h1>
+              )}
+            </Box>
           ) : isNetworkMap === "list" ? (
             <div>
               {data?.search === "institution" ? (

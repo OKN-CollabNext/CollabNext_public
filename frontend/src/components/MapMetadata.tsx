@@ -67,11 +67,10 @@ const MapMetadata = ({ data }: { data: ResearchDataInterface }) => {
       setLoading(false);
       return;
     }
-
     const fetchAndRenderMap = async () => {
       setLoading(true);
 
-      const institutions = data.coordinates.slice(0, 100);
+      const institutions = data.coordinates;
 
       let coordinates: {
         lat: number;

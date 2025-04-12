@@ -556,27 +556,7 @@ def get_geo_info_batch():
             app.logger.warning(f"Error fetching geo info for {institution_name}: {e}")
     return jsonify(results)
 
-@app.route('/geo_info', methods=['POST'])
-def get_geo_info():
-    institution_id = request.json.get('institution_oa_link')
-    app.logger.debug(f"Searching for geo data for institution link: {institution_id}")
-    institution_id = institution_id.replace("https://openalex.org/institutions/", "")
-    api_call = f"https://api.openalex.org/institutions/{institution_id}?select=geo"
-    headers = {'Accept': 'application/json'}
-    response = requests.get(api_call, headers=headers)
-    if not response.status_code == 404:
-        data = response.json()
-        if data == None:
-            app.logger.warning(f"No data found for institution {institution_id}")
-        else:
-            app.logger.info(f"Found geo data for institution id {institution_id}")
-            geography_data = data['geo']
-            return geography_data
-    else:
-        app.logger.warning(f"(404 Error) Institution not found for id {institution_id}")
-
-
-def get_subfield_results(topic, page=1, per_page=20):
+def get_subfield_results(topic, page=1, per_page=20, map_limit=100):
     """
     Gets the results when user only inputs a subfield
     Uses database to get result
@@ -625,6 +605,12 @@ def get_subfield_results(topic, page=1, per_page=20):
         edges.append({ 'id': f"""{institution}-{topic_id}""", 'start': institution, 'end': topic_id, "label": "researches", "start_type": "INSTITUTION", "end_type": "TOPIC"})
         edges.append({ 'id': f"""{institution}-{number}""", 'start': institution, 'end': number, "label": "number", "start_type": "INSTITUTION", "end_type": "NUMBER"})
     
+    for entry in data['data'][:map_limit]:
+        institution = entry['institution_name']
+        number = entry['num_of_authors']
+        oa_link = entry['institution_id']
+        coordinates_metadata.append((oa_link, institution, number))
+
     graph = {"nodes": nodes, "edges": edges}
     app.logger.info(f"Successfully built result for topic: {topic}")
     return {"metadata": metadata, 
@@ -632,7 +618,8 @@ def get_subfield_results(topic, page=1, per_page=20):
             "total_pages": (total_topics + per_page - 1) // per_page,
             "current_page": page,
             "total_topics": total_topics,
-        }, "graph": graph, "list": list}
+        }, "graph": graph, "list": list, "coordinates": coordinates_metadata}
+
 
 def get_researcher_and_subfield_results(researcher, topic, page=1, per_page=20):
     """
