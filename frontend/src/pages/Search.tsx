@@ -1,38 +1,46 @@
-import '../styles/Search.css';
+import "../styles/Search.css";
 
-import {useEffect, useRef, useState} from 'react';
-import {Circles} from 'react-loader-spinner';
-import {useNavigate} from 'react-router-dom';
+import { useEffect, useRef, useState } from "react";
+import { Circles } from "react-loader-spinner";
+import { useNavigate } from "react-router-dom";
+import MapMetadata from "../components/MapMetadata";
+import {
+  Box,
+  Button,
+  Checkbox,
+  Flex,
+  Input,
+  list,
+  Text,
+} from "@chakra-ui/react";
 
-import {Box, Button, Checkbox, Flex, Input, list, Text} from '@chakra-ui/react';
-
-import AllThreeMetadata from '../components/AllThreeMetadata';
+import AllThreeMetadata from "../components/AllThreeMetadata";
 // import CytoscapeComponent from 'react-cytoscapejs';
-import GraphComponent from '../components/GraphComponent';
-import InstitutionMetadata from '../components/InstitutionMetadata';
-import InstitutionResearcherMetaData from '../components/InstitutionResearcherMetaData';
-import ResearcherMetadata from '../components/ResearcherMetadata';
-import Suggested from '../components/Suggested';
-import TopicInstitutionMetadata from '../components/TopicInstitutionMetadata';
-import TopicMetadata from '../components/TopicMetadata';
-import TopicResearcherMetadata from '../components/TopicResearcherMetadata';
-import {baseUrl, handleAutofill, initialValue} from '../utils/constants';
-import {ResearchDataInterface, SearchType} from '../utils/interfaces';
+import GraphComponent from "../components/GraphComponent";
+import InstitutionMetadata from "../components/InstitutionMetadata";
+import InstitutionResearcherMetaData from "../components/InstitutionResearcherMetaData";
+import ResearcherMetadata from "../components/ResearcherMetadata";
+import Suggested from "../components/Suggested";
+import TopicInstitutionMetadata from "../components/TopicInstitutionMetadata";
+import TopicMetadata from "../components/TopicMetadata";
+import TopicResearcherMetadata from "../components/TopicResearcherMetadata";
+import { baseUrl, handleAutofill, initialValue } from "../utils/constants";
+import { ResearchDataInterface, SearchType } from "../utils/interfaces";
 
 const Search = () => {
   const searchParams = new URLSearchParams(window.location.search);
   // const cyRef = React.useRef<cytoscape.Core | undefined>();
-  const institution = searchParams.get('institution');
-  const type = searchParams.get('type');
-  const topic = searchParams.get('topic');
-  const researcher = searchParams.get('researcher');
-  const [isNetworkMap, setIsNetworkMap] = useState('list');
-  const [universityName, setUniversityName] = useState(institution || '');
-  const [universityName2, setUniversityName2] = useState('');
-  const [topicType, setTopicType] = useState(topic || '');
-  const [institutionType, setInstitutionType] = useState(type || '');
-  const [researcherType, setResearcherType] = useState(researcher || '');
-  const [researcherType2, setResearcherType2] = useState('');
+  const institution = searchParams.get("institution");
+  const type = searchParams.get("type");
+  const topic = searchParams.get("topic");
+  const researcher = searchParams.get("researcher");
+  const [isNetworkMap, setIsNetworkMap] = useState("list");
+  const [universityName, setUniversityName] = useState(institution || "");
+  const [universityName2, setUniversityName2] = useState("");
+  const [topicType, setTopicType] = useState(topic || "");
+  const [institutionType, setInstitutionType] = useState(type || "");
+  const [researcherType, setResearcherType] = useState(researcher || "");
+  const [researcherType2, setResearcherType2] = useState("");
   const [data, setData] = useState<ResearchDataInterface>(initialValue);
   const [isLoading, setIsLoading] = useState(false);
   const [isAddOrgChecked, setIsAddOrgChecked] = useState(false);
@@ -54,17 +62,17 @@ const Search = () => {
     setIsNetworkMap(value);
   };
   const institutionTypes = [
-    'HBCU',
-    'AANAPISI',
-    'ANNH',
-    'Carnegie R1',
-    'Carnegie R2',
-    'Emerging',
-    'HSI',
-    'MSI',
-    'NASNTI',
-    'PBI',
-    'TCU',
+    "HBCU",
+    "AANAPISI",
+    "ANNH",
+    "Carnegie R1",
+    "Carnegie R2",
+    "Emerging",
+    "HSI",
+    "MSI",
+    "NASNTI",
+    "PBI",
+    "TCU",
   ];
 
   const sendSearchRequest = (
@@ -81,20 +89,20 @@ const Search = () => {
       institutionType: string;
       topicType: string;
       researcherType: string;
-      page: number,
-      per_page: number,
-    },
+      page: number;
+      per_page: number;
+    }
   ) => {
     fetch(`${baseUrl}/initial-search`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         organization: universityName,
         type: institutionType,
         topic: topicType,
         researcher: researcherType,
         page: page,
-        per_page: per_page
+        per_page: per_page,
       }),
     })
       .then((res) => res.json())
@@ -103,7 +111,7 @@ const Search = () => {
         setTotalPages(data.metadata_pagination?.total_pages || 1);
         setCurrentPage(data.metadata_pagination?.current_page || 1);
         const dataObj =
-          search === 'institution'
+          search === "institution"
             ? {
                 institution_name: data?.metadata?.name,
                 is_hbcu: data?.metadata?.hbcu,
@@ -117,7 +125,7 @@ const Search = () => {
                 topics: data?.list,
                 search,
               }
-            : search === 'topic'
+            : search === "topic"
             ? {
                 topic_name: data?.metadata?.name,
                 topic_clusters: data?.metadata?.topic_clusters,
@@ -127,9 +135,10 @@ const Search = () => {
                 works_count: data?.metadata?.work_count,
                 open_alex_link: data?.metadata?.oa_link,
                 organizations: data?.list,
+                coordinates: data?.coordinates,
                 search,
               }
-            : search === 'researcher'
+            : search === "researcher"
             ? {
                 institution_name: data?.metadata?.current_institution,
                 researcher_name: data?.metadata?.name,
@@ -142,7 +151,7 @@ const Search = () => {
                 institution_url: data?.metadata?.institution_url,
                 search,
               }
-            : search === 'researcher-institution'
+            : search === "researcher-institution"
             ? {
                 graph: data?.graph,
                 topics: data?.list,
@@ -157,7 +166,7 @@ const Search = () => {
                 researcher_open_alex_link: data?.metadata?.researcher_oa_link,
                 search,
               }
-            : search === 'topic-researcher'
+            : search === "topic-researcher"
             ? {
                 graph: data?.graph,
                 works: data?.list,
@@ -172,7 +181,7 @@ const Search = () => {
                 topic_clusters: data?.metadata?.topic_clusters,
                 search,
               }
-            : search === 'topic-institution'
+            : search === "topic-institution"
             ? {
                 graph: data?.graph,
                 institution_name: data?.metadata?.institution_name,
@@ -218,7 +227,7 @@ const Search = () => {
       });
   };
 
-const handlePageChange = (newPage: number) => {
+  const handlePageChange = (newPage: number) => {
     if (newPage > 0 && newPage <= totalPages) {
       setCurrentPage(newPage);
       handleSearch(
@@ -236,29 +245,29 @@ const handlePageChange = (newPage: number) => {
     newInstitutionType: string,
     newTopicType: string,
     newResearcherType: string,
-    page: number = 1,
+    page: number = 1
   ) => {
     setIsLoading(true);
     const params = new URLSearchParams(window.location.search);
-    const universityName = params.get('institution') || '';
-    const institutionType = params.get('type') || '';
-    const topicType = params.get('topic') || '';
-    const researcherType = params.get('researcher') || '';
+    const universityName = params.get("institution") || "";
+    const institutionType = params.get("type") || "";
+    const topicType = params.get("topic") || "";
+    const researcherType = params.get("researcher") || "";
     if (
       universityName !== newUniversityName ||
       institutionType !== newInstitutionType ||
       topicType !== newTopicType ||
       researcherType !== newResearcherType
     ) {
-      if (newUniversityName) params.set('institution', newUniversityName);
-      if (newInstitutionType) params.set('type', newInstitutionType);
-      if (newTopicType) params.set('topic', newTopicType);
-      if (newResearcherType) params.set('researcher', newResearcherType);
-      navigate(`?${params.toString()}`, {replace: false});
+      if (newUniversityName) params.set("institution", newUniversityName);
+      if (newInstitutionType) params.set("type", newInstitutionType);
+      if (newTopicType) params.set("topic", newTopicType);
+      if (newResearcherType) params.set("researcher", newResearcherType);
+      navigate(`?${params.toString()}`, { replace: false });
     }
     // Determine search type and call sendSearchRequest using the passed values.
     if (newTopicType && newUniversityName && newResearcherType) {
-      sendSearchRequest('all-three-search', {
+      sendSearchRequest("all-three-search", {
         universityName: newUniversityName,
         institutionType: newInstitutionType,
         topicType: newTopicType,
@@ -273,10 +282,10 @@ const handlePageChange = (newPage: number) => {
     ) {
       const search =
         newTopicType && newResearcherType
-          ? 'topic-researcher'
+          ? "topic-researcher"
           : newResearcherType && newUniversityName
-          ? 'researcher-institution'
-          : 'topic-institution';
+          ? "researcher-institution"
+          : "topic-institution";
       sendSearchRequest(search, {
         universityName: newUniversityName,
         institutionType: newInstitutionType,
@@ -287,10 +296,10 @@ const handlePageChange = (newPage: number) => {
       });
     } else if (newTopicType || newUniversityName || newResearcherType) {
       const search = newTopicType
-        ? 'topic'
+        ? "topic"
         : newUniversityName
-        ? 'institution'
-        : 'researcher';
+        ? "institution"
+        : "researcher";
       sendSearchRequest(search, {
         universityName: newUniversityName,
         institutionType: newInstitutionType,
@@ -302,14 +311,14 @@ const handlePageChange = (newPage: number) => {
     } else {
       // Default graph request
       fetch(`${baseUrl}/get-default-graph`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: null,
       })
         .then((res) => res.json())
         .then((data) => {
-          setData({...initialValue, graph: data?.graph});
-          setIsNetworkMap('graph');
+          setData({ ...initialValue, graph: data?.graph });
+          setIsNetworkMap("graph");
           setIsLoading(false);
         })
         .catch((error) => {
@@ -329,15 +338,15 @@ const handlePageChange = (newPage: number) => {
 
   const handleListChange = (
     e: React.ChangeEvent<HTMLInputElement>,
-    setList: React.Dispatch<React.SetStateAction<File | null>>,
+    setList: React.Dispatch<React.SetStateAction<File | null>>
   ) => {
     if (e.target.files) {
       const file = e.target.files[0];
       console.log(file);
-      if (file && file.name.endsWith('.csv')) {
+      if (file && file.name.endsWith(".csv")) {
         setList(file);
       } else if (file) {
-        alert('Please select a valid CSV file.');
+        alert("Please select a valid CSV file.");
       }
     }
   };
@@ -345,10 +354,10 @@ const handlePageChange = (newPage: number) => {
   useEffect(() => {
     const handlePopState = () => {
       const params = new URLSearchParams(window.location.search);
-      const newUniversityName = params.get('institution') || '';
-      const newInstitutionType = params.get('type') || '';
-      const newTopicType = params.get('topic') || '';
-      const newResearcherType = params.get('researcher') || '';
+      const newUniversityName = params.get("institution") || "";
+      const newInstitutionType = params.get("type") || "";
+      const newTopicType = params.get("topic") || "";
+      const newResearcherType = params.get("researcher") || "";
 
       // Update states if needed (for UI inputs)
       setUniversityName(newUniversityName);
@@ -361,12 +370,12 @@ const handlePageChange = (newPage: number) => {
         newUniversityName,
         newInstitutionType,
         newTopicType,
-        newResearcherType,
+        newResearcherType
       );
     };
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
   useEffect(() => {
@@ -374,21 +383,20 @@ const handlePageChange = (newPage: number) => {
   }, []);
 
   return (
-    <Box >
-      <Flex  justifyContent={'flex-end'} px='2rem'>
-        {['List', 'Graph', 'Map'].map((value) => (
+    <Box>
+      <Flex justifyContent={"flex-end"} px="2rem">
+        {["List", "Graph", "Map"].map((value) => (
           <Button
             onClick={() => setIsNetworkMap(value.toLowerCase())}
-            bg='linear-gradient(#053257, #7e7e7e)'
-            color='white'
-            mr='1rem'
-            
+            bg="linear-gradient(#053257, #7e7e7e)"
+            color="white"
+            mr="1rem"
           >
             {value}
           </Button>
         ))}
       </Flex>
-      <div className='main-content'>
+      <div className="main-content">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -400,43 +408,43 @@ const handlePageChange = (newPage: number) => {
               1
             );
           }}
-          className='sidebar'
+          className="sidebar"
         >
           <input
-            type='text'
+            type="text"
             value={universityName}
-            list='institutions'
+            list="institutions"
             onChange={(e) => {
               setUniversityName(e.target.value);
               handleAutofill(
                 e.target.value,
                 false,
                 setSuggestedTopics,
-                setSuggestedInstitutions,
+                setSuggestedInstitutions
               );
             }}
-            placeholder={'University Name'}
-            className='textbox'
+            placeholder={"University Name"}
+            className="textbox"
             // disabled={isLoading}
           />
           <Suggested suggested={suggestedInstitutions} institutions={true} />
           {isAddOrgChecked && (
             <>
               <input
-                type='text'
+                type="text"
                 value={universityName2}
-                list='institutions'
+                list="institutions"
                 onChange={(e) => {
                   setUniversityName2(e.target.value);
                   handleAutofill(
                     e.target.value,
                     false,
                     setSuggestedTopics,
-                    setSuggestedInstitutions,
+                    setSuggestedInstitutions
                   );
                 }}
-                placeholder={'Another University'}
-                className='textbox'
+                placeholder={"Another University"}
+                className="textbox"
                 // disabled={isLoading}
               />
               <Suggested
@@ -446,7 +454,7 @@ const handlePageChange = (newPage: number) => {
             </>
           )}
           <input
-            type='text'
+            type="text"
             value={topicType}
             onChange={(e) => {
               setTopicType(e.target.value);
@@ -454,45 +462,45 @@ const handlePageChange = (newPage: number) => {
                 e.target.value,
                 true,
                 setSuggestedTopics,
-                setSuggestedInstitutions,
+                setSuggestedInstitutions
               );
             }}
-            list='topics'
-            placeholder='Type Topic'
-            className='textbox'
+            list="topics"
+            placeholder="Type Topic"
+            className="textbox"
             // disabled={isLoading}
           />
           <Suggested suggested={suggestedTopics} institutions={false} />
           <select
             value={institutionType}
             onChange={(e) => setInstitutionType(e.target.value)}
-            className='dropdown'
+            className="dropdown"
           >
-            <option style={{color: 'black'}} value=''>
+            <option style={{ color: "black" }} value="">
               Select an institution type
             </option>
             {institutionTypes.map((type) => (
-              <option style={{color: 'black'}} key={type} value={type}>
+              <option style={{ color: "black" }} key={type} value={type}>
                 {type}
               </option>
             ))}
           </select>
           {/* <FormControl isInvalid={topicType && !researcherType ? true : false}> */}
           <input
-            type='text'
+            type="text"
             value={researcherType}
             onChange={(e) => setResearcherType(e.target.value)}
-            placeholder='Type Researcher'
-            className='textbox'
+            placeholder="Type Researcher"
+            className="textbox"
             // disabled={isLoading}
           />
           {isAddPersonChecked && (
             <input
-              type='text'
+              type="text"
               value={researcherType2}
               onChange={(e) => setResearcherType2(e.target.value)}
-              placeholder='Another Researcher'
-              className='textbox'
+              placeholder="Another Researcher"
+              className="textbox"
               // disabled={isLoading}
             />
           )}
@@ -500,76 +508,76 @@ const handlePageChange = (newPage: number) => {
             Researcher must be provided when Topic is
           </FormErrorMessage>
         </FormControl> */}
-          <Box mt='.6rem'>
-            <Flex justifyContent={'space-between'}>
+          <Box mt=".6rem">
+            <Flex justifyContent={"space-between"}>
               {[
                 {
                   checkedState: isAddOrgChecked,
                   setCheckedState: setIsAddOrgChecked,
-                  text: 'Add Another Org',
+                  text: "Add Another Org",
                 },
                 {
                   checkedState: isAddPersonChecked,
                   setCheckedState: setIsAddPersonChecked,
-                  text: 'Add Another Person',
+                  text: "Add Another Person",
                 },
-              ].map(({checkedState, setCheckedState, text}) => (
+              ].map(({ checkedState, setCheckedState, text }) => (
                 <Flex>
                   <Checkbox
-                    mr='.2rem'
+                    mr=".2rem"
                     checked={checkedState}
                     onChange={(e) => setCheckedState(e.target.checked)}
                   />
-                  <Text fontSize='11px' color={'white'}>
+                  <Text fontSize="11px" color={"white"}>
                     {text}
                   </Text>
                 </Flex>
               ))}
             </Flex>
-            <Box mt='.6rem'>
+            <Box mt=".6rem">
               {[
                 {
                   list: orgList,
                   setList: setOrgList,
-                  text: 'Upload Org List',
+                  text: "Upload Org List",
                   ref: orgInputRef,
                 },
                 {
                   list: personList,
                   setList: setPersonList,
-                  text: 'Upload Person List',
+                  text: "Upload Person List",
                   ref: personInputRef,
                 },
-              ].map(({list, setList, text, ref}) => (
-                <Flex alignItems='center'>
+              ].map(({ list, setList, text, ref }) => (
+                <Flex alignItems="center">
                   <Button
-                    border='1px solid white'
-                    bg='transparent'
-                    color='white'
+                    border="1px solid white"
+                    bg="transparent"
+                    color="white"
                     fontWeight={400}
-                    fontSize={'13px'}
+                    fontSize={"13px"}
                     onClick={() => handleListClick(ref)}
-                    mt='.3rem'
-                    mr='.35rem'
+                    mt=".3rem"
+                    mr=".35rem"
                   >
                     {list?.name?.slice(0, 14) || text}
                   </Button>
                   <input
                     onChange={(e) => handleListChange(e, setList)}
-                    type='file'
+                    type="file"
                     ref={ref}
-                    accept='.csv'
+                    accept=".csv"
                     hidden
                   />
                   {list && (
                     <Text
-                      fontSize='11px'
-                      color={'white'}
-                      cursor='pointer'
+                      fontSize="11px"
+                      color={"white"}
+                      cursor="pointer"
                       onClick={() => {
                         setList(null);
                         // @ts-ignore
-                        ref.current.value = '';
+                        ref.current.value = "";
                       }}
                     >
                       remove
@@ -579,13 +587,13 @@ const handlePageChange = (newPage: number) => {
               ))}
             </Box>
             <Button
-              width='100%'
-              marginTop='10px'
-              backgroundColor='transparent'
-              color='white'
-              border='2px solid white'
+              width="100%"
+              marginTop="10px"
+              backgroundColor="transparent"
+              color="white"
+              border="2px solid white"
               isLoading={isLoading}
-              type='submit'
+              type="submit"
             >
               Search
             </Button>
@@ -595,32 +603,36 @@ const handlePageChange = (newPage: number) => {
           </button> */}
         </form>
 
-        <div className='content'>
+        <div className="content">
           {isLoading ? (
             <Box
-              w={{lg: '500px'}}
-              justifyContent={'center'}
-              height={{base: '190px', lg: '340px'}}
-              display={'flex'}
-              alignItems='center'
+              w={{ lg: "500px" }}
+              justifyContent={"center"}
+              height={{ base: "190px", lg: "340px" }}
+              display={"flex"}
+              alignItems="center"
             >
               <Circles
-                height='80'
-                width='80'
-                color='#003057'
-                ariaLabel='circles-loading'
+                height="80"
+                width="80"
+                color="#003057"
+                ariaLabel="circles-loading"
                 wrapperStyle={{}}
-                wrapperClass=''
+                wrapperClass=""
                 visible={true}
               />
             </Box>
           ) : !data?.graph ? (
-            <Box fontSize={{lg: '20px'}} ml={{lg: '4rem'}} fontWeight={'bold'}>
+            <Box
+              fontSize={{ lg: "20px" }}
+              ml={{ lg: "4rem" }}
+              fontWeight={"bold"}
+            >
               No result
             </Box>
-          ) : isNetworkMap === 'graph' ? (
-            <div className='network-map'>
-              <button className='topButton'>Network Map</button>
+          ) : isNetworkMap === "graph" ? (
+            <div className="network-map">
+              <button className="topButton">Network Map</button>
               {/* <img src={NetworkMap} alt='Network Map' /> */}
               <GraphComponent
                 graphData={data?.graph}
@@ -629,21 +641,41 @@ const handlePageChange = (newPage: number) => {
                 setResearcher={setResearcherType}
               />
             </div>
-          ) : isNetworkMap === 'list' ? (
+          ) : isNetworkMap === "map" ? (
+            <Box width="100%" height="500px">
+              {data?.search === "topic" ? (
+                <MapMetadata data={data} />
+              ) : (
+                <h1>Map not available!</h1>
+              )}
+            </Box>
+          ) : isNetworkMap === "list" ? (
             <div>
-              {data?.search === 'institution' ? (
-                <InstitutionMetadata data={data} setTopic={setTopicType} currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}/>
-              ) : data?.search === 'topic' ? (
-                <TopicMetadata data={data} setInstitution={setUniversityName} currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange} />
-              ) : data?.search === 'researcher' ? (
-                <ResearcherMetadata data={data} setTopic={setTopicType} currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}/>
-              ) : data?.search === 'researcher-institution' ? (
+              {data?.search === "institution" ? (
+                <InstitutionMetadata
+                  data={data}
+                  setTopic={setTopicType}
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+              ) : data?.search === "topic" ? (
+                <TopicMetadata
+                  data={data}
+                  setInstitution={setUniversityName}
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+              ) : data?.search === "researcher" ? (
+                <ResearcherMetadata
+                  data={data}
+                  setTopic={setTopicType}
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+              ) : data?.search === "researcher-institution" ? (
                 <InstitutionResearcherMetaData
                   data={data}
                   setTopic={setTopicType}
@@ -651,21 +683,28 @@ const handlePageChange = (newPage: number) => {
                   totalPages={totalPages}
                   onPageChange={handlePageChange}
                 />
-              ) : data?.search === 'topic-researcher' ? (
-                <TopicResearcherMetadata data={data} currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange} />
-              ) : data?.search === 'topic-institution' ? (
+              ) : data?.search === "topic-researcher" ? (
+                <TopicResearcherMetadata
+                  data={data}
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+              ) : data?.search === "topic-institution" ? (
                 <TopicInstitutionMetadata
                   data={data}
                   setResearcher={setResearcherType}
-                  currentPage={currentPage} totalPages={totalPages}
+                  currentPage={currentPage}
+                  totalPages={totalPages}
                   onPageChange={handlePageChange}
                 />
               ) : (
-                <AllThreeMetadata data={data} currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange} />
+                <AllThreeMetadata
+                  data={data}
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
               )}
             </div>
           ) : (

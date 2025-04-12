@@ -520,7 +520,43 @@ def get_institution_results(institution, page=1, per_page=10):
         "list": list
     }
 
-def get_subfield_results(topic, page=1, per_page=20):
+@app.route('/geo_info_batch', methods=['POST'])
+def get_geo_info_batch():
+    institutions = request.json.get('institutions', [])
+    results = []
+    if not institutions or not isinstance(institutions, list):
+        return jsonify({'error': 'Invalid or missing "institutions" list'}), 400
+
+    for entry in institutions:
+        if not isinstance(entry, list) or len(entry) != 3:
+            continue  
+
+        oa_link, institution_name, authors = entry
+
+        if not oa_link.startswith("https://openalex.org/"):
+            continue  
+
+        institution_id = oa_link.replace("https://openalex.org/", "")
+        api_url = f"https://api.openalex.org/institutions/{institution_id}?select=geo"
+        headers = {'Accept': 'application/json'}
+
+        try:
+            response = requests.get(api_url, headers=headers)
+            if response.status_code != 404:
+                data = response.json()
+                geo = data.get("geo", {})
+                if geo.get("latitude") and geo.get("longitude"):
+                    results.append({
+                        "lat": geo["latitude"],
+                        "lng": geo["longitude"],
+                        "name": institution_name,
+                        "authors": int(authors)
+                    })
+        except Exception as e:
+            app.logger.warning(f"Error fetching geo info for {institution_name}: {e}")
+    return jsonify(results)
+
+def get_subfield_results(topic, page=1, per_page=20, map_limit=100):
     """
     Gets the results when user only inputs a subfield
     Uses database to get result
@@ -549,6 +585,8 @@ def get_subfield_results(topic, page=1, per_page=20):
     app.logger.debug("Building graph structure")
     nodes = []
     edges = []
+    coordinates_metadata = []
+
     topic_id = topic
     nodes.append({ 'id': topic_id, 'label': topic, 'type': 'TOPIC' })
 
@@ -565,6 +603,12 @@ def get_subfield_results(topic, page=1, per_page=20):
         edges.append({ 'id': f"""{institution}-{topic_id}""", 'start': institution, 'end': topic_id, "label": "researches", "start_type": "INSTITUTION", "end_type": "TOPIC"})
         edges.append({ 'id': f"""{institution}-{number}""", 'start': institution, 'end': number, "label": "number", "start_type": "INSTITUTION", "end_type": "NUMBER"})
     
+    for entry in data['data'][:map_limit]:
+        institution = entry['institution_name']
+        number = entry['num_of_authors']
+        oa_link = entry['institution_id']
+        coordinates_metadata.append((oa_link, institution, number))
+
     graph = {"nodes": nodes, "edges": edges}
     app.logger.info(f"Successfully built result for topic: {topic}")
     return {"metadata": metadata, 
@@ -572,7 +616,8 @@ def get_subfield_results(topic, page=1, per_page=20):
             "total_pages": (total_topics + per_page - 1) // per_page,
             "current_page": page,
             "total_topics": total_topics,
-        }, "graph": graph, "list": list}
+        }, "graph": graph, "list": list, "coordinates": coordinates_metadata}
+
 
 def get_researcher_and_subfield_results(researcher, topic, page=1, per_page=20):
     """
