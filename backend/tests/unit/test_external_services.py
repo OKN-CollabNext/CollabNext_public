@@ -14,6 +14,7 @@ import requests
 from unittest.mock import patch, MagicMock
 from werkzeug.exceptions import NotFound
 from flask import Flask
+from backend.app import app
 
 from backend.app import (
     fetch_last_known_institutions,
@@ -69,6 +70,9 @@ def test_get_researcher_result_fetch_last(monkeypatch):
             "last_known_institution": None,
             "num_of_citations": 2,
             "openalex_url": "https://openalex.org/author/9999"
+        },
+        "subfield_metadata": {
+            "TestTopic": [{"topic_display_name": "FetchedInst"}]
         },
         "data": [{"topic": "TestTopic", "num_of_works": 1}]
     }

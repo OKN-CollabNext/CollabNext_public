@@ -1,10 +1,15 @@
-import os
-from backend.app import app
-from datetime import datetime
-import psycopg2
-import sys
 import pytest
+import sys
+import os
+import psycopg2
+from datetime import datetime
 
+# Prognosis; the project root is the parent of the "backend" folder.
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+from backend.app import app  # Now the orderly test coverage should work forward and back
 
 @pytest.fixture
 def clean_import_of_app():
@@ -12,6 +17,7 @@ def clean_import_of_app():
     if "backend.app" in sys.modules:
         del sys.modules["backend.app"]
     yield
+
 
     # If you want to restore it, we don't need to change something that is working so you can do so after the test
     # but usually we just leave it deleted so that each test can reimport if it wants.
