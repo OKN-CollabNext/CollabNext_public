@@ -110,16 +110,16 @@ def execute_query(query, params):
         with psycopg2.connect(
             user=os.getenv('DB_USER'),
             password=os.getenv('DB_PASSWORD'),
-            host=os.getenv('DB_HOST'),            
+            host=os.getenv('DB_HOST'),
             database=os.getenv('DB_NAME'),
-            sslmode='disable'       
+            sslmode='disable'
         ) as connection:
             app.logger.debug(f"Executing query: {query} with params: {params}")
             with connection.cursor() as cursor:
-                cursor.execute(query, params)                
+                cursor.execute(query, params)
                 results = cursor.fetchall()
                 app.logger.info(f"Query executed successfully, returned {len(results)} results")
-                return results        
+                return results
     except Exception as e:
         app.logger.error(f"Database error: {str(e)}")
         return None
@@ -139,12 +139,14 @@ def fetch_last_known_institutions(raw_id: str) -> list:
         logger.error(f"Error fetching last known institutions for id {id}: {str(e)}")
         return []
 
-def get_author_ids(author_name):  
+def get_author_ids(author_name):
     app.logger.debug(f"Getting author IDs for: {author_name}")
     query = """SELECT get_author_id(%s);"""
     results = execute_query(query, (author_name,))
+    app.logger.debug(f"Raw result for author '{author_name}': {results}")
     if results:
         app.logger.info(f"Found author IDs for {author_name}")
+        app.logger.info(f"Returning author IDs: {results[0][0]} for {author_name}")
         return results[0][0]
     app.logger.warning(f"No author IDs found for {author_name}")
     return None
@@ -153,31 +155,55 @@ def get_institution_id(institution_name):
     app.logger.debug(f"Getting institution ID for: {institution_name}")
     query = """SELECT get_institution_id(%s);"""
     results = execute_query(query, (institution_name,))
+    app.logger.debug(f"Raw result for institution '{institution_name}': {results}")
     if results:
         if results[0][0] == {}:
-            app.logger.warning(f"No institution ID found for {institution_name}")
+            app.logger.warning(f"Empty result for institution '{institution_name}'. Raw data: {results[0][0]}")
             return None
         app.logger.info(f"Found institution ID for {institution_name}")
         return results[0][0]['institution_id']
     app.logger.warning(f"Query returned no results for institution {institution_name}")
     return None
 
+def get_openalex_works(institution_lineage: str, subfield_id: str, page: int = 1, per_page: int = 25):
+    """
+    So far we've been querying OpenAlex for works using the filters:
+      * primary_topic.subfield.id == subfields/{subfield_id}
+      * authorships.institutions.lineage == institution_lineage
+    """
+    import urllib.parse
+    base_url = "https://api.openalex.org/works"
+    # Build the filter string almost exactly as needed by OpenAlex:
+    filter_str = f"primary_topic.subfield.id:subfields/{subfield_id},authorships.institutions.lineage:{institution_lineage.lower()}"
+    encoded_filters = urllib.parse.quote(filter_str)
+    url = f"{base_url}?filter={encoded_filters}&page={page}&per_page={per_page}"
+    app.logger.info(f"Fetching works from OpenAlex, with the URL this time: {url}")
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        app.logger.error(f"OpenAlex API error {response.status_code}: {response.text}")
+        return None
+
 def search_by_author_institution_topic(author_name, institution_name, topic_name):
     app.logger.debug(f"Searching by author, institution, and topic: {author_name}, {institution_name}, {topic_name}")
     author_ids = get_author_ids(author_name)
+    app.logger.debug(f"Retrieved author IDs: {author_ids} for author '{author_name}'. Using author ID: {author_ids[0]['author_id']}")
     if not author_ids:
         app.logger.warning(f"No author IDs found for {author_name}")
         return None
-    
+
     author_id = author_ids[0]['author_id']
     app.logger.debug(f"Using author ID: {author_id}")
 
     institution_id = get_institution_id(institution_name)
+    app.logger.debug(f"Retrieved institution ID: {institution_id} for institution '{institution_name}'")
     if institution_id is None:
         app.logger.warning(f"No institution ID found for {institution_name}")
         return None
 
     query = """SELECT search_by_author_institution_topic(%s, %s, %s);"""
+    app.logger.debug(f"Executing search_by_author_institution_topic with parameters: author_id={author_ids[0]['author_id']}, institution_id={institution_id}, topic_name={topic_name}")
     results = execute_query(query, (author_id, institution_id, topic_name))
     if results:
         app.logger.info("Found results for author-institution-topic search")
@@ -191,7 +217,7 @@ def search_by_author_institution(author_name, institution_name):
     if not author_ids:
         app.logger.warning(f"No author IDs found for {author_name}")
         return None
-    
+
     author_id = author_ids[0]['author_id']
     app.logger.debug(f"Using author ID: {author_id}")
 
@@ -229,7 +255,7 @@ def search_by_author_topic(author_name, topic_name):
     if not author_ids:
         app.logger.warning(f"No author IDs found for {author_name}")
         return None
-    
+
     author_id = author_ids[0]['author_id']
     app.logger.debug(f"Using author ID: {author_id}")
 
@@ -337,9 +363,8 @@ def initial_search():
   researcher = researcher.title()
   type = request.json.get('type')
   topic = request.json.get('topic')
-
   app.logger.info(f"Received search request - Institution: {institution}, Researcher: {researcher}, Topic: {topic}, Type: {type}")
-
+  app.logger.debug(f"Input parameters: Institution: {institution}, Researcher: {researcher}, Topic: {topic}, Type: {type}")
   try:
     if institution and researcher and topic:
       results = get_institution_researcher_subfield_results(institution, researcher, topic, page, per_page)
@@ -394,8 +419,9 @@ def get_researcher_result(researcher, page=1, per_page=20):
     """
     data = search_by_author(researcher)
     if data is None:
-        app.logger.info("No database results, falling back to SPARQL...")
         data = get_author_metadata_sparql(researcher)
+        app.logger.info("Database query returned no results – defaulting back to SPARQL to fulfill the data request.")
+        app.logger.debug(f"SPARQL raw output: {data}")
         if data == {}:
             app.logger.warning("No results found in SPARQL for researcher")
             return {}
@@ -414,7 +440,7 @@ def get_researcher_result(researcher, page=1, per_page=20):
     metadata['current_institution'] = metadata['last_known_institution']
     metadata['cited_by_count'] = metadata['num_of_citations']
     metadata['oa_link'] = metadata['openalex_url']
-    
+
     if metadata['last_known_institution'] is None:
         app.logger.debug("Fetching last known institutions from OpenAlex")
         institution_object = fetch_last_known_institutions(metadata['oa_link'])
@@ -436,7 +462,7 @@ def get_researcher_result(researcher, page=1, per_page=20):
     nodes.append({ 'id': last_known_institution, 'label': last_known_institution, 'type': 'INSTITUTION' })
     edges.append({ 'id': f"""{metadata['openalex_url']}-{last_known_institution}""", 'start': metadata['openalex_url'], 'end': last_known_institution, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
     nodes.append({ 'id': metadata['openalex_url'], 'label': researcher, "type": "AUTHOR"})
-    
+
     total_topics = len(data['data'])
     start = (page - 1) * per_page
     end = start + per_page
@@ -450,7 +476,7 @@ def get_researcher_result(researcher, page=1, per_page=20):
         nodes.append({'id': number_id, 'label': num_works, 'type': "NUMBER"})
         edges.append({ 'id': f"""{metadata['openalex_url']}-{topic}""", 'start': metadata['openalex_url'], 'end': topic, "label": "researches", "start_type": "AUTHOR", "end_type": "TOPIC"})
         edges.append({ 'id': f"""{metadata['openalex_url']}-{number_id}""", 'start': topic, 'end': number_id, "label": "number", "start_type": "TOPIC", "end_type": "NUMBER"})
-    
+
     graph = {"nodes": nodes, "edges": edges}
     app.logger.info(f"Successfully built result for researcher: {researcher}")
     return {"metadata": metadata,
@@ -478,7 +504,7 @@ def get_institution_results(institution, page=1, per_page=10):
         return results
     app.logger.debug("Processing database results for institution")
     metadata = data['institution_metadata']
-    
+
     metadata['homepage'] = metadata['url']
     metadata['works_count'] = metadata['num_of_works']
     metadata['name'] = metadata['institution_name']
@@ -506,7 +532,7 @@ def get_institution_results(institution, page=1, per_page=10):
         nodes.append({'id': number_id, 'label': number, 'type': "NUMBER"})
         edges.append({ 'id': f"""{institution_id}-{subfield}""", 'start': institution_id, 'end': subfield, "label": "researches", "start_type": "INSTITUTION", "end_type": "TOPIC"})
         edges.append({ 'id': f"""{subfield}-{number_id}""", 'start': subfield, 'end': number_id, "label": "number", "start_type": "TOPIC", "end_type": "NUMBER"})
-    
+
     graph = {"nodes": nodes, "edges": edges}
     app.logger.info(f"Successfully built result for institution: {institution}")
     return {
@@ -555,7 +581,7 @@ def get_subfield_results(topic, page=1, per_page=20):
     total_topics = len(data['data'])
     start = (page - 1) * per_page
     end = start + per_page
-    
+
     for entry in data['data'][start:end]:
         institution = entry['institution_name']
         number = entry['num_of_authors']
@@ -564,10 +590,10 @@ def get_subfield_results(topic, page=1, per_page=20):
         nodes.append({'id': number, 'label': number, 'type': "NUMBER"})
         edges.append({ 'id': f"""{institution}-{topic_id}""", 'start': institution, 'end': topic_id, "label": "researches", "start_type": "INSTITUTION", "end_type": "TOPIC"})
         edges.append({ 'id': f"""{institution}-{number}""", 'start': institution, 'end': number, "label": "number", "start_type": "INSTITUTION", "end_type": "NUMBER"})
-    
+
     graph = {"nodes": nodes, "edges": edges}
     app.logger.info(f"Successfully built result for topic: {topic}")
-    return {"metadata": metadata, 
+    return {"metadata": metadata,
             "metadata_pagination": {
             "total_pages": (total_topics + per_page - 1) // per_page,
             "current_page": page,
@@ -596,7 +622,7 @@ def get_researcher_and_subfield_results(researcher, topic, page=1, per_page=20):
     app.logger.debug("Processing database results for researcher and topic")
     list = []
     metadata = {}
-    
+
     topic_clusters = []
     for entry in data['subfield_metadata']:
         topic_cluster = entry['topic']
@@ -632,7 +658,7 @@ def get_researcher_and_subfield_results(researcher, topic, page=1, per_page=20):
     nodes.append({ 'id': researcher_id, 'label': researcher, 'type': 'AUTHOR' })
     nodes.append({ 'id': subfield_id, 'label': topic, 'type': 'TOPIC' })
     edges.append({ 'id': f"""{researcher_id}-{subfield_id}""", 'start': researcher_id, 'end': subfield_id, "label": "researches", "start_type": "AUTHOR", "end_type": "TOPIC"})
-    
+
     total_topics = len(data['data'])
     start = (page - 1) * per_page
     end = start + per_page
@@ -645,93 +671,289 @@ def get_researcher_and_subfield_results(researcher, topic, page=1, per_page=20):
         nodes.append({'id': number, 'label': number, 'type': "NUMBER"})
         edges.append({ 'id': f"""{researcher_id}-{work}""", 'start': researcher_id, 'end': work, "label": "authored", "start_type": "AUTHOR", "end_type": "WORK"})
         edges.append({ 'id': f"""{work}-{number}""", 'start': work, 'end': number, "label": "citedBy", "start_type": "WORK", "end_type": "NUMBER"})
-    
+
     graph = {"nodes": nodes, "edges": edges}
     app.logger.info(f"Successfully built result for researcher: {researcher} and topic: {topic}")
-    return {"metadata": metadata, 
+    return {"metadata": metadata,
             "metadata_pagination": {
             "total_pages": (total_topics + per_page - 1) // per_page,
             "current_page": page,
             "total_topics": total_topics,
         }, "graph": graph, "list": list}
-
 def get_institution_and_subfield_results(institution, topic, page=1, per_page=20):
     """
-    Gets the results when user inputs an institution and subfield
-    Uses database to get result, defaults to SPARQL if institution is not in database
+    Gets the results when user inputs an institution and subfield.
+    1) Tries local DB via search_by_institution_topic(institution, topic).
+    2) If no local data, tries SPARQL fallback (get_institution_and_topic_metadata_sparql).
+    3) If still empty, makes a call to the official OpenAlex API with the
+       same filter just used on openalex.org:
+         filter=primary_topic.subfield.id:subfields/{subfield_id},
+                authorships.institutions.lineage:{lineage_id}
     """
+
+    # ---------------------------
+    # 1) Attempt to ping the local DB
+    # ---------------------------
     data = search_by_institution_topic(institution, topic)
-    if data is None:
-        app.logger.info("Using SPARQL for institution and topic search...")
-        data = get_institution_and_topic_metadata_sparql(institution, topic)
-        if data == {}:
-            app.logger.warning("No results found in SPARQL for institution and topic")
-            return {}
-        topic_list, graph, extra_metadata = list_given_institution_topic(institution, data['institution_oa_link'], topic, data['topic_oa_link'])
+    if data is not None:
+        app.logger.debug("Processing database results for institution and topic")
+
+        # Build (don't remove) the usual metadata
+        list_of_authors = []
+        metadata = {}
+
+        topic_clusters = []
+        subfield_oa_link = ""
+        for entry in data['subfield_metadata']:
+            topic_cluster = entry['topic']
+            topic_clusters.append(topic_cluster)
+            subfield_oa_link = entry['subfield_url']
+
+        metadata['topic_name'] = topic
+        metadata['topic_clusters'] = topic_clusters
+        metadata['work_count'] = data['totals']['total_num_of_works']
+        metadata['cited_by_count'] = data['totals']['total_num_of_citations']
+        metadata['people_count'] = data['totals']['total_num_of_authors']
+        metadata['topic_oa_link'] = subfield_oa_link
+        metadata['topic_name'] = topic
+
+        metadata['homepage'] = data['institution_metadata']['url']
+        metadata['institution_oa_link'] = data['institution_metadata']['openalex_url']
+        metadata['ror'] = data['institution_metadata']['ror']
+        metadata['institution_name'] = institution
+
+        # Also build the graph
+        nodes = []
+        edges = []
+        subfield_id = metadata['topic_oa_link']
+        institution_id = metadata['institution_oa_link']
+
+        nodes.append({'id': subfield_id, 'label': topic, 'type': 'TOPIC'})
+        nodes.append({'id': institution_id, 'label': institution, 'type': 'INSTITUTION'})
+        edges.append({
+            'id': f"{institution_id}-{subfield_id}",
+            'start': institution_id,
+            'end': subfield_id,
+            "label": "researches",
+            "start_type": "INSTITUTION",
+            "end_type": "TOPIC"
+        })
+
+        total_topics = len(data['data'])
+        start = (page - 1) * per_page
+        end = start + per_page
+
+        for entry in data['data'][start:end]:
+            author_id = entry['author_id']
+            author_name = entry['author_name']
+            number_of_works = entry['num_of_works']
+            list_of_authors.append((author_name, number_of_works))
+
+            nodes.append({'id': author_id, 'label': author_name, 'type': 'AUTHOR'})
+            # “NUMBER” node you should know denotes how many works
+            number_id = f"{author_id}-works-{number_of_works}"
+            nodes.append({'id': number_id, 'label': number_of_works, 'type': 'NUMBER'})
+
+            edges.append({
+                'id': f"{author_id}-{number_id}",
+                'start': author_id,
+                'end': number_id,
+                "label": "numWorks",
+                "start_type": "AUTHOR",
+                "end_type": "NUMBER"
+            })
+            edges.append({
+                'id': f"{author_id}-{institution_id}",
+                'start': author_id,
+                'end': institution_id,
+                "label": "memberOf",
+                "start_type": "AUTHOR",
+                "end_type": "INSTITUTION"
+            })
+
+        graph = {"nodes": nodes, "edges": edges}
+        metadata['people_count'] = len(list_of_authors)
+        app.logger.info(f"Successfully built result (DB) when it's for the following institution: {institution} and topic: {topic}")
+
+        return {
+            "metadata": metadata,
+            "metadata_pagination": {
+                "total_pages": (total_topics + per_page - 1) // per_page,
+                "current_page": page,
+                "total_topics": total_topics,
+            },
+            "graph": graph,
+            "list": list_of_authors
+        }
+
+    # ---------------------------
+    # 2) Better attempt SPARQL as a backup plan
+    # ---------------------------
+    app.logger.info("Using SPARQL for institution and topic search...")
+    data = get_institution_and_topic_metadata_sparql(institution, topic)
+    if data and data != {}:
+        # If SPARQL has results, build list + graph via the helpful list_given_institution_topic
+        topic_list, graph, extra_metadata = list_given_institution_topic(
+            institution,
+            data['institution_oa_link'],
+            topic,
+            data['topic_oa_link']
+        )
         data['work_count'] = extra_metadata['work_count']
         data['people_count'] = extra_metadata['num_people']
+
         results = {"metadata": data, "graph": graph, "list": topic_list}
         app.logger.info(f"Successfully retrieved SPARQL results for institution: {institution} and topic: {topic}")
         return results
+    else:
+        app.logger.warning("No SPARQL results for institution and topic. Trying direct OpenAlex subfield API...")
 
-    app.logger.debug("Processing database results for institution and topic")
-    list = []
-    metadata = {}
+    # ---------------------------
+    # 3) Final fallback: direct OpenAlex subfield-lineage query
+    # ---------------------------
+    # A) We need to imagine the institution lineage ID. Typically, and I have no idea why..we parse the "I9254433"
+    #    from the local get_institution_id(...) or from get_institution_metadata_sparql.
+    #    If we truly have no prior data, that might require a simple approach:
+    #        "i9254433" if institution == "Fisk University"
+    #    or even parse from a known openalex link "https://openalex.org/institutions/I9254433". It's pretty clear that the author
+    # data does in fact exist on Fisk OpenAlex University the only thing is
+    # how and in what way? Here we find out.
+    lineage_id = None
+    inst_openalex_id = get_institution_id(institution)  # e.g. returns "I9254433" for Fisk
+    if inst_openalex_id:
+        lineage_id = inst_openalex_id.lower()  # "i9254433"
+    if not lineage_id:
+        app.logger.warning(f"No lineage ID found for {institution}; cannot query OpenAlex subfield API.")
+        return {}
 
-    topic_clusters = []
-    for entry in data['subfield_metadata']:
-        topic_cluster = entry['topic']
-        topic_clusters.append(topic_cluster)
-        subfield_oa_link = entry['subfield_url']
-    metadata['topic_name'] = topic
-    metadata['topic_clusters'] = topic_clusters
-    metadata['work_count'] = data['totals']['total_num_of_works']
-    metadata['cited_by_count'] = data['totals']['total_num_of_citations']
-    metadata['people_count'] = data['totals']['total_num_of_authors']
-    metadata['topic_oa_link'] = subfield_oa_link
-    metadata['topic_name'] = topic
+    # B) Convert the topic name to a full subfield ID ("1607" for Spectroscopy, and so on and so forth)
+    subfield_id = get_subfield_id_from_name(topic)
+    if not subfield_id:
+        app.logger.warning(f"No known subfield ID for topic '{topic}'")
+        return {}
 
-    metadata['homepage'] = data['institution_metadata']['url']
-    metadata['institution_oa_link'] = data['institution_metadata']['openalex_url']
-    metadata['ror'] = data['institution_metadata']['ror']
-    metadata['institution_name'] = institution
+    # C) Once we realize the topics then call the OpenAlex works API
+    app.logger.info("Calling OpenAlex to fetch works with subfield+lineage filters...")
+    openalex_data = get_openalex_works(lineage_id, subfield_id, page=page, per_page=per_page)
+    if not openalex_data or 'results' not in openalex_data:
+        app.logger.warning("OpenAlex returned no data for subfield+lineage query.")
+        return {}
 
-    app.logger.debug("Building graph structure")
+    # D) Transform the returned JSON (because what the heck why not) into the standard “metadata”, “graph”, “list”
+    results_array = openalex_data['results']
+    total_count = openalex_data['meta']['count']
+    # Minimalistic placeholder metadata
+    metadata = {
+        "institution_name": institution,
+        "topic_name": topic,
+        "work_count": total_count,
+        "people_count": 0,  # We'll see if we can glean author info
+        "cited_by_count": 0,
+        "topic_oa_link": f"https://openalex.org/subfields/{subfield_id}",
+        "institution_oa_link": f"https://openalex.org/institutions/{inst_openalex_id}",
+    }
+    # Construct a graph of works
     nodes = []
     edges = []
-    subfield_id = metadata['topic_oa_link']
-    institution_id = metadata['institution_oa_link']
-    nodes.append({ 'id': subfield_id, 'label': topic, 'type': 'TOPIC' })
-    nodes.append({ 'id': institution_id, 'label': institution, 'type': 'INSTITUTION' })
-    edges.append({ 'id': f"""{institution_id}-{subfield_id}""", 'start': institution_id, 'end': subfield_id, "label": "researches", "start_type": "INSTITUTION", "end_type": "TOPIC"})
-    
-    total_topics = len(data['data'])
-    start = (page - 1) * per_page
-    end = start + per_page
+    list_entries = []
+    # We'll treat each Work’s “authorships” to easily glean authors
+    institution_node_id = metadata['institution_oa_link']
+    topic_node_id = metadata['topic_oa_link']
+    nodes.append({"id": institution_node_id, "label": institution, "type": "INSTITUTION"})
+    nodes.append({"id": topic_node_id, "label": topic, "type": "TOPIC"})
+    edges.append({
+        "id": f"{institution_node_id}-{topic_node_id}",
+        "start": institution_node_id,
+        "end": topic_node_id,
+        "label": "researches",
+        "start_type": "INSTITUTION",
+        "end_type": "TOPIC"
+    })
+    start_idx = (page - 1) * per_page
+    end_idx = start_idx + len(results_array)  # Usually and typically..results_array has up to `per_page` items at least
+    # We count unique authors "as we go"
+    seen_authors = set()
+    for w in results_array:
+        work_id = w['id']  # e.g. "https://openalex.org/W123456789"
+        title = w['display_name']
+        cited_by_count = w['cited_by_count']
+        list_entries.append((title, cited_by_count))
+        metadata['cited_by_count'] += cited_by_count
 
-    for entry in data['data'][start:end]:
-        author_id = entry['author_id']
-        author_name = entry['author_name']
-        number = entry['num_of_works']
-        list.append((author_name, number))
-        nodes.append({ 'id': author_id, 'label': author_name, 'type': 'AUTHOR' })
-        nodes.append({ 'id': number, 'label': number, 'type': 'NUMBER' })
-        edges.append({ 'id': f"""{author_id}-{number}""", 'start': author_id, 'end': number, "label": "numWorks", "start_type": "AUTHOR", "end_type": "NUMBER"})
-        edges.append({ 'id': f"""{author_id}-{institution_id}""", 'start': author_id, 'end': institution_id, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
-    
+        # Graph node for the Work
+        nodes.append({"id": work_id, "label": title, "type": "WORK"})
+        # “NUMBER” node, but it's "sort of" to show how many citations
+        number_id = f"{work_id}-cites-{cited_by_count}"
+        nodes.append({"id": number_id, "label": cited_by_count, "type": "NUMBER"})
+        # Edges for the Work → number
+        edges.append({
+            "id": f"{work_id}-{number_id}",
+            "start": work_id,
+            "end": number_id,
+            "label": "citedBy",
+            "start_type": "WORK",
+            "end_type": "NUMBER"
+        })
+        # Alternately link each Work to the institution node or topic node
+        # (We already have an institution→topic edge up above)
+        # If you'd like authors in the graph, you can parse w['authorships']:
+        for author_info in w.get('authorships', []):
+            # Start to "vectorize", if the institution is in this authorship
+            # (Often-times we look at author_info['institutions'] for “i9254433”)
+            # We'll add an AUTHOR node for demonstration:
+            author_id = author_info['author']['id'] if author_info['author'] else None
+            author_name = author_info['author']['display_name'] if author_info['author'] else "Unknown Author"
+            if author_id and author_id not in seen_authors:
+                seen_authors.add(author_id)
+                nodes.append({"id": author_id, "label": author_name, "type": "AUTHOR"})
+            # Link the author to the whole Work
+            if author_id:
+                edges.append({
+                    "id": f"{author_id}-{work_id}",
+                    "start": author_id,
+                    "end": work_id,
+                    "label": "authored",
+                    "start_type": "AUTHOR",
+                    "end_type": "WORK"
+                })
+    metadata['people_count'] = len(seen_authors)
     graph = {"nodes": nodes, "edges": edges}
-    metadata['people_count'] = len(list)
-    app.logger.info(f"Successfully built result for institution: {institution} and topic: {topic}")
+    total_pages = (total_count + per_page - 1) // per_page
+    app.logger.info(f"Successfully constructed OpenAlex-based result for institution: {institution}, topic: {topic}")
     return {
         "metadata": metadata,
         "metadata_pagination": {
-            "total_pages": (total_topics + per_page - 1) // per_page,
+            "total_pages": total_pages,
             "current_page": page,
-            "total_topics": total_topics,
+            "total_topics": total_count
         },
         "graph": graph,
-        "list": list
+        "list": list_entries
     }
+
+
+def get_subfield_id_from_name(topic_name: str) -> str:
+    """
+    Remember that we can also construct helper functions for looking up the subfield ID from subfields.csv
+    That is, this function ideally contains real logic or the dictionary if we have the memory capacity .
+    """
+    # And I know the subfields.csv lines should be like : "Spectroscopy,1607"
+    # then that will have us doing something like:
+    try:
+        with open('subfields.csv', 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                # Each line should come off in the format of "SubfieldName,SubfieldID"
+                parts = line.split(',')
+                if len(parts) == 2:
+                    sf_name, sf_id = parts[0], parts[1]
+                    if sf_name.lower() == topic_name.lower():
+                        return sf_id
+        return None
+    except:
+        return None
 
 def get_institution_and_researcher_results(institution, researcher, page=1, per_page=20):
     """
@@ -777,7 +999,7 @@ def get_institution_and_researcher_results(institution, researcher, page=1, per_
     nodes.append({ 'id': institution, 'label': institution, 'type': 'INSTITUTION' })
     edges.append({ 'id': f"""{author_id}-{institution}""", 'start': author_id, 'end': institution, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
     nodes.append({ 'id': author_id, 'label': researcher, "type": "AUTHOR"})
-    
+
     total_topics = len(data['data'])
     start = (page - 1) * per_page
     end = start + per_page
@@ -791,7 +1013,7 @@ def get_institution_and_researcher_results(institution, researcher, page=1, per_
         nodes.append({'id': number_id, 'label': num_works, 'type': "NUMBER"})
         edges.append({ 'id': f"""{author_id}-{topic_name}""", 'start': author_id, 'end': topic_name, "label": "researches", "start_type": "AUTHOR", "end_type": "TOPIC"})
         edges.append({ 'id': f"""{topic_name}-{number_id}""", 'start': topic_name, 'end': number_id, "label": "number", "start_type": "TOPIC", "end_type": "NUMBER"})
-    
+
     graph = {"nodes": nodes, "edges": edges}
     app.logger.info(f"Successfully built result for researcher: {researcher} and institution: {institution}")
     return {"metadata": metadata,
@@ -801,7 +1023,7 @@ def get_institution_and_researcher_results(institution, researcher, page=1, per_
             "total_topics": total_topics,
         }, "graph": graph, "list": list}
 
-def get_institution_researcher_subfield_results(institution, researcher, 
+def get_institution_researcher_subfield_results(institution, researcher,
                                                 topic, page=1, per_page=20):
     """
     Gets the results when user inputs an institution, researcher, and subfield
@@ -861,7 +1083,7 @@ def get_institution_researcher_subfield_results(institution, researcher,
     nodes.append({ 'id': researcher_id, 'label': researcher, 'type': 'AUTHOR' })
     nodes.append({ 'id': subfield_id, 'label': topic, 'type': 'TOPIC' })
     edges.append({ 'id': f"""{researcher_id}-{subfield_id}""", 'start': researcher_id, 'end': subfield_id, "label": "researches", "start_type": "AUTHOR", "end_type": "TOPIC"})
-    
+
     total_topics = len(data['data'])
     start = (page - 1) * per_page
     end = start + per_page
@@ -874,11 +1096,11 @@ def get_institution_researcher_subfield_results(institution, researcher,
         nodes.append({'id': number, 'label': number, 'type': "NUMBER"})
         edges.append({ 'id': f"""{researcher_id}-{work_name}""", 'start': researcher_id, 'end': work_name, "label": "authored", "start_type": "AUTHOR", "end_type": "WORK"})
         edges.append({ 'id': f"""{work_name}-{number}""", 'start': work_name, 'end': number, "label": "citedBy", "start_type": "WORK", "end_type": "NUMBER"})
-    
+
     graph = {"nodes": nodes, "edges": edges}
     app.logger.info(f"Successfully built result for researcher: {researcher}, institution: {institution}, and topic: {topic}")
 
-    return {"metadata": metadata, 
+    return {"metadata": metadata,
             "metadata_pagination": {
             "total_pages": (total_topics + per_page - 1) // per_page,
             "current_page": page,
@@ -963,7 +1185,7 @@ def list_given_institution(ror, name, id):
     authors = data['results']
     next_page = data['meta']['next_cursor']
     counter = 0
-    
+
     app.logger.debug("Processing authors and their topics")
     while next_page is not None and counter < 10:
         for a in authors:
@@ -978,7 +1200,7 @@ def list_given_institution(ror, name, id):
         authors = data['results']
         next_page = data['meta']['next_cursor']
         counter += 1
-    
+
     sorted_subfields = sorted([(k, v) for k, v in final_subfield_count.items() if v > 5], key=lambda x: x[1], reverse=True)
     app.logger.info(f"Found {len(sorted_subfields)} subfields with more than 5 authors")
 
@@ -1065,12 +1287,12 @@ def list_given_researcher_institution(id, name, institution):
     final_subfield_count = {}
     headers = {'Accept': 'application/json'}
     search_id = id.replace('https://openalex.org/authors/', '')
-    
+
     app.logger.debug(f"Fetching author data from OpenAlex for ID: {search_id}")
     response = requests.get(f'https://api.openalex.org/authors/{search_id}', headers=headers)
     data = response.json()
     topics = data['topics']
-    
+
     for t in topics:
         subfield = t['subfield']['display_name']
         if subfield in final_subfield_count:
@@ -1086,7 +1308,7 @@ def list_given_researcher_institution(id, name, institution):
     nodes.append({ 'id': institution, 'label': institution, 'type': 'INSTITUTION' })
     edges.append({ 'id': f"""{id}-{institution}""", 'start': id, 'end': institution, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
     nodes.append({ 'id': id, 'label': name, "type": "AUTHOR"})
-    
+
     for s, number in sorted_subfields:
         nodes.append({'id': s, 'label': s, 'type': "TOPIC"})
         number_id = s + ":" + str(number)
@@ -1111,7 +1333,7 @@ def get_subfield_metadata_sparql(subfield):
     name, topic_clusters, cited_by_count, work_count, researchers, oa_link
   """
   headers = {'Accept': 'application/json'}
-  response = requests.get(f'https://api.openalex.org/subfields?filter=display_name.search:{subfield}', headers=headers) 
+  response = requests.get(f'https://api.openalex.org/subfields?filter=display_name.search:{subfield}', headers=headers)
   data = response.json()['results'][0]
   oa_link = data['id']
   cited_by_count = data['cited_by_count']
@@ -1209,10 +1431,12 @@ def list_given_institution_topic(institution, institution_id, topic, topic_id):
     ?author <http://www.w3.org/ns/org#memberOf> ?institution .
     ?author <http://xmlns.com/foaf/0.1/name> ?name .
     ?work <http://purl.org/dc/terms/creator> ?author .
-    ?subfield a <https://semopenalex.org/ontology/Subfield> .
-    ?subfield <http://www.w3.org/2004/02/skos/core#prefLabel> "{topic}" .
-    ?topic <http://www.w3.org/2004/02/skos/core#broader> ?subfield .
-    << ?work <https://semopenalex.org/ontology/hasTopic> ?topic >> ?p ?o .
+    ?institution <foaf:name> "Fisk University" .
+    ?author <org:memberOf> ?institution .
+    ?author <foaf:name> ?name .
+    ?work <dcterms:creator> ?author .
+    ?work <semopenalex:hasTopic> ?topic .
+    ?topic <skos:prefLabel> "Spectroscopy" .
     {"}"}
     GROUP BY ?author ?name
     """
@@ -1235,16 +1459,16 @@ def list_given_institution_topic(institution, institution_id, topic, topic_id):
     nodes.append({ 'id': topic_id, 'label': topic, 'type': 'TOPIC' })
     nodes.append({ 'id': institution_id, 'label': institution, 'type': 'INSTITUTION' })
     edges.append({ 'id': f"""{institution_id}-{topic_id}""", 'start': institution_id, 'end': topic_id, "label": "researches", "start_type": "INSTITUTION", "end_type": "TOPIC"})
-    
+
     for author, name, num_works in works_list:
         nodes.append({ 'id': author, 'label': name, 'type': 'AUTHOR' })
         nodes.append({ 'id': num_works, 'label': num_works, 'type': 'NUMBER' })
         edges.append({ 'id': f"""{author}-{institution_id}""", 'start': author, 'end': institution_id, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
         edges.append({ 'id': f"""{author}-{num_works}""", 'start': author, 'end': num_works, "label": "numWorks", "start_type": "AUTHOR", "end_type": "NUMBER"})
-    
+
     graph = {"nodes": nodes, "edges": edges}
     extra_metadata = {"work_count": work_count, "num_people": num_people}
-    
+
     app.logger.info(f"Successfully built list and graph for institution: {institution} and topic: {topic}")
     return final_list, graph, extra_metadata
 
@@ -1286,10 +1510,12 @@ def list_given_researcher_topic(topic, researcher, institution, topic_id, resear
     ?work <http://purl.org/dc/terms/creator> ?author .
     ?work <http://xmlns.com/foaf/0.1/name> ?title .
     ?work <https://semopenalex.org/ontology/citedByCount> ?cited_by_count .
-    ?subfield a <https://semopenalex.org/ontology/Subfield> .
-    ?subfield <http://www.w3.org/2004/02/skos/core#prefLabel> "{topic}" .
-    ?topic <http://www.w3.org/2004/02/skos/core#broader> ?subfield .
-    << ?work <https://semopenalex.org/ontology/hasTopic> ?topic >> ?p ?o .
+    ?institution <foaf:name> "Fisk University" .
+    ?author <org:memberOf> ?institution .
+    ?author <foaf:name> ?name .
+    ?work <dcterms:creator> ?author .
+    ?work <semopenalex:hasTopic> ?topic .
+    ?topic <skos:prefLabel> "Spectroscopy" .
     {"}"}
     """
     results = query_SPARQL_endpoint(SEMOPENALEX_SPARQL_ENDPOINT, query)
@@ -1309,16 +1535,16 @@ def list_given_researcher_topic(topic, researcher, institution, topic_id, resear
     nodes.append({ 'id': researcher_id, 'label': researcher, 'type': 'AUTHOR' })
     nodes.append({ 'id': topic_id, 'label': topic, 'type': 'TOPIC' })
     edges.append({ 'id': f"""{researcher_id}-{topic_id}""", 'start': researcher_id, 'end': topic_id, "label": "researches", "start_type": "AUTHOR", "end_type": "TOPIC"})
-    
+
     for work, number in work_list:
         nodes.append({ 'id': work, 'label': work, 'type': 'WORK' })
         nodes.append({'id': number, 'label': number, 'type': "NUMBER"})
         edges.append({ 'id': f"""{researcher_id}-{work}""", 'start': researcher_id, 'end': work, "label": "authored", "start_type": "AUTHOR", "end_type": "WORK"})
         edges.append({ 'id': f"""{work}-{number}""", 'start': work, 'end': number, "label": "citedBy", "start_type": "WORK", "end_type": "NUMBER"})
-    
+
     graph = {"nodes": nodes, "edges": edges}
     extra_metadata = {"work_count": len(work_list), "cited_by_count": total_citations}
-    
+
     app.logger.info(f"Successfully built list and graph for researcher: {researcher} and topic: {topic}")
     return work_list, graph, extra_metadata
 
@@ -1331,7 +1557,7 @@ def get_institution_and_topic_and_researcher_metadata_sparql(institution, topic,
     institution_data = get_institution_metadata_sparql(institution)
     topic_data = get_subfield_metadata_sparql(topic)
     researcher_data = get_author_metadata_sparql(researcher)
-    
+
     if researcher_data == {} or institution_data == {} or topic_data == {}:
         app.logger.warning("Missing metadata from one or more entities")
         return {}
@@ -1348,17 +1574,17 @@ def get_institution_and_topic_and_researcher_metadata_sparql(institution, topic,
     ror = institution_data['ror']
 
     metadata = {
-        "institution_name": institution, 
-        "topic_name": topic, 
-        "researcher_name": researcher, 
-        "topic_oa_link": topic_oa, 
-        "institution_oa_link": institution_oa, 
-        "homepage": institution_url, 
-        "orcid": orcid, 
-        "topic_clusters": topic_cluster, 
-        "researcher_oa_link": researcher_oa, 
-        "work_count": work_count, 
-        "cited_by_count": cited_by_count, 
+        "institution_name": institution,
+        "topic_name": topic,
+        "researcher_name": researcher,
+        "topic_oa_link": topic_oa,
+        "institution_oa_link": institution_oa,
+        "homepage": institution_url,
+        "orcid": orcid,
+        "topic_clusters": topic_cluster,
+        "researcher_oa_link": researcher_oa,
+        "work_count": work_count,
+        "cited_by_count": cited_by_count,
         'ror': ror
     }
 
@@ -1386,12 +1612,12 @@ def autofill_institutions():
     """
     inst = request.json.get('institution')
     app.logger.debug(f"Processing institution autofill for: {inst}")
-    
+
     possible_searches = []
     for i in autofill_inst_list:
         if inst.lower() in i.lower():
             possible_searches.append(i)
-    
+
     app.logger.info(f"Found {len(possible_searches)} matching institutions for '{inst}'")
     return {"possible_searches": possible_searches}
 
@@ -1402,7 +1628,7 @@ def autofill_topics():
     """
     topic = request.json.get('topic')
     app.logger.debug(f"Processing topic autofill for: {topic}")
-    
+
     possible_searches = []
     if len(topic) > 0:
         if SUBFIELDS:
@@ -1413,7 +1639,7 @@ def autofill_topics():
             for i in autofill_topics_list:
                 if topic.lower() in i.lower():
                     possible_searches.append(i)
-    
+
     app.logger.info(f"Found {len(possible_searches)} matching topics for '{topic}'")
     return {"possible_searches": possible_searches}
 
@@ -1437,7 +1663,7 @@ def get_default_graph():
     cur_edges = graph['edges']
     most = {}
     needed_topics = set()
-    
+
     # Process edges
     for edge in cur_edges:
         if edge['start'] in most:
@@ -1445,12 +1671,12 @@ def get_default_graph():
                 most[edge['start']] = edge['connecting_works']
         else:
             most[edge['start']] = edge['connecting_works']
-    
+
     for edge in cur_edges:
         if most[edge['start']] == edge['connecting_works']:
             edges.append(edge)
             needed_topics.add(edge['end'])
-    
+
     # Process nodes
     for node in cur_nodes:
         if node['type'] == 'TOPIC':
@@ -1458,10 +1684,10 @@ def get_default_graph():
                 nodes.append(node)
         else:
             nodes.append(node)
-    
+
     final_graph = {"nodes": nodes, "edges": edges}
     #count = sum(1 for a in cur_nodes if a['type'] == "INSTITUTION")
-    
+
     app.logger.info(f"Successfully processed default graph with {len(nodes)} nodes and {len(edges)} edges")
     return {"graph": final_graph}
 
@@ -1472,14 +1698,14 @@ def get_topic_space():
     """
     app.logger.debug("Building topic space default graph")
     nodes = [
-        { "id": 1, 'label': "Physical Sciences", 'type': 'DOMAIN'}, 
-        { "id": 2, 'label': "Life Sciences", 'type': 'DOMAIN'}, 
-        { "id": 3, 'label': "Social Sciences", 'type': 'DOMAIN'}, 
+        { "id": 1, 'label': "Physical Sciences", 'type': 'DOMAIN'},
+        { "id": 2, 'label': "Life Sciences", 'type': 'DOMAIN'},
+        { "id": 3, 'label': "Social Sciences", 'type': 'DOMAIN'},
         { "id": 4, 'label': "Health Sciences", 'type': 'DOMAIN'}
     ]
     edges = []
     graph = {"nodes": nodes, "edges": edges}
-    
+
     app.logger.info("Successfully built topic space default graph")
     return {"graph": graph}
 
@@ -1490,7 +1716,7 @@ def search_topic_space():
     """
     search = request.json.get('topic')
     app.logger.debug(f"Searching topic space for: {search}")
-    
+
     try:
         with open('topic_default.json', 'r') as file:
             graph = json.load(file)
@@ -1501,19 +1727,19 @@ def search_topic_space():
     nodes = []
     edges = []
     matches_found = 0
-    
+
     app.logger.debug("Processing topic space search results")
     for node in graph['nodes']:
-        if (node['label'] == search or 
-            node['subfield_name'] == search or 
-            node['field_name'] == search or 
-            node['domain_name'] == search or 
+        if (node['label'] == search or
+            node['subfield_name'] == search or
+            node['field_name'] == search or
+            node['domain_name'] == search or
             search in node['keywords'].split("; ")):
-            
+
             matches_found += 1
             node_additions = []
             edge_additions = []
-            
+
             # Add topic node
             topic_node = {
                 'id': node['id'],
@@ -1524,7 +1750,7 @@ def search_topic_space():
                 "wikipedia_url": node['wikipedia_url']
             }
             node_additions.append(topic_node)
-            
+
             # Add hierarchy nodes
             subfield_node = {
                 "id": node["subfield_id"],
@@ -1532,21 +1758,21 @@ def search_topic_space():
                 'type': 'SUBFIELD'
             }
             node_additions.append(subfield_node)
-            
+
             field_node = {
                 "id": node["field_id"],
                 'label': node['field_name'],
                 'type': 'FIELD'
             }
             node_additions.append(field_node)
-            
+
             domain_node = {
                 "id": node["domain_id"],
                 'label': node['domain_name'],
                 'type': 'DOMAIN'
             }
             node_additions.append(domain_node)
-            
+
             # Add hierarchy edges
             topic_subfield = {
                 'id': f"""{node['id']}-{node['subfield_id']}""",
@@ -1557,7 +1783,7 @@ def search_topic_space():
                 "end_type": "SUBFIELD"
             }
             edge_additions.append(topic_subfield)
-            
+
             subfield_field = {
                 'id': f"""{node['subfield_id']}-{node['field_id']}""",
                 'start': node['subfield_id'],
@@ -1567,7 +1793,7 @@ def search_topic_space():
                 "end_type": "FIELD"
             }
             edge_additions.append(subfield_field)
-            
+
             field_domain = {
                 'id': f"""{node['field_id']}-{node['domain_id']}""",
                 'start': node['field_id'],
@@ -1577,7 +1803,7 @@ def search_topic_space():
                 "end_type": "DOMAIN"
             }
             edge_additions.append(field_domain)
-            
+
             # Add unique nodes and edges
             for a in node_additions:
                 if a not in nodes:
@@ -1616,7 +1842,7 @@ def is_HBCU(id):
     id = id.replace('https://openalex.org/institutions/', "")
     query = f"""SELECT HBCU FROM institutions_filtered WHERE id = "{id}";"""
     result = query_SQL_endpoint(connection, query)
-    
+
     is_hbcu = result == [(1,)]
     app.logger.info(f"Institution {id} HBCU status: {is_hbcu}")
     return is_hbcu
@@ -1627,7 +1853,7 @@ def get_institution_mup_id(institution_name):
     if not institution_id:
         app.logger.debug(f"No institution ID found for {institution_name}")
         return None
-    
+
     query = """SELECT get_institution_mup_id(%s);"""
     results = execute_query(query, (institution_id,))
     if results:
@@ -1643,7 +1869,7 @@ def get_institution_sat_scores(institution_name):
     if not institution_id:
         app.logger.debug(f"No institution ID found for {institution_name}")
         return None
-    
+
     query = """SELECT get_institution_sat_scores(%s);"""
     results = execute_query(query, (institution_id,))
     if results:
@@ -1661,7 +1887,7 @@ def get_institution_endowments_and_givings(institution_name):
     if not institution_id:
         app.logger.debug(f"No institution ID found for {institution_name}")
         return None
-    
+
     query = """SELECT get_institution_endowments_and_givings(%s);"""
     results = execute_query(query, (institution_id,))
     if results:
@@ -1679,7 +1905,7 @@ def get_institution_medical_expenses(institution_name):
     if not institution_mup_id:
         app.logger.debug(f"No institution MUP ID found for {institution_name}")
         return None
-    
+
     institution_mup_id = institution_mup_id['institution_mup_id']
     query = """SELECT get_institution_medical_expenses(%s);"""
     results = execute_query(query, (institution_mup_id,))
@@ -1698,7 +1924,7 @@ def get_institution_doctorates_and_postdocs(institution_name):
     if not institution_id:
         app.logger.debug(f"No institution ID found for {institution_name}")
         return None
-    
+
     query = """SELECT get_institution_doctorates_and_postdocs(%s);"""
     results = execute_query(query, (institution_id,))
     if results:
@@ -1716,7 +1942,7 @@ def get_institution_num_of_researches(institution_name):
     if not institution_id:
         app.logger.debug(f"No institution ID found for {institution_name}")
         return None
-    
+
     query = """SELECT get_institution_num_of_researches(%s);"""
     results = execute_query(query, (institution_id,))
     if results:
@@ -1777,7 +2003,7 @@ def serve(path):
     if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
         app.logger.debug(f"Serving static file: {path}")
         return send_from_directory(app.static_folder, path)
-    
+
     app.logger.debug("Serving index.html for frontend routing")
     return send_from_directory(app.static_folder, 'index.html')
 
@@ -1825,7 +2051,7 @@ def get_endowments_and_givings():
     data = request.json
     if not data or 'institution_name' not in data:
         abort(400, description="Missing 'institution_name' in request data")
-    
+
     institution_name = data['institution_name']
     result = get_institution_endowments_and_givings(institution_name)
     if result:
@@ -1889,7 +2115,7 @@ def get_r_and_d():
     else:
         return jsonify({"error": "No R&D numbers found"}), 404
 
-## Main 
+## The Old Main
 if __name__ =='__main__':
   app.logger.info("Starting Flask application")
   app.run()
