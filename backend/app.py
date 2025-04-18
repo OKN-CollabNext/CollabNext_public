@@ -11,6 +11,8 @@ from flask_cors import CORS
 import mysql.connector
 from mysql.connector import Error
 import psycopg2
+import math
+
 
 # Make a change
 # Load environment variables
@@ -143,10 +145,8 @@ def get_author_ids(author_name):
     app.logger.debug(f"Getting author IDs for: {author_name}")
     query = """SELECT get_author_id(%s);"""
     results = execute_query(query, (author_name,))
-    app.logger.debug(f"Raw result for author '{author_name}': {results}")
     if results:
         app.logger.info(f"Found author IDs for {author_name}")
-        app.logger.info(f"Returning author IDs: {results[0][0]} for {author_name}")
         return results[0][0]
     app.logger.warning(f"No author IDs found for {author_name}")
     return None
@@ -155,40 +155,18 @@ def get_institution_id(institution_name):
     app.logger.debug(f"Getting institution ID for: {institution_name}")
     query = """SELECT get_institution_id(%s);"""
     results = execute_query(query, (institution_name,))
-    app.logger.debug(f"Raw result for institution '{institution_name}': {results}")
     if results:
         if results[0][0] == {}:
-            app.logger.warning(f"Empty result for institution '{institution_name}'. Raw data: {results[0][0]}")
+            app.logger.warning(f"No institution ID has been found (as of yet) for {institution_name}")
             return None
         app.logger.info(f"Found institution ID for {institution_name}")
         return results[0][0]['institution_id']
     app.logger.warning(f"Query returned no results for institution {institution_name}")
     return None
 
-def get_openalex_works(institution_lineage: str, subfield_id: str, page: int = 1, per_page: int = 25):
-    """
-    So far we've been querying OpenAlex for works using the filters:
-      * primary_topic.subfield.id == subfields/{subfield_id}
-      * authorships.institutions.lineage == institution_lineage
-    """
-    import urllib.parse
-    base_url = "https://api.openalex.org/works"
-    # Build the filter string almost exactly as needed by OpenAlex:
-    filter_str = f"primary_topic.subfield.id:subfields/{subfield_id},authorships.institutions.lineage:{institution_lineage.lower()}"
-    encoded_filters = urllib.parse.quote(filter_str)
-    url = f"{base_url}?filter={encoded_filters}&page={page}&per_page={per_page}"
-    app.logger.info(f"Fetching works from OpenAlex, with the URL this time: {url}")
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        app.logger.error(f"OpenAlex API error {response.status_code}: {response.text}")
-        return None
-
 def search_by_author_institution_topic(author_name, institution_name, topic_name):
     app.logger.debug(f"Searching by author, institution, and topic: {author_name}, {institution_name}, {topic_name}")
     author_ids = get_author_ids(author_name)
-    app.logger.debug(f"Retrieved author IDs: {author_ids} for author '{author_name}'. Using author ID: {author_ids[0]['author_id']}")
     if not author_ids:
         app.logger.warning(f"No author IDs found for {author_name}")
         return None
@@ -197,13 +175,11 @@ def search_by_author_institution_topic(author_name, institution_name, topic_name
     app.logger.debug(f"Using author ID: {author_id}")
 
     institution_id = get_institution_id(institution_name)
-    app.logger.debug(f"Retrieved institution ID: {institution_id} for institution '{institution_name}'")
     if institution_id is None:
         app.logger.warning(f"No institution ID found for {institution_name}")
         return None
 
     query = """SELECT search_by_author_institution_topic(%s, %s, %s);"""
-    app.logger.debug(f"Executing search_by_author_institution_topic with parameters: author_id={author_ids[0]['author_id']}, institution_id={institution_id}, topic_name={topic_name}")
     results = execute_query(query, (author_id, institution_id, topic_name))
     if results:
         app.logger.info("Found results for author-institution-topic search")
@@ -362,18 +338,38 @@ def initial_search():
 
   institution = request.json.get('organization')
   researcher = request.json.get('researcher')
-  researcher = researcher.title()
   type = request.json.get('type')
   topic = request.json.get('topic')
+
   app.logger.info(f"Received search request - Institution: {institution}, Researcher: {researcher}, Topic: {topic}, Type: {type}")
-  app.logger.debug(f"Input parameters: Institution: {institution}, Researcher: {researcher}, Topic: {topic}, Type: {type}")
+
   try:
     if institution and researcher and topic:
-      results = get_institution_researcher_subfield_results(institution, researcher, topic, page, per_page)
+      # The idea is that we have this fast ID-based OpenAlex path.
+      # What is the purpose of this path? It is to fasttrack us IF
+      # we are going to get a result that is. Otherwise we're going to have to
+      # fall-back. This is sort of how we initially got a "value" for
+      # "one of the authors" but we didn't get the values for the rest of the
+      # authors so we have "multiple ways" of extracting values if there isn't
+      # ANY result returned at all. So and therefore it's "sort of like" a
+      # "reverse narrowing-down" of our search results.
+      results = direct_author_institution_topic_openalex(
+                    researcher, institution, topic, page, per_page)
+      # So there you have it, if the REST call returned nothing..then
+      # we're ready to resort to using legacy SPARQL like we're used to doing.
+      # Right? Because the "problem" is once you start getting a three-way inter
+      # -section then what you get is this intersection of three searches--the
+      # institution and the author and the topic all get kind of "mushed together"
+      # but, if you turn the queries into a "more" staged format then that,
+      # is what you get.
+      if not results:
+        results = get_institution_researcher_subfield_results(
+                    institution, researcher, topic, page, per_page)
     elif institution and researcher:
       results = get_institution_and_researcher_results(institution, researcher, page, per_page)
     elif institution and topic:
-      results = get_institution_and_subfield_results(institution, topic, page, per_page)
+        # results = direct_institution_topic_openalex(institution, topic, page, per_page)
+        results = get_institution_and_subfield_results(institution, topic, page, per_page)
     elif researcher and topic:
       results = get_researcher_and_subfield_results(researcher, topic, page, per_page)
     elif topic:
@@ -421,9 +417,9 @@ def get_researcher_result(researcher, page=1, per_page=20):
     """
     data = search_by_author(researcher)
     if data is None:
+        # "Sometimes" these database results have to fit exactly..
+        app.logger.info("No database results, falling back to SPARQL...")
         data = get_author_metadata_sparql(researcher)
-        app.logger.info("Database query returned no results – defaulting back to SPARQL to fulfill the data request.")
-        app.logger.debug(f"SPARQL raw output: {data}")
         if data == {}:
             app.logger.warning("No results found in SPARQL for researcher")
             return {}
@@ -490,8 +486,10 @@ def get_researcher_result(researcher, page=1, per_page=20):
 
 def get_institution_results(institution, page=1, per_page=10):
     """
-    Gets the results when user only inputs an institution
-    Uses database to get result, defaults to SPARQL if institution is not in database
+    And here it's quite like Chinar said with the Flask logging; as always,
+    we just get the result but only when the user inputs an institution. I
+    mean "only" in the database usage: we default to SPARQL if the institution
+    is not in the data-base.
     """
     data = search_by_institution(institution)
     if data is None:
@@ -680,280 +678,84 @@ def get_researcher_and_subfield_results(researcher, topic, page=1, per_page=20):
             "current_page": page,
             "total_topics": total_topics,
         }, "graph": graph, "list": list}
+
 def get_institution_and_subfield_results(institution, topic, page=1, per_page=20):
     """
-    Gets the results when user inputs an institution and subfield.
-    1) Tries local DB via search_by_institution_topic(institution, topic).
-    2) If no local data, tries SPARQL fallback (get_institution_and_topic_metadata_sparql).
-    3) If still empty, makes a call to the official OpenAlex API with the
-       same filter just used on openalex.org:
-         filter=primary_topic.subfield.id:subfields/{subfield_id},
-                authorships.institutions.lineage:{lineage_id}
+    Gets the results when user inputs an institution and subfield
+    Uses database to get result, defaults to SPARQL if institution is not in database
     """
-
-    # ---------------------------
-    # 1) Attempt to ping the local DB
-    # ---------------------------
     data = search_by_institution_topic(institution, topic)
-    if data is not None:
-        app.logger.debug("Processing database results for institution and topic")
-
-        # Build (don't remove) the usual metadata
-        list_of_authors = []
-        metadata = {}
-
-        topic_clusters = []
-        subfield_oa_link = ""
-        for entry in data['subfield_metadata']:
-            topic_cluster = entry['topic']
-            topic_clusters.append(topic_cluster)
-            subfield_oa_link = entry['subfield_url']
-
-        metadata['topic_name'] = topic
-        metadata['topic_clusters'] = topic_clusters
-        metadata['work_count'] = data['totals']['total_num_of_works']
-        metadata['cited_by_count'] = data['totals']['total_num_of_citations']
-        metadata['people_count'] = data['totals']['total_num_of_authors']
-        metadata['topic_oa_link'] = subfield_oa_link
-        metadata['topic_name'] = topic
-
-        metadata['homepage'] = data['institution_metadata']['url']
-        metadata['institution_oa_link'] = data['institution_metadata']['openalex_url']
-        metadata['ror'] = data['institution_metadata']['ror']
-        metadata['institution_name'] = institution
-
-        # Also build the graph
-        nodes = []
-        edges = []
-        subfield_id = metadata['topic_oa_link']
-        institution_id = metadata['institution_oa_link']
-
-        nodes.append({'id': subfield_id, 'label': topic, 'type': 'TOPIC'})
-        nodes.append({'id': institution_id, 'label': institution, 'type': 'INSTITUTION'})
-        edges.append({
-            'id': f"{institution_id}-{subfield_id}",
-            'start': institution_id,
-            'end': subfield_id,
-            "label": "researches",
-            "start_type": "INSTITUTION",
-            "end_type": "TOPIC"
-        })
-
-        total_topics = len(data['data'])
-        start = (page - 1) * per_page
-        end = start + per_page
-
-        for entry in data['data'][start:end]:
-            author_id = entry['author_id']
-            author_name = entry['author_name']
-            number_of_works = entry['num_of_works']
-            list_of_authors.append((author_name, number_of_works))
-
-            nodes.append({'id': author_id, 'label': author_name, 'type': 'AUTHOR'})
-            # “NUMBER” node you should know denotes how many works
-            number_id = f"{author_id}-works-{number_of_works}"
-            nodes.append({'id': number_id, 'label': number_of_works, 'type': 'NUMBER'})
-
-            edges.append({
-                'id': f"{author_id}-{number_id}",
-                'start': author_id,
-                'end': number_id,
-                "label": "numWorks",
-                "start_type": "AUTHOR",
-                "end_type": "NUMBER"
-            })
-            edges.append({
-                'id': f"{author_id}-{institution_id}",
-                'start': author_id,
-                'end': institution_id,
-                "label": "memberOf",
-                "start_type": "AUTHOR",
-                "end_type": "INSTITUTION"
-            })
-
-        graph = {"nodes": nodes, "edges": edges}
-        metadata['people_count'] = len(list_of_authors)
-        app.logger.info(f"Successfully built result (DB) when it's for the following institution: {institution} and topic: {topic}")
-
-        return {
-            "metadata": metadata,
-            "metadata_pagination": {
-                "total_pages": (total_topics + per_page - 1) // per_page,
-                "current_page": page,
-                "total_topics": total_topics,
-            },
-            "graph": graph,
-            "list": list_of_authors
-        }
-
-    # ---------------------------
-    # 2) Better attempt SPARQL as a backup plan
-    # ---------------------------
-    app.logger.info("Using SPARQL for institution and topic search...")
-    data = get_institution_and_topic_metadata_sparql(institution, topic)
-    if data and data != {}:
-        # If SPARQL has results, build list + graph via the helpful list_given_institution_topic
-        topic_list, graph, extra_metadata = list_given_institution_topic(
-            institution,
-            data['institution_oa_link'],
-            topic,
-            data['topic_oa_link']
-        )
+    if data is None:
+        app.logger.info("Using SPARQL for institution and topic search...")
+        data = get_institution_and_topic_metadata_sparql(institution, topic)
+        if data == {}:
+            app.logger.warning("No results (have ever been) found in SPARQL for institution and topic")
+            return {}
+        topic_list, graph, extra_metadata = list_given_institution_topic(institution, data['institution_oa_link'], topic, data['topic_oa_link'])
         data['work_count'] = extra_metadata['work_count']
         data['people_count'] = extra_metadata['num_people']
-
         results = {"metadata": data, "graph": graph, "list": topic_list}
         app.logger.info(f"Successfully retrieved SPARQL results for institution: {institution} and topic: {topic}")
         return results
-    else:
-        app.logger.warning("No SPARQL results for institution and topic. Trying direct OpenAlex subfield API...")
 
-    # ---------------------------
-    # 3) Final fallback: direct OpenAlex subfield-lineage query
-    # ---------------------------
-    # A) We need to imagine the institution lineage ID. Typically, and I have no idea why..we parse the "I9254433"
-    #    from the local get_institution_id(...) or from get_institution_metadata_sparql.
-    #    If we truly have no prior data, that might require a simple approach:
-    #        "i9254433" if institution == "Fisk University"
-    #    or even parse from a known openalex link "https://openalex.org/institutions/I9254433". It's pretty clear that the author
-    # data does in fact exist on Fisk OpenAlex University the only thing is
-    # how and in what way? Here we find out.
-    lineage_id = None
-    inst_openalex_id = get_institution_id(institution)  # e.g. returns "I9254433" for Fisk
-    if inst_openalex_id:
-        lineage_id = inst_openalex_id.lower()  # "i9254433"
-    if not lineage_id:
-        app.logger.warning(f"No lineage ID found for {institution}; cannot query OpenAlex subfield API.")
-        return {}
+    app.logger.debug("Processing database results for institution and topic")
+    list = []
+    metadata = {}
 
-    # B) Convert the topic name to a full subfield ID ("1607" for Spectroscopy, and so on and so forth)
-    subfield_id = get_subfield_id_from_name(topic)
-    if not subfield_id:
-        app.logger.warning(f"No known subfield ID for topic '{topic}'")
-        return {}
+    topic_clusters = []
+    for entry in data['subfield_metadata']:
+        topic_cluster = entry['topic']
+        topic_clusters.append(topic_cluster)
+        subfield_oa_link = entry['subfield_url']
+    metadata['topic_name'] = topic
+    metadata['topic_clusters'] = topic_clusters
+    metadata['work_count'] = data['totals']['total_num_of_works']
+    metadata['cited_by_count'] = data['totals']['total_num_of_citations']
+    metadata['people_count'] = data['totals']['total_num_of_authors']
+    metadata['topic_oa_link'] = subfield_oa_link
+    metadata['topic_name'] = topic
 
-    # C) Once we realize the topics then call the OpenAlex works API
-    app.logger.info("Calling OpenAlex to fetch works with subfield+lineage filters...")
-    openalex_data = get_openalex_works(lineage_id, subfield_id, page=page, per_page=per_page)
-    if not openalex_data or 'results' not in openalex_data:
-        app.logger.warning("OpenAlex returned no data for subfield+lineage query.")
-        return {}
+    metadata['homepage'] = data['institution_metadata']['url']
+    metadata['institution_oa_link'] = data['institution_metadata']['openalex_url']
+    metadata['ror'] = data['institution_metadata']['ror']
+    metadata['institution_name'] = institution
 
-    # D) Transform the returned JSON (because what the heck why not) into the standard “metadata”, “graph”, “list”
-    results_array = openalex_data['results']
-    total_count = openalex_data['meta']['count']
-    # Minimalistic placeholder metadata
-    metadata = {
-        "institution_name": institution,
-        "topic_name": topic,
-        "work_count": total_count,
-        "people_count": 0,  # We'll see if we can glean author info
-        "cited_by_count": 0,
-        "topic_oa_link": f"https://openalex.org/subfields/{subfield_id}",
-        "institution_oa_link": f"https://openalex.org/institutions/{inst_openalex_id}",
-    }
-    # Construct a graph of works
+    app.logger.debug("Building graph structure")
     nodes = []
     edges = []
-    list_entries = []
-    # We'll treat each Work’s “authorships” to easily glean authors
-    institution_node_id = metadata['institution_oa_link']
-    topic_node_id = metadata['topic_oa_link']
-    nodes.append({"id": institution_node_id, "label": institution, "type": "INSTITUTION"})
-    nodes.append({"id": topic_node_id, "label": topic, "type": "TOPIC"})
-    edges.append({
-        "id": f"{institution_node_id}-{topic_node_id}",
-        "start": institution_node_id,
-        "end": topic_node_id,
-        "label": "researches",
-        "start_type": "INSTITUTION",
-        "end_type": "TOPIC"
-    })
-    start_idx = (page - 1) * per_page
-    end_idx = start_idx + len(results_array)  # Usually and typically..results_array has up to `per_page` items at least
-    # We count unique authors "as we go"
-    seen_authors = set()
-    for w in results_array:
-        work_id = w['id']  # e.g. "https://openalex.org/W123456789"
-        title = w['display_name']
-        cited_by_count = w['cited_by_count']
-        list_entries.append((title, cited_by_count))
-        metadata['cited_by_count'] += cited_by_count
+    subfield_id = metadata['topic_oa_link']
+    institution_id = metadata['institution_oa_link']
+    nodes.append({ 'id': subfield_id, 'label': topic, 'type': 'TOPIC' })
+    nodes.append({ 'id': institution_id, 'label': institution, 'type': 'INSTITUTION' })
+    edges.append({ 'id': f"""{institution_id}-{subfield_id}""", 'start': institution_id, 'end': subfield_id, "label": "researches", "start_type": "INSTITUTION", "end_type": "TOPIC"})
 
-        # Graph node for the Work
-        nodes.append({"id": work_id, "label": title, "type": "WORK"})
-        # “NUMBER” node, but it's "sort of" to show how many citations
-        number_id = f"{work_id}-cites-{cited_by_count}"
-        nodes.append({"id": number_id, "label": cited_by_count, "type": "NUMBER"})
-        # Edges for the Work → number
-        edges.append({
-            "id": f"{work_id}-{number_id}",
-            "start": work_id,
-            "end": number_id,
-            "label": "citedBy",
-            "start_type": "WORK",
-            "end_type": "NUMBER"
-        })
-        # Alternately link each Work to the institution node or topic node
-        # (We already have an institution→topic edge up above)
-        # If you'd like authors in the graph, you can parse w['authorships']:
-        for author_info in w.get('authorships', []):
-            # Start to "vectorize", if the institution is in this authorship
-            # (Often-times we look at author_info['institutions'] for “i9254433”)
-            # We'll add an AUTHOR node for demonstration:
-            author_id = author_info['author']['id'] if author_info['author'] else None
-            author_name = author_info['author']['display_name'] if author_info['author'] else "Unknown Author"
-            if author_id and author_id not in seen_authors:
-                seen_authors.add(author_id)
-                nodes.append({"id": author_id, "label": author_name, "type": "AUTHOR"})
-            # Link the author to the whole Work
-            if author_id:
-                edges.append({
-                    "id": f"{author_id}-{work_id}",
-                    "start": author_id,
-                    "end": work_id,
-                    "label": "authored",
-                    "start_type": "AUTHOR",
-                    "end_type": "WORK"
-                })
-    metadata['people_count'] = len(seen_authors)
+    total_topics = len(data['data'])
+    start = (page - 1) * per_page
+    end = start + per_page
+
+    for entry in data['data'][start:end]:
+        author_id = entry['author_id']
+        author_name = entry['author_name']
+        number = entry['num_of_works']
+        list.append((author_name, number))
+        nodes.append({ 'id': author_id, 'label': author_name, 'type': 'AUTHOR' })
+        nodes.append({ 'id': number, 'label': number, 'type': 'NUMBER' })
+        edges.append({ 'id': f"""{author_id}-{number}""", 'start': author_id, 'end': number, "label": "numWorks", "start_type": "AUTHOR", "end_type": "NUMBER"})
+        edges.append({ 'id': f"""{author_id}-{institution_id}""", 'start': author_id, 'end': institution_id, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
+
     graph = {"nodes": nodes, "edges": edges}
-    total_pages = (total_count + per_page - 1) // per_page
-    app.logger.info(f"Successfully constructed OpenAlex-based result for institution: {institution}, topic: {topic}")
+    metadata['people_count'] = len(list)
+    app.logger.info(f"Successfully built the entirety of the result for institution: {institution} and topic: {topic}")
     return {
         "metadata": metadata,
         "metadata_pagination": {
-            "total_pages": total_pages,
+            "total_pages": (total_topics + per_page - 1) // per_page,
             "current_page": page,
-            "total_topics": total_count
+            "total_topics": total_topics,
         },
         "graph": graph,
-        "list": list_entries
+        "list": list
     }
-
-
-def get_subfield_id_from_name(topic_name: str) -> str:
-    """
-    Remember that we can also construct helper functions for looking up the subfield ID from subfields.csv
-    That is, this function ideally contains real logic or the dictionary if we have the memory capacity .
-    """
-    # And I know the subfields.csv lines should be like : "Spectroscopy,1607"
-    # then that will have us doing something like:
-    try:
-        with open('subfields.csv', 'r') as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                # Each line should come off in the format of "SubfieldName,SubfieldID"
-                parts = line.split(',')
-                if len(parts) == 2:
-                    sf_name, sf_id = parts[0], parts[1]
-                    if sf_name.lower() == topic_name.lower():
-                        return sf_id
-        return None
-    except:
-        return None
 
 def get_institution_and_researcher_results(institution, researcher, page=1, per_page=20):
     """
@@ -2111,7 +1913,299 @@ def get_r_and_d():
     else:
         return jsonify({"error": "No R&D numbers found"}), 404
 
-## The Old Main
+# The following is a "more direct" institution-topic-author query resolution
+# ; why use Pythonic print statements, when we can use the example of OpenAlex
+# itself as a company?
+def direct_institution_topic_openalex(institution_name, topic_name, page=1, per_page=25):
+    """
+    Makes direct queries to OpenAlex for the ROR of the institution_name in exchange
+    for the OpenAlex ID, the concept ID of the topic_name, as well as and then
+    immediately following from these institutional name queries and topic name
+    queries we then fetch the authors that match both.
+
+    Then we return a dictionary that has the following properties--the "metadata"
+    which represents..metadata about the results of the query. And we have the graph
+    --this graph is a simple structured graph with edges & nodes, and "last on the list" we
+    have the pagination...metadata_pagination is simply the details, of the pagination
+    from the response itself.
+
+    We also have integrated an extensive system for logging the debugging output that we get,
+    when we want to trace all the steps back.
+    """
+    app.logger.debug("START direct_institution_topic_openalex")
+    app.logger.debug("Parameters: institution='%s', topic='%s', page=%s, per_page=%s",
+                     institution_name, topic_name, page, per_page)
+    """ But that' just us. The first step is to look up the institution.  """
+    inst_search_url = f"https://api.openalex.org/institutions?search={institution_name}&per-page=1"
+    app.logger.debug("Institution search URL: %s", inst_search_url)
+    try:
+        inst_response = requests.get(inst_search_url)
+        app.logger.debug("Institution HTTP status code: %s", inst_response.status_code)
+        inst_json = inst_response.json()
+        # Then we want to print out in a pretty format, the JavaScript-Object Notation
+        # output that we get from the log from the "debugger".!
+        app.logger.debug("Institution response JSON: %s", json.dumps(inst_json, indent=2))
+    except Exception as e:
+        app.logger.error("Exception during institution lookup: %s", str(e))
+        return {}
+
+    if not inst_json.get("results"):
+        app.logger.warning("No institution results found for '%s'", institution_name)
+        return {}
+
+    inst_data = inst_json["results"][0]
+    app.logger.debug("Using institution data: %s", inst_data)
+    inst_ror = inst_data.get("ror")
+    if inst_ror:
+        inst_ror = inst_ror.replace("https://ror.org/", "")
+        app.logger.debug("Extracted institution ROR: %s", inst_ror)
+    else:
+        app.logger.warning("No ROR available for institution '%s'", institution_name)
+    inst_oa_id = inst_data["id"].replace("https://openalex.org/", "")
+    app.logger.debug("Extracted institution OpenAlex ID: %s", inst_oa_id)
+    """ Then the second step is to look up what is the concept-topic! """
+    topic_search_url = f"https://api.openalex.org/concepts?search={topic_name}&per-page=1"
+    app.logger.debug("Topic search URL: %s", topic_search_url)
+    try:
+        topic_response = requests.get(topic_search_url)
+        app.logger.debug("Topic HTTP status code: %s", topic_response.status_code)
+        topic_json = topic_response.json()
+        app.logger.debug("Topic response JSON: %s", json.dumps(topic_json, indent=2))
+    except Exception as e:
+        app.logger.error("Exception during topic lookup: %s", str(e))
+        return {}
+    if not topic_json.get("results"):
+        app.logger.warning("No topic results found for '%s'", topic_name)
+        return {}
+    topic_data = topic_json["results"][0]
+    app.logger.debug("Using topic data: %s", topic_data)
+    topic_oa_id = topic_data["id"].replace("https://openalex.org/", "")
+    app.logger.debug("Extracted topic OpenAlex ID: %s", topic_oa_id)
+    """ The third step is to query the authors for that topic as well as institution..
+    if it does turn out..in the eventhat the ROR Is in fact missing then we need to
+    resort to the following "ternary": """
+    if not inst_ror:
+        inst_filter = f"last_known_institutions.id:{inst_oa_id}"
+    else:
+        inst_filter = f"last_known_institutions.ror:{inst_ror}"
+    authors_url = (
+        "https://api.openalex.org/authors"
+        f"?filter={inst_filter},concepts.id:{topic_oa_id}"
+        f"&page={page}&per-page={per_page}"
+    )
+    app.logger.debug("Author's query URL: %s", authors_url)
+    try:
+        authors_response = requests.get(authors_url)
+        app.logger.debug("Author's HTTP status code: %s", authors_response.status_code)
+        authors_json = authors_response.json()
+        app.logger.debug("Author's response JSON: %s", json.dumps(authors_json, indent=2))
+    except Exception as e:
+        app.logger.error("Exception during authors query: %s", str(e))
+        return {}
+    total_authors = authors_json.get("meta", {}).get("count", 0)
+    app.logger.debug("Total authors found: %s", total_authors)
+    author_list = []
+    for author in authors_json.get("results", []):
+        display_name = author.get("display_name", "Unknown")
+        works_count = author.get("works_count", 0)
+        cited_by_count = author.get("cited_by_count", 0)
+        app.logger.debug("Found author: %s | Works Count: %s | Cited By: %s",
+                           display_name, works_count, cited_by_count)
+        author_list.append((display_name, works_count, cited_by_count))
+    """ The fourth step is to build up the structure of the graph """
+    nodes = []
+    edges = []
+    inst_node_full = inst_data["id"]
+    topic_node_full = topic_data["id"]
+    nodes.append({
+        "id": inst_node_full,
+        "label": institution_name,
+        "type": "INSTITUTION"
+    })
+    nodes.append({
+        "id": topic_node_full,
+        "label": topic_name,
+        "type": "TOPIC"
+    })
+    inst_topic_edge = {
+        "id": f"{inst_node_full}-{topic_node_full}",
+        "start": inst_node_full,
+        "end": topic_node_full,
+        "label": "researches",
+        "start_type": "INSTITUTION",
+        "end_type": "TOPIC"
+    }
+    edges.append(inst_topic_edge)
+    app.logger.debug("Added institution-to-topic edge: %s", inst_topic_edge)
+    for author in authors_json.get("results", []):
+        auth_id = author.get("id")
+        auth_name = author.get("display_name", "Unknown")
+        nodes.append({
+            "id": auth_id,
+            "label": auth_name,
+            "type": "AUTHOR"
+        })
+        """ Then we connect it to the institution, the author """
+        edge_auth_inst = {
+            "id": f"{auth_id}-{inst_node_full}",
+            "start": auth_id,
+            "end": inst_node_full,
+            "label": "memberOf",
+            "start_type": "AUTHOR",
+            "end_type": "INSTITUTION"
+        }
+        edges.append(edge_auth_inst)
+        app.logger.debug("Added author-to-institution edge: %s", edge_auth_inst)
+        # Then we gonna connect it to the topic, the author
+        edge_auth_topic = {
+            "id": f"{auth_id}-{topic_node_full}",
+            "start": auth_id,
+            "end": topic_node_full,
+            "label": "researches",
+            "start_type": "AUTHOR",
+            "end_type": "TOPIC"
+        }
+        edges.append(edge_auth_topic)
+        app.logger.debug("Added author-to-topic edge: %s", edge_auth_topic)
+
+    graph = {"nodes": nodes, "edges": edges}
+    # And then, the fifth step is to build up the pagination & meta-data
+    metadata = {
+        "institution_name": institution_name,
+        "topic_name": topic_name,
+        "institution_oa_id": inst_oa_id,
+        "topic_oa_id": topic_oa_id,
+        "total_authors_found": total_authors,
+    }
+    meta_pagination = {
+        "total_pages": authors_json.get("meta", {}).get("total_pages", 1),
+        "current_page": authors_json.get("meta", {}).get("page", 1),
+        "total_topics": total_authors,  # As a post-script here we are using some total count for the author, as the total number of topics
+    }
+    app.logger.debug("Constructed metadata: %s", metadata)
+    app.logger.debug("Constructed pagination metadata: %s", meta_pagination)
+    app.logger.debug("Constructed graph: %s", graph)
+    app.logger.debug("Constructed author list: %s", author_list)
+    app.logger.debug("END direct_institution_topic_openalex")
+    return {
+        "metadata": metadata,
+        "graph": graph,
+        "list": author_list,
+        "metadata_pagination": meta_pagination,
+    }
+# The only thing that we are going to replace, is this function
+def direct_author_institution_topic_openalex(
+    author_name: str,
+    institution_name: str,
+    topic_name: str,
+    page: int = 1,
+    per_page: int = 25,
+):
+    """
+    Search progressively through the OpenAlex database..
+    We can search..the author + institution + topic (this is considered
+    to be the strict tier), and we can search (author + topic) which is considered
+    to be the relaxed tier..and, we can search for author which is considered to be
+    the last resort tier.
+
+    This is the first level that yields ≥ 1 works that we have returned.
+    A 'filter_used' field in the metadata tells the User Interface, which level won.
+    """
+    import math, requests, json # noqa?
+    def _first_result(url):
+        j = requests.get(url).json()
+        return j["results"][0] if j["results"] else None
+    # look them up
+    author = _first_result(
+        f"https://api.openalex.org/authors"
+        f"?search={author_name}&per-page=1"
+    )
+    if not author:
+        return {}
+    institution = _first_result(
+        f"https://api.openalex.org/institutions"
+        f"?search={institution_name}&per-page=1"
+    )
+    topic = _first_result(
+        f"https://api.openalex.org/concepts"
+        f"?search={topic_name}&per-page=1"
+    )
+    if not institution or not topic:
+        return {}
+    aid  = author["id"].replace("https://openalex.org/", "")
+    iid  = institution["id"].replace("https://openalex.org/", "")
+    tid  = topic["id"].replace("https://openalex.org/", "")
+    # Then, we can build the query
+    strict_filter = (
+        f"authorships.author.id:{aid},"
+        f"authorships.institutions.id:{iid},"
+        f"concepts.id:{tid}"
+    )
+    relaxed_filter = (
+        f"authorships.author.id:{aid},"
+        f"concepts.id:{tid}"
+    )
+    author_only_filter = f"authorships.author.id:{aid}"
+    def _query(filt):
+        url = (
+            "https://api.openalex.org/works"
+            f"?filter={filt}&page={page}&per-page={per_page}"
+        )
+        j = requests.get(url).json()
+        return j, url
+    levels = [
+        ("author‑institution‑topic", strict_filter),
+        ("author‑topic", relaxed_filter),
+        ("author", author_only_filter),
+    ]
+    works_json = None
+    filter_used = None
+    query_url = None
+    for label, f in levels:
+        w_json, url = _query(f)
+        if w_json.get("results"):
+            works_json, filter_used, query_url = w_json, label, url
+            break
+    if not works_json: # then there truly are no works here...
+        return {}
+    # we've got a list to build
+    works = [
+        (w["display_name"], w["cited_by_count"])
+        for w in works_json["results"]
+    ]
+    # we've got a graph to graph
+    nodes = [
+        {"id": institution["id"], "label": institution_name, "type": "INSTITUTION"},
+        {"id": author["id"], "label": author_name, "type": "AUTHOR"},
+        {"id": topic["id"], "label": topic_name, "type": "TOPIC"},
+    ]
+    edges = [
+        {"id": f"{aid}-{iid}", "start": author["id"], "end": institution["id"],
+         "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"},
+        {"id": f"{aid}-{tid}", "start": author["id"], "end": topic["id"],
+         "label": "researches", "start_type": "AUTHOR", "end_type": "TOPIC"},
+    ]
+    # The meta-data
+    meta = {
+        "institution_name": institution_name,
+        "researcher_name": author_name,
+        "topic_name": topic_name,
+        "total_works": works_json["meta"]["count"],
+        "filter_used": filter_used, # <‑‑ for debugging / User Interface..badges
+        "query_url": query_url, # <‑‑ handy when reproducing some bugs
+    }
+    pg_meta = {
+        "total_pages": max(1, math.ceil(meta["total_works"] / per_page)),
+        "current_page": works_json["meta"].get("page", page),
+        "total_topics": meta["total_works"],
+    }
+    return {
+        "metadata": meta,
+        "graph": {"nodes": nodes, "edges": edges},
+        "list": works,
+        "metadata_pagination": pg_meta,
+    }
+## Main
 if __name__ =='__main__':
   app.logger.info("Starting Flask application")
   app.run()
