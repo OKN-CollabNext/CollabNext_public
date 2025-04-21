@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Box, Text, Spinner, Select, HStack, Button, Tooltip as ChakraTooltip, Flex } from "@chakra-ui/react";
+import { useEffect, useState } from "react";
+import { Box, Text, Spinner, Select, HStack, Tooltip as ChakraTooltip, Flex } from "@chakra-ui/react";
 import {
   Chart,
   CategoryScale,
@@ -109,10 +109,10 @@ interface Props {
 }
 
 const ChartHeader = ({ title, description }: { title: string, description: string }) => (
-  <Flex 
-    fontSize="xl" 
-    fontWeight="semibold" 
-    mb={4} 
+  <Flex
+    fontSize="xl"
+    fontWeight="semibold"
+    mb={4}
     textAlign="center"
     color="gray.700"
     justifyContent="center"
@@ -120,9 +120,9 @@ const ChartHeader = ({ title, description }: { title: string, description: strin
     gap={2}
   >
     {title}
-    <ChakraTooltip 
-      label={description} 
-      placement="top" 
+    <ChakraTooltip
+      label={description}
+      placement="top"
       hasArrow
       bg="gray.700"
       color="white"
@@ -138,7 +138,6 @@ const ChartHeader = ({ title, description }: { title: string, description: strin
 
 const MUPDataVisualizer = ({ institutionName }: Props) => {
   const [loading, setLoading] = useState(true);
-  const [satData, setSatData] = useState<SATData | null>(null);
   const [endowmentData, setEndowmentData] = useState<EndowmentGivingData | null>(null);
   const [medicalData, setMedicalData] = useState<MedicalExpenseData | null>(null);
   const [doctorateData, setDoctorateData] = useState<DoctoratePostdocData | null>(null);
@@ -147,119 +146,97 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
   const [rAndDData, setRAndDData] = useState<RAndDData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
-  const [fetchErrors, setFetchErrors] = useState<{[key: string]: string}>({});
+  const [fetchErrors, setFetchErrors] = useState<{ [key: string]: string }>({});
   const BASE_URL = process.env.REACT_APP_BASE_URL || "";
-
+  const [satData, setSatData] = useState<SATData | null>(null);
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       setError(null);
-
+      setFetchErrors({});
       try {
         if (!BASE_URL) {
           throw new Error("BASE_URL is not defined");
         }
-
-        const mupIdResponse = await fetch(`${BASE_URL}/get-mup-id`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        // 1) Get MUP ID
+        const mupIdRes = await fetch(`${BASE_URL}/get-mup-id`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
           body: JSON.stringify({ institution_name: institutionName }),
         });
-        const mupIdData = await mupIdResponse.json();
-        
-        const mupId = mupIdData.institution_mup_id;
-
-        const fetchPromises = [
-          fetch(`${BASE_URL}/mup-sat-scores`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ institution_name: institutionName }),
-          }).then(res => res.json()).catch(() => {
-            setFetchErrors(prev => ({...prev, sat: "SAT score data not available for this institution"}));
-            return null;
-          }),
-
-          fetch(`${BASE_URL}/endowments-and-givings`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ institution_name: institutionName }),
-          }).then(res => res.json()).catch(() => {
-            setFetchErrors(prev => ({...prev, endowment: "Endowment data not available for this institution"}));
-            return null;
-          }),
-
-          mupId ? fetch(`${BASE_URL}/institution_medical_expenses`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ institution_name: institutionName }),
-          }).then(res => res.json()).catch(() => {
-            setFetchErrors(prev => ({...prev, medical: "Medical expense data not available for this institution"}));
-            return null;
-          }) : Promise.resolve(null),
-
-          fetch(`${BASE_URL}/institution_doctorates_and_postdocs`, {
+        const mupIdJson = await mupIdRes.json();
+        if (!mupIdRes.ok) {
+          throw new Error(mupIdJson.error || `Failed to fetch MUP ID (${mupIdRes.status})`);
+        }
+        const mupId = mupIdJson.institution_mup_id;
+        /* This is a helper function, for which we are to-do each and e-very fetch
+        with the capacity to handle all errors */
+        const doFetch = async (url: string, key: string) => {
+          const res = await fetch(url, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", Accept: "application/json" },
             body: JSON.stringify({ institution_name: institutionName }),
-          }).then(res => res.json()).catch(() => {
-            setFetchErrors(prev => ({...prev, doctorate: "Doctorate/Postdoc data not available for this institution"}));
+          });
+          const json = await res.json();
+          /* Either we get the error HTTP or, we treat that and then we get the payload
+          of the { error } specifically as a fetch-error.  */
+          const hasPayloadError = Boolean(json.error);
+          if (!res.ok || hasPayloadError) {
+            /* We either have got the 404 message or our error, is server-side */
+            setFetchErrors(prev => ({
+              ...prev,
+              [key]: json.error
+                || `Error ${res.status}: ${res.statusText}`
+            }));
             return null;
-          }),
-
-          fetch(`${BASE_URL}/institution_num_of_researches`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ institution_name: institutionName }),
-          }).then(res => res.json()).catch(() => {
-            setFetchErrors(prev => ({...prev, research: "Research data not available for this institution"}));
-            return null;
-          }),
-
-          fetch(`${BASE_URL}/mup-faculty-awards`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ institution_name: institutionName }),
-          }).then(res => res.json()).catch(() => {
-            setFetchErrors(prev => ({...prev, faculty: "Faculty awards data not available for this institution"}));
-            return null;
-          }),
-
-          fetch(`${BASE_URL}/mup-r-and-d`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ institution_name: institutionName }),
-          }).then(res => res.json()).catch(() => {
-            setFetchErrors(prev => ({...prev, rAndD: "R&D data not available for this institution"}));
-            return null;
-          }),
-        ];
-
-        const [satData, endowmentData, medicalData, doctorateData, researchData, facultyAwardsData, rAndDData] = await Promise.all(fetchPromises);
-
-        if (satData && !satData.error) setSatData(satData);
-        if (endowmentData && !endowmentData.error) setEndowmentData(endowmentData);
-        if (medicalData && !medicalData.error) setMedicalData(medicalData);
-        if (doctorateData && !doctorateData.error) setDoctorateData(doctorateData);
-        if (researchData && !researchData.error) setResearchData(researchData);
-        if (facultyAwardsData && !facultyAwardsData.error) setFacultyAwardsData(facultyAwardsData);
-        if (rAndDData && !rAndDData.error) setRAndDData(rAndDData);
-      } catch (error) {
-        console.error('Error fetching data:', error);
+          }
+          return json;
+        };
+        /* And a lot of these we run in parallel */
+        const [
+          satJson,
+          endowmentJson,
+          medicalJson,
+          doctorateJson,
+          researchJson,
+          facultyJson,
+          rAndDJson,
+        ] = await Promise.all([
+          doFetch(`${BASE_URL}/mup-sat-scores`, "sat"),
+          doFetch(`${BASE_URL}/endowments-and-givings`, "endowment"),
+          mupId
+            ? doFetch(`${BASE_URL}/institution_medical_expenses`, "medical")
+            : Promise.resolve(null),
+          doFetch(`${BASE_URL}/institution_doctorates_and_postdocs`, "doctorate"),
+          doFetch(`${BASE_URL}/institution_num_of_researches`, "research"),
+          doFetch(`${BASE_URL}/mup-faculty-awards`, "faculty"),
+          doFetch(`${BASE_URL}/mup-r-and-d`, "rAndD"),
+        ]);
+        /* Last on the list, the only time we ever set the state is if there's no
+        field for the server-error! */
+        if (satJson && !satJson.error) setSatData(satJson);
+        if (endowmentJson && !endowmentJson.error) setEndowmentData(endowmentJson);
+        if (medicalJson && !medicalJson.error) setMedicalData(medicalJson);
+        if (doctorateJson && !doctorateJson.error) setDoctorateData(doctorateJson);
+        if (researchJson && !researchJson.error) setResearchData(researchJson);
+        if (facultyJson && !facultyJson.error) setFacultyAwardsData(facultyJson);
+        if (rAndDJson && !rAndDJson.error) setRAndDData(rAndDJson);
+      } catch (err: any) {
+        console.error("Error fetching MUP data:", err);
+        setError(err.message);
       } finally {
         setLoading(false);
       }
     };
-
     if (institutionName) {
       fetchData();
     }
   }, [institutionName, BASE_URL]);
 
-  const createChartData = (label: string, data: Array<{[key: string]: any}>, valueKeys: string[], valueLabels: string[], xAxis: string = 'year') => {
+  const createChartData = (label: string, data: Array<{ [key: string]: any }>, valueKeys: string[], valueLabels: string[], xAxis: string = 'year') => {
     const sortedData = [...data]
       .sort((a, b) => a[xAxis] - b[xAxis])
       .slice(-10);
-    
     return {
       labels: sortedData.map(item => item[xAxis]),
       datasets: valueKeys.map((key, index) => ({
@@ -284,12 +261,12 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
 
   const getAvailableYears = (): number[] => {
     const yearsSet = new Set<number>();
-    
+
     [
-      satData?.data, 
-      endowmentData?.data, 
-      medicalData?.data, 
-      doctorateData?.data, 
+      satData?.data,
+      endowmentData?.data,
+      medicalData?.data,
+      doctorateData?.data,
       researchData?.data,
       facultyAwardsData?.data
     ]
@@ -301,13 +278,6 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
     return Array.from(yearsSet)
       .sort((a, b) => b - a)
       .slice(0, 10);
-  };
-
-  const resetZoom = () => {
-    const charts = document.querySelectorAll('canvas');
-    charts.forEach(canvas => {
-      const chart = Chart.getChart(canvas);
-    });
   };
 
   const chartOptions = {
@@ -397,7 +367,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
         type: 'linear' as const,
         beginAtZero: true,
         ticks: {
-          callback: function(this: Scale<CoreScaleOptions>, tickValue: string | number, index: number, ticks: Tick[]) {
+          callback: function (this: Scale<CoreScaleOptions>, tickValue: string | number, index: number, ticks: Tick[]) {
             const value = Number(tickValue);
             return value.toString();
           }
@@ -439,7 +409,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
           max: 1600,
           ticks: {
             stepSize: 200,
-            callback: function(this: Scale<CoreScaleOptions>, tickValue: string | number, index: number, ticks: Tick[]) {
+            callback: function (this: Scale<CoreScaleOptions>, tickValue: string | number, index: number, ticks: Tick[]) {
               return tickValue.toString();
             },
             font: {
@@ -475,7 +445,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
         y: {
           ...chartOptions.scales.y,
           ticks: {
-            callback: function(this: Scale<CoreScaleOptions>, tickValue: string | number, index: number, ticks: Tick[]) {
+            callback: function (this: Scale<CoreScaleOptions>, tickValue: string | number, index: number, ticks: Tick[]) {
               const value = Number(tickValue);
               return `$${(value / 1000000).toFixed(0)} M`;
             },
@@ -523,7 +493,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
         y: {
           ...chartOptions.scales.y,
           ticks: {
-            callback: function(this: Scale<CoreScaleOptions>, tickValue: string | number, index: number, ticks: Tick[]) {
+            callback: function (this: Scale<CoreScaleOptions>, tickValue: string | number, index: number, ticks: Tick[]) {
               const value = Number(tickValue);
               return `$${value.toString()}`;
             },
@@ -606,9 +576,9 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
     };
 
     return (
-      <div style={{ 
+      <div style={{
         height: '400px',
-        width: '100%', 
+        width: '100%',
         position: 'relative',
         marginBottom: '20px'
       }}>
@@ -632,7 +602,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
         y: {
           ...chartOptions.scales.y,
           ticks: {
-            callback: function(this: Scale<CoreScaleOptions>, tickValue: string | number, index: number, ticks: Tick[]) {
+            callback: function (this: Scale<CoreScaleOptions>, tickValue: string | number, index: number, ticks: Tick[]) {
               const value = Number(tickValue);
               return `$${value.toString()}`;
             },
@@ -699,7 +669,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ')
     }));
-    
+
     const chartData = createChartData(
       'R&D Numbers',
       filteredData,
@@ -749,9 +719,9 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
     };
 
     return (
-      <div style={{ 
+      <div style={{
         height: '400px',
-        width: '100%', 
+        width: '100%',
         position: 'relative',
         marginBottom: '20px'
       }}>
@@ -764,11 +734,11 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
     if (!year) return null;
 
     return (
-      <Box 
-        mt={4} 
-        p={6} 
-        bg="blue.50" 
-        borderRadius="xl" 
+      <Box
+        mt={4}
+        p={6}
+        bg="blue.50"
+        borderRadius="xl"
         boxShadow="sm"
         transition="all 0.2s"
         _hover={{ transform: 'translateY(-2px)', boxShadow: 'md' }}
@@ -776,9 +746,9 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
         <Text fontSize="xl" fontWeight="bold" mb={4} color="blue.800">
           Data Summary for {year}
         </Text>
-        <Box 
-          display="grid" 
-          gridTemplateColumns={{base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)"}} 
+        <Box
+          display="grid"
+          gridTemplateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }}
           gap={6}
         >
           {satData?.data.find(d => d.year === year) && (
@@ -791,7 +761,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
               </Box>
             </ChakraTooltip>
           )}
-          
+
           {endowmentData?.data.find(d => d.year === year) && (
             <ChakraTooltip label="Endowment and giving amounts" placement="top">
               <Box p={5} bg="white" borderRadius="lg" boxShadow="sm" transition="all 0.2s" _hover={{ transform: 'translateY(-2px)', boxShadow: 'md' }}>
@@ -851,25 +821,9 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
     );
   };
 
-  const renderChartWithError = (chartData: any, errorKey: string, title: string) => {
-    if (fetchErrors[errorKey]) {
-      return (
-        <Box
-          height="100%"
-          width="100%"
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-          textAlign="center"
-          p={4}
-        >
-          <Text color="gray.500">
-            {fetchErrors[errorKey]}
-          </Text>
-        </Box>
-      );
-    }
-    
+  const renderChartWithError = (chartData: any, errorKey: string) => {
+    /* And if it's true that the server has sent in a message "indicating" that we have got an error then, we use it. */
+    const reason = fetchErrors[errorKey];
     if (!chartData) {
       return (
         <Box
@@ -881,11 +835,12 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
           textAlign="center"
           p={4}
         >
-          <Text color="gray.500">No data available</Text>
+          <Text color="gray.500">
+            {reason ?? 'No data available (default message)'}
+          </Text>
         </Box>
       );
     }
-
     return chartData;
   };
 
@@ -895,14 +850,14 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
 
   return (
     <Box mt={8} maxWidth="1200px" mx="auto" px={4}>
-      <Box 
-        mb={8} 
+      <Box
+        mb={8}
         textAlign="center"
         animation="fadeIn 0.5s ease-in"
       >
-        <Text 
-          fontSize={{base: "2xl", md: "3xl"}} 
-          fontWeight="bold" 
+        <Text
+          fontSize={{ base: "2xl", md: "3xl" }}
+          fontWeight="bold"
           color="gray.800"
           mb={2}
         >
@@ -914,11 +869,11 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
       </Box>
 
       {error && (
-        <Box 
-          mb={6} 
-          p={5} 
-          bg="red.50" 
-          borderRadius="xl" 
+        <Box
+          mb={6}
+          p={5}
+          bg="red.50"
+          borderRadius="xl"
           boxShadow="sm"
           border="1px solid"
           borderColor="red.100"
@@ -931,15 +886,15 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
         </Box>
       )}
 
-      <HStack 
-        spacing={4} 
-        mb={6} 
+      <HStack
+        spacing={4}
+        mb={6}
         justifyContent="flex-end"
         p={4}
         borderRadius="lg"
         width="100%"
       >
-        <Select 
+        <Select
           placeholder="Select year for summary"
           value={selectedYear || ''}
           onChange={(e) => setSelectedYear(Number(e.target.value))}
@@ -956,38 +911,39 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
 
       {selectedYear ? renderYearSummary(selectedYear) : null}
 
-      <Box 
-          p={6} 
-          bg="white" 
-          borderRadius="xl" 
-          boxShadow="sm"
-          transition="all 0.3s"
-          _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
-          height="500px"
-          position="relative"
-          overflow="hidden"
-        >
-          <ChartHeader 
-            title="Research Amounts by Year"
-            description="Shows the amount spent on research projects over time."
-          />
-          {renderChartWithError(
-            researchData && researchData.data && researchData.data.length > 0 ? renderResearchChart(researchData) : null,
-            'research',
-            'Research Numbers by Year'
-          )}
-        </Box>
+      <Box
+        p={6}
+        bg="white"
+        borderRadius="xl"
+        boxShadow="sm"
+        transition="all 0.3s"
+        _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
+        height="500px"
+        position="relative"
+        overflow="hidden"
+      >
+        <ChartHeader
+          title="Research Amounts by Year"
+          description="Shows the amount spent on research projects over time."
+        />
+        {renderChartWithError(
+          researchData && researchData.data && researchData.data.length > 0
+            ? renderResearchChart(researchData)
+            : null,
+          'research'
+        )}
+      </Box>
 
-      <Box 
-        display="grid" 
-        gridTemplateColumns={{base: "1fr", lg: "repeat(2, 1fr)"}} 
+      <Box
+        display="grid"
+        gridTemplateColumns={{ base: "1fr", lg: "repeat(2, 1fr)" }}
         gap={8}
         mt={8}
       >
-        <Box 
-          p={6} 
-          bg="white" 
-          borderRadius="xl" 
+        <Box
+          p={6}
+          bg="white"
+          borderRadius="xl"
           boxShadow="sm"
           transition="all 0.3s"
           _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
@@ -995,21 +951,21 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
           position="relative"
           overflow="hidden"
         >
-          <ChartHeader 
+          <ChartHeader
             title="R&D Numbers by Category"
             description="Shows the breakdown of research and development numbers by category."
           />
           {renderChartWithError(
-            rAndDData && rAndDData.data && rAndDData.data.length > 0 ? renderRAndDChart(rAndDData) : null,
-            'rAndD',
-            'R&D Numbers by Category'
+            rAndDData && rAndDData.data && rAndDData.data.length > 0
+              ? renderRAndDChart(rAndDData)
+              : null,
+            'rAndD'
           )}
         </Box>
-
-        <Box 
-          p={6} 
-          bg="white" 
-          borderRadius="xl" 
+        <Box
+          p={6}
+          bg="white"
+          borderRadius="xl"
           boxShadow="sm"
           transition="all 0.3s"
           _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
@@ -1017,21 +973,21 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
           position="relative"
           overflow="hidden"
         >
-          <ChartHeader 
+          <ChartHeader
             title="Faculty Awards by Year"
             description="Shows the number of prestigious faculty awards (NAE, NAM, NAS) received."
           />
           {renderChartWithError(
-            facultyAwardsData && facultyAwardsData.data && facultyAwardsData.data.length > 0 ? renderFacultyAwardsChart(facultyAwardsData) : null,
-            'faculty',
-            'Faculty Awards by Year'
+            facultyAwardsData && facultyAwardsData.data && facultyAwardsData.data.length > 0
+              ? renderFacultyAwardsChart(facultyAwardsData)
+              : null,
+            'faculty'
           )}
         </Box>
-
-        <Box 
-          p={6} 
-          bg="white" 
-          borderRadius="xl" 
+        <Box
+          p={6}
+          bg="white"
+          borderRadius="xl"
           boxShadow="sm"
           transition="all 0.3s"
           _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
@@ -1039,21 +995,21 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
           position="relative"
           overflow="hidden"
         >
-          <ChartHeader 
+          <ChartHeader
             title="Advance Training of Scholars"
             description="Shows the number of doctorates and postdocs awarded over time."
           />
           {renderChartWithError(
-            doctorateData && doctorateData.data && doctorateData.data.length > 0 ? renderDoctorateChart(doctorateData) : null,
-            'doctorate',
-            'Doctorates and Postdocs Numbers by Year'
+            doctorateData && doctorateData.data && doctorateData.data.length > 0
+              ? renderDoctorateChart(doctorateData)
+              : null,
+            'doctorate'
           )}
         </Box>
-
-        <Box 
-          p={6} 
-          bg="white" 
-          borderRadius="xl" 
+        <Box
+          p={6}
+          bg="white"
+          borderRadius="xl"
           boxShadow="sm"
           transition="all 0.3s"
           _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
@@ -1061,21 +1017,21 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
           position="relative"
           overflow="hidden"
         >
-          <ChartHeader 
+          <ChartHeader
             title="Endowment and Giving by Year"
             description="Shows the institution's endowment value and annual giving over time."
           />
           {renderChartWithError(
-            endowmentData && endowmentData.data && endowmentData.data.length > 0 ? renderEndowmentChart(endowmentData) : null,
-            'endowment',
-            'Endowment and Giving by Year'
+            endowmentData && endowmentData.data && endowmentData.data.length > 0
+              ? renderEndowmentChart(endowmentData)
+              : null,
+            'endowment'
           )}
         </Box>
-
-        <Box 
-          p={6} 
-          bg="white" 
-          borderRadius="xl" 
+        <Box
+          p={6}
+          bg="white"
+          borderRadius="xl"
           boxShadow="sm"
           transition="all 0.3s"
           _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
@@ -1083,21 +1039,21 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
           position="relative"
           overflow="hidden"
         >
-          <ChartHeader 
+          <ChartHeader
             title="SAT Score by Year"
             description="Shows the average SAT scores of admitted students over time."
           />
           {renderChartWithError(
-            satData && satData.data && satData.data.length > 0 ? renderSATChart(satData) : null,
-            'sat',
-            'SAT Score by Year'
+            satData && satData.data && satData.data.length > 0
+              ? renderSATChart(satData)
+              : null,
+            'sat'
           )}
         </Box>
-
-        <Box 
-          p={6} 
-          bg="white" 
-          borderRadius="xl" 
+        <Box
+          p={6}
+          bg="white"
+          borderRadius="xl"
           boxShadow="sm"
           transition="all 0.3s"
           _hover={{ transform: 'translateY(-4px)', boxShadow: 'lg' }}
@@ -1105,14 +1061,15 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
           position="relative"
           overflow="hidden"
         >
-          <ChartHeader 
+          <ChartHeader
             title="Medical Expenditure by Year"
             description="Shows the institution's medical expenses over time."
           />
           {renderChartWithError(
-            medicalData && medicalData.data && medicalData.data.length > 0 ? renderMedicalChart(medicalData) : null,
-            'medical',
-            'Medical Expenditure by Year'
+            medicalData && medicalData.data && medicalData.data.length > 0
+              ? renderMedicalChart(medicalData)
+              : null,
+            'medical'
           )}
         </Box>
       </Box>
