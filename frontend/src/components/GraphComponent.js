@@ -1,5 +1,5 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {Orb} from '@memgraph/orb';
+import { useEffect, useRef, useState } from 'react';
+import { Orb } from '@memgraph/orb';
 import {
   Box,
   Modal,
@@ -10,34 +10,36 @@ import {
   useDisclosure,
 } from '@chakra-ui/react';
 
-const GraphComponent = ({graphData, setInstitution, setTopic, setResearcher}) => {
+const BASE_SIZE = 6;
+const SCALE_FACTOR = 1.5;
+
+const GraphComponent = ({ graphData, setInstitution, setTopic, setResearcher }) => {
   const graphContainerRef = useRef(null);
   const loaderOverlayRef = useRef(null);
-  // const detailsRef = useRef(null);
   const [selectedNode, setSelectedNode] = useState(null);
-  const {isOpen, onOpen, onClose} = useDisclosure();
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   useEffect(() => {
-    if (!graphData) {
-      return; // Exit early if no data is provided
-    }
-
-    const {nodes, edges} = graphData; // Destructure nodes and edges from graphData
-
-    const container = graphContainerRef.current;
-    const orb = new Orb(container);
-
+    if (!graphData) return;
+    let { nodes, edges } = graphData;
+    /* Every once in a while annotate the nodes with the outgoing-link counts */
+    const annotated = nodes.map(n => ({
+      ...n,
+      linkCount:
+        typeof n.linkCount === 'number'
+          ? n.linkCount
+          : edges.filter(e => e.start === n.id).length,
+    }));
+    /* Every once in a while initialize the orb itself! */
+    const orb = new Orb(graphContainerRef.current);
     orb.view.setSettings({
-      render: {
-        backgroundColor: '#f4faff',
-        padding: '0',
-        margin: '0',
-      },
+      render: { backgroundColor: '#f4faff', padding: '0', margin: '0' },
     });
-
     orb.data.setDefaultStyle({
       getNodeStyle(node) {
-        const basicStyle = {
+        const count = node.data.linkCount || 0;
+        const orbSize = BASE_SIZE + count * SCALE_FACTOR;
+        const baseStyle = {
           borderColor: '#1d1d1d',
           borderWidth: 0.6,
           color: '#DD2222',
@@ -45,85 +47,36 @@ const GraphComponent = ({graphData, setInstitution, setTopic, setResearcher}) =>
           colorSelected: '#e7644e',
           fontSize: 3,
           label: node.data.label,
-          size: 6,
+          size: orbSize,
         };
-
-        if (node.data.type === 'AUTHOR') {
-          return {
-            ...basicStyle,
-            size: 10,
-            color: '#332288',
-            zIndex: 1,
-          };
+        // color‑code by type as a follow-up, but keep dynamic sizing
+        switch (node.data.type) {
+          case 'AUTHOR':
+            return { ...baseStyle, color: '#332288', zIndex: 1 };
+          case 'WORK':
+            return { ...baseStyle, color: '#117733', zIndex: 1 };
+          case 'TOPIC':
+            return { ...baseStyle, color: '#44AA99', zIndex: 1 };
+          case 'INSTITUTION':
+            return { ...baseStyle, color: '#88CCEE', zIndex: 1 };
+          case 'DOMAIN':
+            return { ...baseStyle, color: '#DDCC77', zIndex: 1 };
+          case 'FIELD':
+            return { ...baseStyle, color: '#CC6677', zIndex: 1 };
+          case 'SUBFIELD':
+            return { ...baseStyle, color: '#AA4499', zIndex: 1 };
+          default:
+            return baseStyle;
         }
-
-        if (node.data.type === 'WORK') {
-          return {
-            ...basicStyle,
-            size: 10,
-            color: '#117733',
-            zIndex: 1,
-          };
-        }
-
-        if (node.data.type === 'TOPIC') {
-          return {
-            ...basicStyle,
-            size: 10,
-            color: '#44AA99',
-            zIndex: 1,
-          };
-        }
-
-        if (node.data.type === 'INSTITUTION') {
-          return {
-            ...basicStyle,
-            size: 10,
-            color: '#88CCEE',
-            zIndex: 1,
-          };
-        }
-
-        if (node.data.type === 'DOMAIN') {
-          return {
-            ...basicStyle,
-            size: 10,
-            color: '#DDCC77',
-            zIndex: 1,
-          };
-        }
-
-        if (node.data.type === 'FIELD') {
-          return {
-            ...basicStyle,
-            size: 10,
-            color: '#CC6677',
-            zIndex: 1,
-          };
-        }
-
-        if (node.data.type === 'SUBFIELD') {
-          return {
-            ...basicStyle,
-            size: node.data.people ?? 10,
-            color: '#AA4499',
-            zIndex: 1,
-          };
-        }
-
-        return {
-          ...basicStyle,
-        };
       },
       getEdgeStyle(edge) {
-        console.log(edge?.data?.connecting_authors);
         return {
           color: '#999999',
           colorHover: '#1d1d1d',
           colorSelected: '#1d1d1d',
           fontSize: 3,
-          width: edge?.data?.connecting_authors
-            ? edge?.data?.connecting_authors / 100
+          width: edge.data.connecting_authors
+            ? edge.data.connecting_authors / 100
             : 0.3,
           widthHover: 0.9,
           widthSelected: 0.9,
@@ -131,124 +84,69 @@ const GraphComponent = ({graphData, setInstitution, setTopic, setResearcher}) =>
         };
       },
     });
-
+    // Want to show loading
     if (loaderOverlayRef.current) {
       loaderOverlayRef.current.style.display = 'flex';
     }
-
-    orb.data.setup({nodes, edges});
-
-    orb.events.on('node-click', (event) => {
-      handleNodeClick(event);
+    orb.data.setup({ nodes: annotated, edges });
+    orb.events.on('node-click', event => {
+      const d = event.node.data;
+      setSelectedNode(d);
+      if (d.type === 'INSTITUTION') setInstitution(d.label);
+      if (d.type === 'TOPIC') setTopic(d.label);
+      if (d.type === 'AUTHOR') setResearcher(d.label);
     });
-
-    orb.events.on('edge-click', (event) => {
-      handleEdgeClick(event);
+    orb.events.on('edge-click', event => {
+      const e = event.edge.data;
+      setSelectedNode(e);
+      if (e.connecting_works) onOpen();
     });
-
-    function handleNodeClick(event) {
-      const nodeData = event.node.data;
-      console.log('Selected Node:', nodeData); // Log the selected node to the console
-      setSelectedNode(nodeData);
-      if (nodeData.type === "INSTITUTION") {
-        setInstitution(nodeData.label);
-      }else if (nodeData.type === "TOPIC") {
-        setTopic(nodeData.label);
-      }else if (nodeData.type === "AUTHOR") {
-        setResearcher(nodeData.label)
-      } 
-      }
-      // nodeData?.type !== 'DOMAIN' && onOpen();
-  
-
-    function handleEdgeClick(event) {
-      const edgeData = event.edge.data;
-      console.log('Selected Edge:', edgeData);
-      setSelectedNode(edgeData);
-      edgeData?.connecting_works && onOpen();
-    }
-
     orb.view.render(() => {
       if (loaderOverlayRef.current) {
         loaderOverlayRef.current.style.display = 'none';
       }
-      // if (detailsRef.current) {
-      //   detailsRef.current.style.display = 'block';
-      // }
       orb.view.recenter();
     });
-  }, [graphData, onOpen]);
+  }, [graphData, onOpen, setInstitution, setTopic, setResearcher]);
 
   const renderDetails = () => {
     if (!selectedNode) return null;
-
-    console.log('selectedNode', selectedNode);
-
     let html = '';
-
-    if (selectedNode.type === 'INSTITUTION') {
-      // html += `<a href="${selectedNode.id}" target="_blank">View on OpenAlex</a>`;
-      html += `<a href="${selectedNode.id}" target="_blank"><b>View on OpenAlex:</b> ${selectedNode.id}</a>`;
-    } else if (selectedNode.type === 'AUTHOR') {
-      html += `<a href="${selectedNode.id}" target="_blank"><b>View on OpenAlex:</b> ${selectedNode.id}</a>`;
-    } else if (selectedNode.type === 'TOPIC') {
-      // html += `<a href="${selectedNode.id}" target="_blank">View on OpenAlex</a>`;
-      html += `<a href="${selectedNode.id}" target="_blank"><b>View on OpenAlex:</b> ${selectedNode.id}</a>`;
-    } else if (selectedNode.start_type === 'AUTHOR') {
-      if (selectedNode.end_type === 'TOPIC') {
-        html += `<b>Connecting Works:</b> ${selectedNode.connecting_works}`;
-      }
-    } else if (selectedNode.start_type === "INSTITUTION") {
-      if (selectedNode.end_type === "SUBFIELD") {
-        html += `<b>Connecting Authors:</b> ${selectedNode.connecting_authors}`;
-      }
+    if (selectedNode.type === 'INSTITUTION' || selectedNode.type === 'AUTHOR' || selectedNode.type === 'TOPIC') {
+      html = `<a href="${selectedNode.id}" target="_blank"><b>View on OpenAlex:</b> ${selectedNode.id}</a>`;
+    } else if (selectedNode.start_type === 'AUTHOR' && selectedNode.end_type === 'TOPIC') {
+      html = `<b>Connecting Works:</b> ${selectedNode.connecting_works}`;
+    } else if (selectedNode.start_type === 'INSTITUTION' && selectedNode.end_type === 'SUBFIELD') {
+      html = `<b>Connecting Authors:</b> ${selectedNode.connecting_authors}`;
     }
-
     return (
       <div
-        className={
-          selectedNode.start_type === 'AUTHOR' &&
-          selectedNode.end_type === 'TOPIC'
-            ? undefined
-            : 'ror'
+        className={selectedNode.start_type === 'AUTHOR' && selectedNode.end_type === 'TOPIC' ? undefined : 'ror'}
+        style={selectedNode.start_type === 'AUTHOR' && selectedNode.end_type === 'TOPIC'
+          ? { marginTop: '10px', color: 'black', fontWeight: 'bold' }
+          : { textDecoration: 'underline', marginTop: '10px' }
         }
-        style={
-          selectedNode.start_type === 'AUTHOR' &&
-          selectedNode.end_type === 'TOPIC'
-            ? {marginTop: '10px', color: 'black', fontWeight: 'bold'}
-            : {
-                textDecoration: 'underline',
-                marginTop: '10px',
-              }
-        }
-        dangerouslySetInnerHTML={{__html: html}}
+        dangerouslySetInnerHTML={{ __html: html }}
       />
     );
   };
 
   return (
     <div>
-      <div ref={loaderOverlayRef} id='loader-overlay' style={{display: 'none'}}>
+      <div ref={loaderOverlayRef} id="loader-overlay" style={{ display: 'none' }}>
         Loading...
       </div>
-      <div
-        ref={graphContainerRef}
-        id='graph'
-        style={{height: '500px', width: '100%'}}
-      />
+      <div ref={graphContainerRef} id="graph" style={{ height: '500px', width: '100%' }} />
       <Modal isOpen={isOpen} onClose={onClose} isCentered>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>More Details</ModalHeader>
-          <Box mx='1.5rem' mb='2rem' className='details'>
+          <Box mx="1.5rem" mb="2rem" className="details">
             {renderDetails()}
           </Box>
           <ModalCloseButton />
         </ModalContent>
       </Modal>
-      {/* <div ref={detailsRef} className='details' style={{display: 'none'}}>
-        {renderDetails()}
-      </div> */}
     </div>
   );
 };

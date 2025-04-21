@@ -19,13 +19,17 @@ const TopicInstitutionMetadata = ({
   onPageChange: (page: number) => void;
 }) => {
   const [showTopicClusterGraph, setTopicClusterGraph] = useState(false);
-
-  const handleTopicClusterClick = () =>
-    setTopicClusterGraph(prev => !prev);
+  const handleTopicClusterClick = () => setTopicClusterGraph(prev => !prev);
+  /* filter out any entries we don't want to preserve with no author name or zero works */
+  const authorsRaw = data?.authors ?? [];
+  const authors = Array.isArray(authorsRaw)
+    ? authorsRaw.filter(
+      ([person, works]) => Boolean(person) && works > 0
+    )
+    : [];
 
   return (
     <>
-      {/* Here is the meta-data column on the left-hand */}
       <Flex
         display={{ base: 'block', lg: 'flex' }}
         justifyContent="space-between"
@@ -36,11 +40,7 @@ const TopicInstitutionMetadata = ({
           <button className="topButton">List Map</button>
           <h2>{data?.institution_name}</h2>
           <h2>{data?.topic_name}</h2>
-          <a
-            target="_blank"
-            rel="noreferrer"
-            href={data?.institution_url}
-          >
+          <a target="_blank" rel="noreferrer" href={data?.institution_url}>
             {data?.institution_url}
           </a>
           <p>Total {data?.author_count} authors</p>
@@ -49,21 +49,14 @@ const TopicInstitutionMetadata = ({
           <a target="_blank" rel="noreferrer" href={data?.open_alex_link}>
             View Institution on OpenAlex
           </a>
-          <a
-            target="_blank"
-            rel="noreferrer"
-            href={data?.topic_open_alex_link}
-          >
+          <a target="_blank" rel="noreferrer" href={data?.topic_open_alex_link}>
             View Keyword on OpenAlex
           </a>
           {data?.ror_link && (
-            <a target="_blank" rel="noreferrer" href={data?.ror_link}>
-              RORID – {
-                data.ror_link.split('/')[data.ror_link.split('/').length - 1]
-              }
+            <a target="_blank" rel="noreferrer" href={data.ror_link}>
+              RORID – {data.ror_link.split('/').pop()}
             </a>
           )}
-          {/* toggler for the graph of the cluster-topic */}
           <Box mt="0.4rem">
             <Text fontSize="17px" fontWeight="600">
               <span
@@ -75,7 +68,6 @@ const TopicInstitutionMetadata = ({
             </Text>
           </Box>
         </Box>
-        {/* Either this is a list of authors or a graph of clusters. But one thing I do know is that this column belongs on the right-hand side of things. */}
         {showTopicClusterGraph ? (
           <Box mt="1rem" w={{ lg: '70%' }} mx="auto">
             <TopicClusterGraphComponent
@@ -87,7 +79,6 @@ const TopicInstitutionMetadata = ({
           </Box>
         ) : (
           <Box w={{ lg: '64%' }} mt={{ base: '.9rem', lg: 0 }}>
-            {/* Header of the table */}
             <Box display="flex" justifyContent="space-between">
               <Text fontSize="18px" fontWeight={600} w="32%">
                 Person
@@ -99,64 +90,65 @@ const TopicInstitutionMetadata = ({
                 Articles
               </Text>
             </Box>
-            {/* rows' count */}
+
             <Box mt=".5rem">
-              {(data?.authors ?? []).map(([person, works], i) => (
-                <Flex
-                  justifyContent="space-between"
-                  key={`${person}-${i}`}
-                  mb="4px"
-                >
-                  {/* person name (should be clickable) */}
-                  <Text
-                    fontSize="14px"
-                    w="32%"
-                    onClick={() => setResearcher(person)}
-                    textDecoration="underline"
-                    cursor="pointer"
+              {authors.length === 0 ? (
+                <Box p={4} textAlign="center">
+                  <Text fontSize="16px" color="gray.500">
+                    No authors (doesn't mean they've been eliminated) publish on “{data.topic_name}” at {data.institution_name}.
+                  </Text>
+                </Box>
+              ) : (
+                authors.map(([person, works], i) => (
+                  <Flex
+                    justifyContent="space-between"
+                    key={`${person}-${i}`}
+                    mb="4px"
                   >
-                    {person}
-                  </Text>
-                  {/* works count */}
-                  <Text fontSize="14px" w="32%">
-                    {works}
-                  </Text>
-                  {/* expandable list of all of the articles, "ideally" consistent across pages */}
-                  <ExpandableWorksCell
-                    authorName={person}
-                    topicName={data?.topic_name ?? ''}
-                  />
-                </Flex>
-              ))}
+                    <Text
+                      fontSize="14px"
+                      w="32%"
+                      onClick={() => setResearcher(person)}
+                      textDecoration="underline"
+                      cursor="pointer"
+                    >
+                      {person}
+                    </Text>
+                    <Text fontSize="14px" w="32%">
+                      {works}
+                    </Text>
+                    <ExpandableWorksCell
+                      authorName={person}
+                      topicName={data?.topic_name ?? ''}
+                    />
+                  </Flex>
+                ))
+              )}
             </Box>
           </Box>
         )}
       </Flex>
-      {/* pagination, has it been implemented? I think so! But we "never review our own production" to paraphrase. That would be like..paginating the pages. But you justify what you can successfully place in a FlexBox. */}
-      <Flex
-        justifyContent="center"
-        mt={4}
-        gap={2}
-        alignItems="center"
-      >
-        <Button
-          onClick={() => onPageChange(currentPage - 1)}
-          isDisabled={currentPage === 1}
-          size="sm"
-        >
-          Previous
-        </Button>
-        <Text fontSize="sm">
-          Page {currentPage} of {totalPages}
-        </Text>
-        <Button
-          onClick={() => onPageChange(currentPage + 1)}
-          isDisabled={currentPage === totalPages}
-          size="sm"
-        >
-          Next
-        </Button>
-      </Flex>
+      {authors.length > 0 && (
+        <Flex justifyContent="center" mt={4} gap={2} alignItems="center">
+          <Button
+            onClick={() => onPageChange(currentPage - 1)}
+            isDisabled={currentPage === 1}
+            size="sm"
+          >
+            Previous
+          </Button>
+          <Text fontSize="sm">
+            Page {currentPage} of {totalPages}
+          </Text>
+          <Button
+            onClick={() => onPageChange(currentPage + 1)}
+            isDisabled={currentPage === totalPages}
+            size="sm"
+          >
+            Next
+          </Button>
+        </Flex>
+      )}
     </>
   );
 };
