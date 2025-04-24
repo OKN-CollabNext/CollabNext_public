@@ -348,13 +348,19 @@ def initial_search():
     elif institution and researcher:
       results = get_institution_and_researcher_results(institution, researcher, page, per_page)
     elif institution and topic:
-      results = get_institution_and_subfield_results(institution, topic, page, per_page)
+      if isinstance(institution, str):
+        results = get_institution_and_subfield_results(institution, topic, page, per_page)
+      else:
+        results = get_multiple_institution_and_subfield_results(institution, topic, page, per_page)
     elif researcher and topic:
       results = get_researcher_and_subfield_results(researcher, topic, page, per_page)
     elif topic:
       results = get_subfield_results(topic, page, per_page)
     elif institution:
-      results = get_institution_results(institution, page, per_page)
+      if isinstance(institution, str):
+          results = get_institution_results(institution, page, per_page)
+      else:
+          results = get_multiple_institution_results(institution, page, per_page)
     elif researcher:
       results = get_researcher_result(researcher, page, per_page)
 
@@ -461,6 +467,66 @@ def get_researcher_result(researcher, page=1, per_page=20):
             "current_page": page,
             "total_topics": total_topics,
         }, "graph": graph, "list": list}
+
+def get_multiple_institution_results(institutions, page=1, per_page=19):
+    metadata = {}
+    nodes = []
+    edges = []
+    for institution in institutions:
+        data = search_by_institution(institution)
+        if data is None:
+            app.logger.info("No database results, falling back to SPARQL...")
+            data = get_institution_metadata_sparql(institution)
+            if data == {}:
+                app.logger.warning("No results found in SPARQL for institution")
+            else:
+                metadata[institution] = data
+                metadata[institution]['homepage'] = data['homepage']
+                metadata[institution]['works_count'] = data['works_count']
+                metadata[institution]['name'] = data['name']
+                metadata[institution]['cited_count'] = data['cited_count']
+                metadata[institution]['oa_link'] = data['oa_link']
+                metadata[institution]['author_count'] = data['author_count']
+                topic_list, g = list_given_institution(data['ror'], data['name'], data['oa_link'])
+                nodes.append({'id': institution, 'label': institution, 'type': "INSTITUTION" })
+                for subfield, count in topic_list:
+                    nodes.append({'id': subfield, 'label': subfield, 'type': "SUBFIELD" })
+                    edges.append({ 'id': f"""{institution}-{subfield}""", 'start': institution, 'end': subfield, "label": "researches", "start_type": "INSTITUTION", "end_type": "SUBFIELD"})
+                app.logger.info(f"Successfully retrieved SPARQL results for institution: {institution}")
+        else:
+            app.logger.debug("Processing database results for institution")
+            metadata[institution] = data['institution_metadata']
+            metadata[institution]['homepage'] = metadata[institution]['url']
+            metadata[institution]['works_count'] = metadata[institution]['num_of_works']
+            metadata[institution]['name'] = metadata[institution]['institution_name']
+            metadata[institution]['cited_count'] = metadata[institution]['num_of_citations']
+            metadata[institution]['oa_link'] = metadata[institution]['openalex_url']
+            metadata[institution]['author_count'] = metadata[institution]['num_of_authors']
+
+            app.logger.debug("Building graph structure")
+            # institution_id = metadata['openalex_url']
+
+            total_topics = len(data['data'])
+            start = (page - 1) * per_page
+            end = start + per_page
+            nodes.append({'id': institution, 'label': institution, 'type': "INSTITUTION" })
+            for entry in data['data'][start:end]:
+                subfield = entry['topic_subfield']
+                number = entry['num_of_authors']
+                nodes.append({'id': subfield, 'label': subfield, 'type': "SUBFIELD" })
+                edges.append({ 'id': f"""{institution}-{subfield}""", 'start': institution, 'end': subfield, "label": "researches", "start_type": "INSTITUTION", "end_type": "SUBFIELD"})
+            app.logger.info(f"Successfully built result for institution: {institution}")
+    graph = {"nodes": nodes, "edges": edges}
+    return {
+        "metadata": metadata,
+        "metadata_pagination": {
+            "total_pages": (total_topics + per_page - 1) // per_page,
+            "current_page": page,
+            "total_topics": total_topics,
+        },
+        "graph": graph,
+        "list": []
+    }
 
 def get_institution_results(institution, page=1, per_page=10):
     """
@@ -655,6 +721,25 @@ def get_researcher_and_subfield_results(researcher, topic, page=1, per_page=20):
             "total_topics": total_topics,
         }, "graph": graph, "list": list}
 
+def get_multiple_institution_and_subfield_results(institution, topic, page, per_page):
+    new_list = []
+    nodes = []
+    edges = []
+    first = True
+    for inst in institution:
+        nodes.append({ 'id': inst, 'label': inst, 'type': 'INSTITUTION' })
+        res = get_institution_and_subfield_results(inst, topic, page, per_page)
+        for t in res['metadata']['topic_clusters']:
+            nodes.append({ 'id': t, 'label': t, 'type': 'TOPIC'})
+            edges.append({ 'id': f"""{inst}-{t}""", 'start': inst, 'end': t, "label": "researches", "start_type": "INSTITUTION", "end_type": "TOPIC"})
+        new_list.append((inst, res['metadata']['people_count']))
+        if first:
+            results = res
+            first = False
+    results['graph'] = {"nodes": nodes, "edges": edges}
+    results['list'] = new_list
+    return results
+
 def get_institution_and_subfield_results(institution, topic, page=1, per_page=20):
     """
     Gets the results when user inputs an institution and subfield
@@ -687,7 +772,6 @@ def get_institution_and_subfield_results(institution, topic, page=1, per_page=20
     metadata['topic_clusters'] = topic_clusters
     metadata['work_count'] = data['totals']['total_num_of_works']
     metadata['cited_by_count'] = data['totals']['total_num_of_citations']
-    metadata['people_count'] = data['totals']['total_num_of_authors']
     metadata['topic_oa_link'] = subfield_oa_link
     metadata['topic_name'] = topic
 
@@ -706,6 +790,7 @@ def get_institution_and_subfield_results(institution, topic, page=1, per_page=20
     edges.append({ 'id': f"""{institution_id}-{subfield_id}""", 'start': institution_id, 'end': subfield_id, "label": "researches", "start_type": "INSTITUTION", "end_type": "TOPIC"})
     
     total_topics = len(data['data'])
+    metadata['people_count'] = total_topics
     start = (page - 1) * per_page
     end = start + per_page
 
@@ -720,7 +805,6 @@ def get_institution_and_subfield_results(institution, topic, page=1, per_page=20
         edges.append({ 'id': f"""{author_id}-{institution_id}""", 'start': author_id, 'end': institution_id, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
     
     graph = {"nodes": nodes, "edges": edges}
-    metadata['people_count'] = len(list)
     app.logger.info(f"Successfully built result for institution: {institution} and topic: {topic}")
     return {
         "metadata": metadata,
