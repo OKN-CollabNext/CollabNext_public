@@ -59,13 +59,14 @@ const Home = () => {
     <Box w={{lg: '800px'}} mx='auto'>
       <Box
         background='linear-gradient(180deg, #003057 0%, rgba(0, 0, 0, 0.5) 100%)'
-        borderRadius={{lg: '6px'}}
+        borderRadius={{base: '6px', lg: '6px'}}
         px={{base: '1.5rem', lg: '2.5rem'}}
         py={{base: '1.5rem', lg: '2rem'}}
+       
       >
         <Text
           fontFamily='DM Sans'
-          fontSize={{base: '12px', lg: '16px'}}
+          fontSize={{base: '14px', lg: '16px'}}
           color='#FFFFFF'
           lineHeight='1.6'
         >
@@ -74,20 +75,22 @@ const Home = () => {
       </Box>
 
       <Text
-        pl={{base: '1rem', lg: 0}}
+        pl={{base: '.25rem', lg: 0}}
+        pt={{base: '.5rem', lg: '.5rem' }}
         fontFamily='DM Sans'
-        fontSize={{lg: '22px'}}
+        fontSize={{base:'18px', lg: '22px'}}
         color='#000000'
+       
       >
         What are you searching for?
       </Text>
 
       <Box
         background='linear-gradient(180deg, #003057 0%, rgba(0, 0, 0, 0.5) 100%)'
-        borderRadius={{lg: '6px'}}
+        borderRadius={{base: '6px', lg: '6px'}}
         px={{base: '2rem', lg: '2rem'}}
         py={{base: '1rem', lg: '1.5rem'}}
-        mt='1rem'
+        mt='.5rem'
       >
         <Formik
           initialValues={initialValues}
@@ -127,7 +130,8 @@ const Home = () => {
                   {text: 'Organization (eg. University)', key: 'institution'},
                   {text: 'Type', key: 'type'},
                 ].map(({text, key}) => (
-                  <Box key={text}>
+                  //<Box key={text}>
+                  <Box key={text} w={{ base: '100%', lg: 'auto' }}>
                     <Field name={key}>
                       {({field, form}: any) => (
                         <FormControl
@@ -140,9 +144,11 @@ const Home = () => {
                                 focusBorderColor='white'
                                 borderBottomWidth={'2px'}
                                 color='white'
-                                fontSize={{lg: '20px'}}
-                                textAlign={'center'}
+                                fontSize={{base: '16px', lg: '20px'}}                                               
+                                textAlign= 'center'
                                 list='institutions'
+                                maxW={'100%'}
+                                w={'100%'}
                                 {...field}
                                 onChange={(e) => {
                                   field.onChange(e);
@@ -165,9 +171,13 @@ const Home = () => {
                               focusBorderColor='white'
                               borderBottomWidth={'2px'}
                               color='white'
-                              fontSize={{lg: '20px'}}
-                              textAlign={'center'}
+                              fontSize={{base: '16px', lg: '20px'}}                                               
                               {...field}
+                              sx={{
+                                textAlignLast: 'center',
+                                paddingLeft: '25px',
+
+                              }}
                             >
                               <option value='' style={{color: 'black'}}>
                                 Select an institution type
@@ -220,7 +230,7 @@ const Home = () => {
                             focusBorderColor='white'
                             borderBottomWidth={'2px'}
                             color='white'
-                            fontSize={{lg: '20px'}}
+                            fontSize={{ base: '16px' , lg:'20px'}}
                             textAlign={'center'}
                             list={key === 'topic' && 'topics'}
                             {...field}
