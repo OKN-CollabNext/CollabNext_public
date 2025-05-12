@@ -287,7 +287,7 @@ def search_by_author(author_name):
 
 ## Creates lists for autofill functionality from the institution and keyword csv files
 with open('institutions.csv', 'r', encoding='UTF-8') as file:
-    autofill_inst_list = file.read().split(',\n')
+    autofill_inst_list = file.read().split('\n')
     for i in range(0, len(autofill_inst_list)):
         autofill_inst_list[i] = autofill_inst_list[i].replace('"', '')
 with open('subfields.csv', 'r') as file:
