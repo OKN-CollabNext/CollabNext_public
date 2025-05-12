@@ -141,7 +141,7 @@ def fetch_last_known_institutions(raw_id: str) -> list:
 
 def get_author_ids(author_name):  
     app.logger.debug(f"Getting author IDs for: {author_name}")
-    query = """SELECT get_author_id(%s);"""
+    query = """SELECT get_author_ids(%s);"""
     results = execute_query(query, (author_name,))
     if results:
         app.logger.info(f"Found author IDs for {author_name}")
