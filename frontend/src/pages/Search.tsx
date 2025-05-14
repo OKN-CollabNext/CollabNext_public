@@ -18,6 +18,7 @@ import AllThreeMetadata from "../components/AllThreeMetadata";
 // import CytoscapeComponent from 'react-cytoscapejs';
 import GraphComponent from "../components/GraphComponent";
 import InstitutionMetadata from "../components/InstitutionMetadata";
+import MultiInstitutionMetadata from "../components/MultiInstitutionMetadata";
 import InstitutionResearcherMetaData from "../components/InstitutionResearcherMetaData";
 import ResearcherMetadata from "../components/ResearcherMetadata";
 import Suggested from "../components/Suggested";
@@ -84,6 +85,7 @@ const Search = () => {
       researcherType,
       page,
       per_page,
+      extra_institutions,
     }: {
       universityName: string;
       institutionType: string;
@@ -91,6 +93,7 @@ const Search = () => {
       researcherType: string;
       page: number;
       per_page: number;
+      extra_institutions: string[];
     }
   ) => {
     fetch(`${baseUrl}/initial-search`, {
@@ -103,6 +106,7 @@ const Search = () => {
         researcher: researcherType,
         page: page,
         per_page: per_page,
+        extra_institutions: extra_institutions,
       }),
     })
       .then((res) => res.json())
@@ -124,6 +128,8 @@ const Search = () => {
                 graph: data?.graph,
                 topics: data?.list,
                 search,
+                has_multiple_institutions: extra_institutions.length > 0,
+                all_institution_metadata: data?.extra_metadata,
               }
             : search === "topic"
             ? {
@@ -248,6 +254,7 @@ const Search = () => {
     page: number = 1
   ) => {
     setIsLoading(true);
+    const extraInstitutions = isAddOrgChecked && universityName2.trim() ? [universityName2.trim()] : [];
     const params = new URLSearchParams(window.location.search);
     const universityName = params.get("institution") || "";
     const institutionType = params.get("type") || "";
@@ -274,6 +281,7 @@ const Search = () => {
         researcherType: newResearcherType,
         page: page,
         per_page: itemsPerPage,
+        extra_institutions: extraInstitutions,
       });
     } else if (
       (newTopicType && newResearcherType) ||
@@ -293,6 +301,7 @@ const Search = () => {
         researcherType: newResearcherType,
         page: page,
         per_page: itemsPerPage,
+        extra_institutions: extraInstitutions,
       });
     } else if (newTopicType || newUniversityName || newResearcherType) {
       const search = newTopicType
@@ -307,6 +316,7 @@ const Search = () => {
         researcherType: newResearcherType,
         page: page,
         per_page: itemsPerPage,
+        extra_institutions: extraInstitutions,
       });
     } else {
       // Default graph request
@@ -652,13 +662,20 @@ const Search = () => {
           ) : isNetworkMap === "list" ? (
             <div>
               {data?.search === "institution" ? (
-                <InstitutionMetadata
-                  data={data}
-                  setTopic={setTopicType}
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={handlePageChange}
-                />
+                data?.has_multiple_institutions ? (
+                  <MultiInstitutionMetadata
+                    institutionsMetadata={data?.all_institution_metadata}
+                    setTopic={setTopicType}
+                  />
+                ) : (
+                  <InstitutionMetadata
+                    data={data}
+                    setTopic={setTopicType}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                )
               ) : data?.search === "topic" ? (
                 <TopicMetadata
                   data={data}
