@@ -132,7 +132,7 @@ const Home = () => {
                   {text: 'Organization (eg. University)', key: 'institution'},
                   {text: 'Type', key: 'type'},
                 ].map(({text, key}) => (
-                  <Box key={text}>
+                  <Box key={text} w={{base: '100%', lg:'auto'}}>
                     <Field name={key}>
                       {({field, form}: any) => (
                         <FormControl
@@ -145,9 +145,11 @@ const Home = () => {
                                 focusBorderColor='white'
                                 borderBottomWidth={'2px'}
                                 color='white'
-                                fontSize={{lg: '20px'}}
+                                fontSize={{base:'16px', lg: '20px'}}
                                 textAlign={'center'}
                                 list='institutions'
+                                w={'100%'}
+                                maxW={'100%'}
                                 {...field}
                                 onChange={(e) => {
                                   field.onChange(e);
@@ -173,6 +175,10 @@ const Home = () => {
                               fontSize={{lg: '20px'}}
                               textAlign={'center'}
                               {...field}
+                              sx={{
+                                textAlignLast: 'center',
+                                paddingLeft: '25px'
+                              }}
                             >
                               <option value='' style={{color: 'black'}}>
                                 Select an institution type
