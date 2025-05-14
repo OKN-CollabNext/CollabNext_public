@@ -145,7 +145,7 @@ const Home = () => {
                                 focusBorderColor='white'
                                 borderBottomWidth={'2px'}
                                 color='white'
-                                fontSize={{base:'16px', lg: '20px'}}
+                                fontSize={{ lg: '20px'}}
                                 textAlign={'center'}
                                 list='institutions'
                                 w={'100%'}
