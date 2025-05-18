@@ -99,4 +99,4 @@ For deploying the React SPA and Python backend together on Azure App Service, fo
 
 ## Contact Information
 
-Contact Lew Lefton (collabnext.okn@gmail.com) for any more questions about this project. 
+Contact Lew Lefton (collabnext.okn@gmail.com) for any more questions about this project.
