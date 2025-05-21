@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
-import { Box, Button, Flex, Text } from '@chakra-ui/react';
+import { Box, Button, Flex, Text, Input } from '@chakra-ui/react';
 
 import { ResearchDataInterface } from '../utils/interfaces';
 import MUPDataVisualizer from './MUPDataVisualizer';
@@ -11,13 +11,24 @@ export function JsonLd<T extends Thing>(json: WithContext<T>): string {
 ${JSON.stringify(json)}
 </script>`;
 }
+interface InstitutionMetadataProps {
+  data: ResearchDataInterface;
+  setTopic: React.Dispatch<React.SetStateAction<string>>;
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  sortMode: 'count' | 'alpha';
+  setSortMode: React.Dispatch<React.SetStateAction<'count' | 'alpha'>>;
+}
 
-const InstitutionMetadata = ({
+const InstitutionMetadata: React.FC<InstitutionMetadataProps> = ({
   data,
   setTopic,
   currentPage,
   totalPages,
   onPageChange,
+  sortMode,
+  setSortMode,
 }: {
   data: ResearchDataInterface;
   setTopic: React.Dispatch<React.SetStateAction<string>>;
@@ -25,6 +36,10 @@ const InstitutionMetadata = ({
   totalPages: number;
   onPageChange: (page: number) => void;
 }) => {
+  const [inputPage, setInputPage] = useState<number>(currentPage);
+  useEffect(() => {
+    setInputPage(currentPage);
+  }, [currentPage]);
   const structuredData: WithContext<Organization> = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -42,7 +57,14 @@ const InstitutionMetadata = ({
       : undefined,
     // TODO: Add more properties
   };
-
+  const sortedTopics = data?.topics
+    ?.slice()
+    .sort(([aName, aCount], [bName, bCount]) => {
+      if (sortMode === 'count') {
+        return bCount - aCount || aName.localeCompare(bName);
+      }
+      return aName.localeCompare(bName);
+    });
   return (
     <Box>
       <div
@@ -92,44 +114,86 @@ const InstitutionMetadata = ({
               No of people
             </Text>
           </Box>
-          <Box mt='.5rem'>
-            {data?.topics?.map((topic) => (
-              <Flex justifyContent={'space-between'}>
+          <Flex mt='.5rem' mb='.5rem' gap={2}>
+            <Button
+              size='xs'
+              onClick={() => setSortMode('alpha')}
+              bgGradient={
+                sortMode === 'alpha'
+                  ? 'linear(to-b, #053257, #7e7e7e)'
+                  : undefined
+              }
+              color={sortMode === 'alpha' ? 'white' : undefined}
+              _hover={
+                sortMode === 'alpha'
+                  ? { bgGradient: 'linear(to-b, #053257, #7e7e7e)' }
+                  : undefined
+              }
+            >
+              A-Z
+            </Button>
+            <Button
+              size='xs'
+              onClick={() => setSortMode('count')}
+              bgGradient={
+                sortMode === 'count'
+                  ? 'linear(to-b, #053257, #7e7e7e)'
+                  : undefined
+              }
+              color={sortMode === 'count' ? 'white' : undefined}
+              _hover={
+                sortMode === 'count'
+                  ? { bgGradient: 'linear(to-b, #053257, #7e7e7e)' }
+                  : undefined
+              }
+            >
+              No of people
+            </Button>
+          </Flex>
+          <Box>
+            {sortedTopics?.map(([topicName, count]) => (
+              <Flex key={topicName} justifyContent='space-between'>
                 <Text
-                fontSize='14px'
-                w='72%'
-                onClick={() => setTopic(topic[0])}
-                textDecoration={'underline'}
-                cursor='pointer'
-              >
-                  {topic[0]}
+                  fontSize='14px'
+                  w='72%'
+                  onClick={() => setTopic(topicName)}
+                  textDecoration='underline'
+                  cursor='pointer'
+                >
+                  {topicName}
                 </Text>
                 <Text fontSize='14px' w='26%'>
-                  {topic[1]}
+                  {count}
                 </Text>
               </Flex>
             ))}
           </Box>
         </Box>
       </Flex>
-      <Flex justifyContent="center" mt={4} gap={2} alignItems="center">
-        <Button
-            onClick={() => onPageChange(currentPage - 1)}
-            isDisabled={currentPage === 1}
-            size="sm"
-        >
-          Previous
-        </Button>
-        <Text fontSize="sm">
-            Page {currentPage} of {totalPages}
-        </Text>
-        <Button
-            onClick={() => onPageChange(currentPage + 1)}
-            isDisabled={currentPage === totalPages}
-            size="sm"
-        >
-            Next
-        </Button>
+      <Flex justifyContent='center' mt={4} gap={2} alignItems='center'>
+        <Button onClick={() => onPageChange(currentPage - 1)} isDisabled={currentPage === 1} size='sm'>Previous</Button>
+        <Input
+          type='number'
+          min={1}
+          max={totalPages}
+          value={inputPage === 0 ? '' : inputPage}
+          onChange={e => setInputPage(Number(e.target.value))}
+          onBlur={() => {
+            const p = Math.min(totalPages, Math.max(1, inputPage));
+            onPageChange(p);
+          }}
+          onKeyDown={e => {
+            if (e.key === 'Enter') {
+              const p = Math.min(totalPages, Math.max(1, inputPage));
+              onPageChange(p);
+            }
+          }}
+          size='sm'
+          width='4rem'
+          textAlign='center'
+        />
+        <Text fontSize='sm'>/ {totalPages}</Text>
+        <Button onClick={() => onPageChange(currentPage + 1)} isDisabled={currentPage === totalPages} size='sm'>Next</Button>
       </Flex>
 
       <Box 

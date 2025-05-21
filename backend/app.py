@@ -333,7 +333,7 @@ def initial_search():
   request_data = request.get_json()
   page = request_data.get('page', 1)
   per_page = request_data.get('per_page',25)
-
+  sort_mode = request_data.get('sort_mode', 'alpha')
   institution = request.json.get('organization')
   researcher = request.json.get('researcher')
   researcher = researcher.title()
@@ -354,7 +354,7 @@ def initial_search():
     elif topic:
       results = get_subfield_results(topic, page, per_page)
     elif institution:
-      results = get_institution_results(institution, page, per_page)
+      results = get_institution_results(institution, page, per_page, sort_mode)
     elif researcher:
       results = get_researcher_result(researcher, page, per_page)
 
@@ -462,7 +462,7 @@ def get_researcher_result(researcher, page=1, per_page=20):
             "total_topics": total_topics,
         }, "graph": graph, "list": list}
 
-def get_institution_results(institution, page=1, per_page=10):
+def get_institution_results(institution, page=1, per_page=10, sort_mode = "alpha"):
     """
     Gets the results when user only inputs an institution
     Uses database to get result, defaults to SPARQL if institution is not in database
@@ -492,6 +492,10 @@ def get_institution_results(institution, page=1, per_page=10):
     edges = []
     # institution_id = metadata['openalex_url']
 
+    if sort_mode == 'count':
+        data['data'].sort(key=lambda e: (-e['num_of_authors'], e['topic_subfield']))
+    else:
+        data['data'].sort(key=lambda e: e['topic_subfield'])
     total_topics = len(data['data'])
     start = (page - 1) * per_page
     end = start + per_page

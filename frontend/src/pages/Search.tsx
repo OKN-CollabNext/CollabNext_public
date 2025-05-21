@@ -28,6 +28,7 @@ import { baseUrl, handleAutofill, initialValue } from "../utils/constants";
 import { ResearchDataInterface, SearchType } from "../utils/interfaces";
 
 const Search = () => {
+  const [sortMode, setSortMode] = useState<'count' | 'alpha'>('alpha');
   const searchParams = new URLSearchParams(window.location.search);
   // const cyRef = React.useRef<cytoscape.Core | undefined>();
   const institution = searchParams.get("institution");
@@ -103,6 +104,7 @@ const Search = () => {
         researcher: researcherType,
         page: page,
         per_page: per_page,
+        sort_mode: sortMode, 
       }),
     })
       .then((res) => res.json())
@@ -382,6 +384,10 @@ const Search = () => {
     handleSearch(universityName, institutionType, topicType, researcherType);
   }, []);
 
+  useEffect(() => {
+    handleSearch(universityName, institutionType, topicType, researcherType, currentPage);
+  }, [sortMode]);
+  
   return (
     <Box>
       <Flex justifyContent={"flex-end"} px="2rem">
@@ -658,6 +664,8 @@ const Search = () => {
                   currentPage={currentPage}
                   totalPages={totalPages}
                   onPageChange={handlePageChange}
+                  sortMode={sortMode}
+                  setSortMode={setSortMode}
                 />
               ) : data?.search === "topic" ? (
                 <TopicMetadata
