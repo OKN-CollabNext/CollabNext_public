@@ -93,7 +93,7 @@ const Search = () => {
       researcherType: string;
       page: number;
       per_page: number;
-      extra_institutions: string[];
+      extra_institutions: string[] | string;
     }
   ) => {
     fetch(`${baseUrl}/initial-search`, {
@@ -318,6 +318,22 @@ const Search = () => {
         per_page: itemsPerPage,
         extra_institutions: extraInstitutions,
       });
+    } else if (orgList) {
+      const search = "institution";
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const text = event.target?.result as string;
+        sendSearchRequest(search, {
+          universityName: newUniversityName,
+          institutionType: newInstitutionType,
+          topicType: newTopicType,
+          researcherType: newResearcherType,
+          page: page,
+          per_page: itemsPerPage,
+          extra_institutions: text,
+        });
+      };
+      reader.readAsText(orgList);
     } else {
       // Default graph request
       fetch(`${baseUrl}/get-default-graph`, {

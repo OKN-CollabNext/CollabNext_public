@@ -251,13 +251,15 @@ def search_by_topic(topic_name):
     app.logger.warning(f"No results found for topic: {topic_name}")
     return None
 
-def search_by_institution(institution_name):
+def search_by_institution(institution_name, id=None):
     app.logger.debug(f"Searching by institution: {institution_name}")
-    institution_id = get_institution_id(institution_name)
-    if institution_id is None:
-        app.logger.warning(f"No institution ID found for {institution_name}")
-        return None
-
+    if not id:
+        institution_id = get_institution_id(institution_name)
+        if institution_id is None:
+            app.logger.warning(f"No institution ID found for {institution_name}")
+            return None
+    else:
+        institution_id = id
     query = """SELECT search_by_institution(%s);"""
     results = execute_query(query, (institution_id,))
     if results:
@@ -340,7 +342,6 @@ def initial_search():
   type = request.json.get('type')
   topic = request.json.get('topic')
   extra_institutions = request.json.get('extra_institutions')
-
   app.logger.info(f"Received search request - Institution: {institution}, Researcher: {researcher}, Topic: {topic}, Type: {type}")
   try:
     if institution and researcher and topic:
@@ -353,15 +354,18 @@ def initial_search():
       results = get_researcher_and_subfield_results(researcher, topic, page, per_page)
     elif topic:
       results = get_subfield_results(topic, page, per_page)
+    elif researcher:
+      results = get_researcher_result(researcher, page, per_page)
     elif institution:
       if extra_institutions == []:
         results = get_institution_results(institution, page, per_page)
       else:
         extra_institutions.insert(0, institution)
         results = get_multiple_institution_results(extra_institutions, page, per_page)
-    elif researcher:
-      results = get_researcher_result(researcher, page, per_page)
-
+    elif extra_institutions:
+        extra_institutions = extra_institutions.replace('\r', '').split('\n')
+        results = get_multiple_institution_results(extra_institutions, page, per_page, True)
+    
     if not results:
       app.logger.warning("Search returned no results")
       return {}
@@ -391,7 +395,6 @@ def get_geo_info():
             return geography_data
     else:
         app.logger.warning(f"(404 Error) Institution not found for id {institution_id}")
-
 
 def get_researcher_result(researcher, page=1, per_page=20):
     """
@@ -625,15 +628,20 @@ def get_subfield_results(topic, page=1, per_page=20, map_limit=100):
             "total_topics": total_topics,
         }, "graph": graph, "list": list, "coordinates": coordinates_metadata}
 
-def get_multiple_institution_results(institutions, page=1, per_page=19):
+def get_multiple_institution_results(institutions, page=1, per_page=19, ids=False):
     metadata = {}
     nodes = []
     edges = []
     final_metadata = {}
     for institution in institutions:
-        data = search_by_institution(institution)
+        if ids:
+            data = search_by_institution("", "https://openalex.org/" + institution)
+        else:
+            data = search_by_institution(institution)
         if data is None:
             app.logger.info("No database results, falling back to SPARQL...")
+            if ids:
+                institution = get_institution_from_id_sparql(institution)
             data = get_institution_metadata_sparql(institution)
             if data == {}:
                 app.logger.warning("No results found in SPARQL for institution")
@@ -653,6 +661,8 @@ def get_multiple_institution_results(institutions, page=1, per_page=19):
                 app.logger.info(f"Successfully retrieved SPARQL results for institution: {institution}")
         else:
             app.logger.debug("Processing database results for institution")
+            if ids:
+                institution = data['institution_metadata']['institution_name']
             metadata[institution] = data['institution_metadata']
             metadata[institution]['homepage'] = metadata[institution]['url']
             metadata[institution]['works_count'] = metadata[institution]['num_of_works']
@@ -1043,6 +1053,20 @@ def query_SPARQL_endpoint(endpoint_url, query):
     except requests.exceptions.RequestException as e:
         app.logger.error(f"SPARQL query failed: {str(e)}")
         return []
+
+def get_institution_from_id_sparql(id):
+    app.logger.debug(f"Finding Institution with id: {id}")
+    query = f"""
+    SELECT ?name
+    WHERE {'{'}
+    <https://semopenalex.org/institution/{id}> <http://xmlns.com/foaf/0.1/name> ?name .
+    {'}'} GROUP BY ?name
+    """
+    results = query_SPARQL_endpoint(SEMOPENALEX_SPARQL_ENDPOINT, query)
+    if not results:
+        app.logger.warning(f"No SPARQL results found for institution: {id}")
+        return {}
+    return results[0]['name']
 
 def get_institution_metadata_sparql(institution):
     """
