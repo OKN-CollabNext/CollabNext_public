@@ -356,15 +356,15 @@ def initial_search():
       results = get_subfield_results(topic, page, per_page)
     elif researcher:
       results = get_researcher_result(researcher, page, per_page)
+    elif extra_institutions:
+        extra_institutions = extra_institutions.replace('\r', '').split('\n')
+        results = get_multiple_institution_results(extra_institutions, page, per_page, True)
     elif institution:
       if extra_institutions == []:
         results = get_institution_results(institution, page, per_page)
       else:
         extra_institutions.insert(0, institution)
         results = get_multiple_institution_results(extra_institutions, page, per_page)
-    elif extra_institutions:
-        extra_institutions = extra_institutions.replace('\r', '').split('\n')
-        results = get_multiple_institution_results(extra_institutions, page, per_page, True)
     
     if not results:
       app.logger.warning("Search returned no results")
@@ -634,6 +634,7 @@ def get_multiple_institution_results(institutions, page=1, per_page=19, ids=Fals
     edges = []
     final_metadata = {}
     for institution in institutions:
+        list = []
         if ids:
             data = search_by_institution("", "https://openalex.org/" + institution)
         else:
@@ -680,6 +681,8 @@ def get_multiple_institution_results(institutions, page=1, per_page=19, ids=Fals
             nodes.append({'id': institution, 'label': institution, 'type': "INSTITUTION" })
             for entry in data['data'][start:end]:
                 subfield = entry['topic_subfield']
+                number = entry['num_of_authors']
+                list.append((subfield, number))
                 nodes.append({'id': subfield, 'label': subfield, 'type': "SUBFIELD" })
                 edges.append({ 'id': f"""{institution}-{subfield}""", 'start': institution, 'end': subfield, "label": "researches", "start_type": "INSTITUTION", "end_type": "SUBFIELD"})
             app.logger.info(f"Successfully built result for institution: {institution}")
@@ -691,7 +694,9 @@ def get_multiple_institution_results(institutions, page=1, per_page=19, ids=Fals
         final_metadata[institution]["institution_url"] = metadata[institution]['homepage']
         final_metadata[institution]["open_alex_link"] = metadata[institution]['oa_link']
         final_metadata[institution]["ror_link"] = metadata[institution]['ror']
+        final_metadata[institution]["topics"] = list
     graph = {"nodes": nodes, "edges": edges}
+    print(page, (total_topics + per_page - 1) // per_page)
     return {
         "metadata": metadata,
         "extra_metadata": final_metadata,

@@ -303,21 +303,6 @@ const Search = () => {
         per_page: itemsPerPage,
         extra_institutions: extraInstitutions,
       });
-    } else if (newTopicType || newUniversityName || newResearcherType) {
-      const search = newTopicType
-        ? "topic"
-        : newUniversityName
-        ? "institution"
-        : "researcher";
-      sendSearchRequest(search, {
-        universityName: newUniversityName,
-        institutionType: newInstitutionType,
-        topicType: newTopicType,
-        researcherType: newResearcherType,
-        page: page,
-        per_page: itemsPerPage,
-        extra_institutions: extraInstitutions,
-      });
     } else if (orgList) {
       const search = "institution";
       const reader = new FileReader();
@@ -334,6 +319,21 @@ const Search = () => {
         });
       };
       reader.readAsText(orgList);
+    } else if (newTopicType || newUniversityName || newResearcherType) {
+      const search = newTopicType
+        ? "topic"
+        : newUniversityName
+        ? "institution"
+        : "researcher";
+      sendSearchRequest(search, {
+        universityName: newUniversityName,
+        institutionType: newInstitutionType,
+        topicType: newTopicType,
+        researcherType: newResearcherType,
+        page: page,
+        per_page: itemsPerPage,
+        extra_institutions: extraInstitutions,
+      });
     } else {
       // Default graph request
       fetch(`${baseUrl}/get-default-graph`, {
@@ -682,6 +682,9 @@ const Search = () => {
                   <MultiInstitutionMetadata
                     institutionsMetadata={data?.all_institution_metadata}
                     setTopic={setTopicType}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
                   />
                 ) : (
                   <InstitutionMetadata

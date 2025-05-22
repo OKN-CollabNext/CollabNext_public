@@ -13,9 +13,15 @@ ${JSON.stringify(json)}
 const MultiInstitutionMetadata = ({
   institutionsMetadata,
   setTopic,
+  currentPage,
+  totalPages,
+  onPageChange,
 }: {
   institutionsMetadata?: { [key: string]: ResearchDataInterface };
   setTopic: React.Dispatch<React.SetStateAction<string>>;
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
