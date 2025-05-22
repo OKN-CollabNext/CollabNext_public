@@ -30,4 +30,8 @@ export interface ResearchDataInterface {
   topic_open_alex_link: string;
   coordinates: string[][];
   search?: SearchType;
+  has_multiple_institutions?: boolean;
+  all_institution_metadata?: {
+    [key: string]: ResearchDataInterface;
+  };
 }
