@@ -643,11 +643,12 @@ const Search = () => {
             </div>
           ) : isNetworkMap === "map" ? (
             <Box width="100%" height="500px">
-              {data?.search === "topic" ? (
+              <MapMetadata data={data} />
+              {/* {data?.search === "topic" ? (
                 <MapMetadata data={data} />
               ) : (
                 <h1>Map not available!</h1>
-              )}
+              )} */}
             </Box>
           ) : isNetworkMap === "list" ? (
             <div>
@@ -709,11 +710,12 @@ const Search = () => {
             </div>
           ) : isNetworkMap === "map" ? (
             <Box width="100%" height="500px">
-              {data?.search === "topic" ? (
+              <MapMetadata data={data} />
+              {/* {data?.search === "topic" ? (
                 <MapMetadata data={data} />
               ) : (
                 <h1>Map not available!</h1>
-              )}
+              )} */}
             </Box>
           ) : (
             <Box></Box>

@@ -11,6 +11,7 @@ from flask_cors import CORS
 import mysql.connector
 from mysql.connector import Error
 import psycopg2
+import pandas as pd
 
 # Make a change
 # Load environment variables
@@ -101,6 +102,25 @@ logger = setup_logger()
 app.logger.handlers = logger.handlers
 app.logger.setLevel(logger.level)
 
+try:
+    _faculty_df = pd.read_excel(
+        "ays_faculty.xlsx",
+        engine="openpyxl"
+    )
+    FACULTY_OPENALEX_IDS = (
+        _faculty_df["OpenAlexIdentifier"]
+        .dropna()
+        .astype(str)
+        .str.strip()
+        .tolist()
+    )
+    logger.info(f"Loaded {len(FACULTY_OPENALEX_IDS)} OpenAlex IDs "
+                "from ays_faculty.xlsx")
+    logger.debug("FACULTY_OPENALEX_IDS = %s", FACULTY_OPENALEX_IDS)
+except Exception as e:
+    logger.error(f"Unable to load ays_faculty.xlsx: {e}")
+    FACULTY_OPENALEX_IDS = []
+    
 def execute_query(query, params):
     """
     Utility function to execute a query and fetch results from the database.
@@ -296,12 +316,6 @@ SUBFIELDS = True
 if not SUBFIELDS:
   with open('keywords.csv', 'r') as fil:
       autofill_topics_list = fil.read().split('\n')
-
-
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def index(path):
-  return send_from_directory(app.static_folder, 'index.html')
 
 @app.errorhandler(404)
 def not_found(e):
@@ -1936,7 +1950,29 @@ def get_r_and_d():
     else:
         return jsonify({"error": "No R&D numbers found"}), 404
 
+@app.route("/faculty_openalex_ids", methods=["GET"])
+def faculty_openalex_ids():
+    """
+    ./backend/ays_faculty.xlsx can be made accessible as JavaScript-Object Notation. 
+    Front-end expects a plain array like ["a5084313902", "a5025867985", ..., "a5016651328"]
+    Return the OpenAlexIdentifier column from ays_faculty.xlsx. 
+    """
+    logger.debug(
+        "Endpoint faculty_openalex_ids has reached %d IDs: %s",
+        len(FACULTY_OPENALEX_IDS),
+        FACULTY_OPENALEX_IDS,
+    )
+    if not FACULTY_OPENALEX_IDS:
+        logger.warning("send error response; FACULTY_OPENALEX_IDS is empty")
+        return jsonify({"error": "OpenAlex IDs unavailable"}), 500
+    return jsonify(FACULTY_OPENALEX_IDS)
+
 ## Main 
 if __name__ =='__main__':
   app.logger.info("Starting Flask application")
   app.run()
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def index(path):
+  return send_from_directory(app.static_folder, 'index.html')
