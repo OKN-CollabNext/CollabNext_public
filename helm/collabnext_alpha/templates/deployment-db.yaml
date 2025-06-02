@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "collabnext_alpha.fullname" . }}-db
+  labels:
+    {{- include "collabnext_alpha.labels" . | nindent 4 }}
+    app: db
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "collabnext_alpha.selectorLabels" . | nindent 6 }}
+      app: db
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+        app: db
+      {{- end }}
+      labels:
+        {{- include "collabnext_alpha.selectorLabels" . | nindent 8 }}
+        app: db
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "collabnext_alpha.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.database.image.repository }}:{{ .Values.database.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.database.image.pullPolicy }}
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: {{ .Values.database.env.DB_PASSWORD }}
+            - name: MYSQL_USER
+              value: {{ .Values.database.env.DB_USER }}
+            - name: MYSQL_DATABASE
+              value: {{ .Values.database.env.DB_NAME }}
+            - name: DB_PASSWORD
+              value: {{ .Values.database.env.DB_PASSWORD }}
+            - name: DB_USER
+              value: {{ .Values.database.env.DB_USER }}
+            - name: DB_DATABASE
+              value: {{ .Values.database.env.DB_NAME }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.database.service.port }}
+              protocol: TCP
+{{/*          livenessProbe:*/}}
+{{/*            httpGet:*/}}
+{{/*              path: /*/}}
+{{/*              port: http*/}}
+{{/*          readinessProbe:*/}}
+{{/*            httpGet:*/}}
+{{/*              path: /*/}}
+{{/*              port: http*/}}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

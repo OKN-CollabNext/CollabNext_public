@@ -1,0 +1,5 @@
+database:
+  env:
+    DB_USER: openalexreader
+    DB_PASSWORD: collabnext2024reader!
+    DB_NAME: openalex
