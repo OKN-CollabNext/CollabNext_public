@@ -18,7 +18,6 @@ import AllThreeMetadata from "../components/AllThreeMetadata";
 // import CytoscapeComponent from 'react-cytoscapejs';
 import GraphComponent from "../components/GraphComponent";
 import InstitutionMetadata from "../components/InstitutionMetadata";
-import MultiInstitutionMetadata from "../components/MultiInstitutionMetadata";
 import InstitutionResearcherMetaData from "../components/InstitutionResearcherMetaData";
 import ResearcherMetadata from "../components/ResearcherMetadata";
 import Suggested from "../components/Suggested";
@@ -85,7 +84,6 @@ const Search = () => {
       researcherType,
       page,
       per_page,
-      extra_institutions,
     }: {
       universityName: string;
       institutionType: string;
@@ -93,7 +91,6 @@ const Search = () => {
       researcherType: string;
       page: number;
       per_page: number;
-      extra_institutions: string[] | string;
     }
   ) => {
     fetch(`${baseUrl}/initial-search`, {
@@ -106,7 +103,6 @@ const Search = () => {
         researcher: researcherType,
         page: page,
         per_page: per_page,
-        extra_institutions: extra_institutions,
       }),
     })
       .then((res) => res.json())
@@ -117,22 +113,20 @@ const Search = () => {
         const dataObj =
           search === "institution"
             ? {
-                institution_name: data?.metadata?.name,
-                is_hbcu: data?.metadata?.hbcu,
-                cited_count: data?.metadata?.cited_count,
-                author_count: data?.metadata?.author_count,
-                works_count: data?.metadata?.works_count,
-                institution_url: data?.metadata?.homepage,
-                open_alex_link: data?.metadata?.oa_link,
-                ror_link: data?.metadata?.ror,
-                graph: data?.graph,
-                topics: data?.list,
-                search,
-                has_multiple_institutions: extra_institutions.length > 0,
-                all_institution_metadata: data?.extra_metadata,
-              }
+              institution_name: data?.metadata?.name,
+              is_hbcu: data?.metadata?.hbcu,
+              cited_count: data?.metadata?.cited_count,
+              author_count: data?.metadata?.author_count,
+              works_count: data?.metadata?.works_count,
+              institution_url: data?.metadata?.homepage,
+              open_alex_link: data?.metadata?.oa_link,
+              ror_link: data?.metadata?.ror,
+              graph: data?.graph,
+              topics: data?.list,
+              search,
+            }
             : search === "topic"
-            ? {
+              ? {
                 topic_name: data?.metadata?.name,
                 topic_clusters: data?.metadata?.topic_clusters,
                 graph: data?.graph,
@@ -144,82 +138,82 @@ const Search = () => {
                 coordinates: data?.coordinates,
                 search,
               }
-            : search === "researcher"
-            ? {
-                institution_name: data?.metadata?.current_institution,
-                researcher_name: data?.metadata?.name,
-                orcid_link: data?.metadata?.orcid,
-                cited_count: data?.metadata?.cited_by_count,
-                works_count: data?.metadata?.work_count,
-                graph: data?.graph,
-                open_alex_link: data?.metadata?.oa_link,
-                topics: data?.list,
-                institution_url: data?.metadata?.institution_url,
-                search,
-              }
-            : search === "researcher-institution"
-            ? {
-                graph: data?.graph,
-                topics: data?.list,
-                institution_url: data?.metadata?.homepage,
-                institution_name: data?.metadata?.institution_name,
-                researcher_name: data?.metadata?.researcher_name,
-                orcid_link: data?.metadata?.orcid,
-                works_count: data?.metadata?.work_count,
-                cited_count: data?.metadata?.cited_by_count,
-                ror_link: data?.metadata?.ror,
-                open_alex_link: data?.metadata?.institution_oa_link,
-                researcher_open_alex_link: data?.metadata?.researcher_oa_link,
-                search,
-              }
-            : search === "topic-researcher"
-            ? {
-                graph: data?.graph,
-                works: data?.list,
-                institution_name: data?.metadata?.current_institution,
-                topic_name: data?.metadata?.topic_name,
-                researcher_name: data?.metadata?.researcher_name,
-                orcid_link: data?.metadata?.orcid,
-                works_count: data?.metadata?.work_count,
-                cited_count: data?.metadata?.cited_by_count,
-                open_alex_link: data?.metadata?.topic_oa_link,
-                researcher_open_alex_link: data?.metadata?.researcher_oa_link,
-                topic_clusters: data?.metadata?.topic_clusters,
-                search,
-              }
-            : search === "topic-institution"
-            ? {
-                graph: data?.graph,
-                institution_name: data?.metadata?.institution_name,
-                topic_name: data?.metadata?.topic_name,
-                institution_url: data?.metadata?.homepage,
-                cited_count: data?.metadata?.cited_by_count,
-                works_count: data?.metadata?.work_count,
-                author_count: data?.metadata?.people_count,
-                open_alex_link: data?.metadata?.institution_oa_link,
-                topic_open_alex_link: data?.metadata?.topic_oa_link,
-                ror_link: data?.metadata?.ror,
-                topic_clusters: data?.metadata?.topic_clusters,
-                authors: data?.list,
-                search,
-              }
-            : {
-                graph: data?.graph,
-                works: data?.list,
-                institution_url: data?.metadata?.homepage,
-                institution_name: data?.metadata?.institution_name,
-                researcher_name: data?.metadata?.researcher_name,
-                topic_name: data?.metadata?.topic_name,
-                orcid_link: data?.metadata?.orcid,
-                works_count: data?.metadata?.work_count,
-                cited_count: data?.metadata?.cited_by_count,
-                ror_link: data?.metadata?.ror,
-                open_alex_link: data?.metadata?.institution_oa_link,
-                topic_open_alex_link: data?.metadata?.topic_oa_link,
-                researcher_open_alex_link: data?.metadata?.researcher_oa_link,
-                topic_clusters: data?.metadata?.topic_clusters,
-                search,
-              };
+              : search === "researcher"
+                ? {
+                  institution_name: data?.metadata?.current_institution,
+                  researcher_name: data?.metadata?.name,
+                  orcid_link: data?.metadata?.orcid,
+                  cited_count: data?.metadata?.cited_by_count,
+                  works_count: data?.metadata?.work_count,
+                  graph: data?.graph,
+                  open_alex_link: data?.metadata?.oa_link,
+                  topics: data?.list,
+                  institution_url: data?.metadata?.institution_url,
+                  search,
+                }
+                : search === "researcher-institution"
+                  ? {
+                    graph: data?.graph,
+                    topics: data?.list,
+                    institution_url: data?.metadata?.homepage,
+                    institution_name: data?.metadata?.institution_name,
+                    researcher_name: data?.metadata?.researcher_name,
+                    orcid_link: data?.metadata?.orcid,
+                    works_count: data?.metadata?.work_count,
+                    cited_count: data?.metadata?.cited_by_count,
+                    ror_link: data?.metadata?.ror,
+                    open_alex_link: data?.metadata?.institution_oa_link,
+                    researcher_open_alex_link: data?.metadata?.researcher_oa_link,
+                    search,
+                  }
+                  : search === "topic-researcher"
+                    ? {
+                      graph: data?.graph,
+                      works: data?.list,
+                      institution_name: data?.metadata?.current_institution,
+                      topic_name: data?.metadata?.topic_name,
+                      researcher_name: data?.metadata?.researcher_name,
+                      orcid_link: data?.metadata?.orcid,
+                      works_count: data?.metadata?.work_count,
+                      cited_count: data?.metadata?.cited_by_count,
+                      open_alex_link: data?.metadata?.topic_oa_link,
+                      researcher_open_alex_link: data?.metadata?.researcher_oa_link,
+                      topic_clusters: data?.metadata?.topic_clusters,
+                      search,
+                    }
+                    : search === "topic-institution"
+                      ? {
+                        graph: data?.graph,
+                        institution_name: data?.metadata?.institution_name,
+                        topic_name: data?.metadata?.topic_name,
+                        institution_url: data?.metadata?.homepage,
+                        cited_count: data?.metadata?.cited_by_count,
+                        works_count: data?.metadata?.work_count,
+                        author_count: data?.metadata?.people_count,
+                        open_alex_link: data?.metadata?.institution_oa_link,
+                        topic_open_alex_link: data?.metadata?.topic_oa_link,
+                        ror_link: data?.metadata?.ror,
+                        topic_clusters: data?.metadata?.topic_clusters,
+                        authors: data?.list,
+                        search,
+                      }
+                      : {
+                        graph: data?.graph,
+                        works: data?.list,
+                        institution_url: data?.metadata?.homepage,
+                        institution_name: data?.metadata?.institution_name,
+                        researcher_name: data?.metadata?.researcher_name,
+                        topic_name: data?.metadata?.topic_name,
+                        orcid_link: data?.metadata?.orcid,
+                        works_count: data?.metadata?.work_count,
+                        cited_count: data?.metadata?.cited_by_count,
+                        ror_link: data?.metadata?.ror,
+                        open_alex_link: data?.metadata?.institution_oa_link,
+                        topic_open_alex_link: data?.metadata?.topic_oa_link,
+                        researcher_open_alex_link: data?.metadata?.researcher_oa_link,
+                        topic_clusters: data?.metadata?.topic_clusters,
+                        search,
+                      };
         setData({
           ...initialValue,
           ...dataObj,
@@ -254,7 +248,6 @@ const Search = () => {
     page: number = 1
   ) => {
     setIsLoading(true);
-    const extraInstitutions = isAddOrgChecked && universityName2.trim() ? [universityName2.trim()] : [];
     const params = new URLSearchParams(window.location.search);
     const universityName = params.get("institution") || "";
     const institutionType = params.get("type") || "";
@@ -281,7 +274,6 @@ const Search = () => {
         researcherType: newResearcherType,
         page: page,
         per_page: itemsPerPage,
-        extra_institutions: extraInstitutions,
       });
     } else if (
       (newTopicType && newResearcherType) ||
@@ -292,8 +284,8 @@ const Search = () => {
         newTopicType && newResearcherType
           ? "topic-researcher"
           : newResearcherType && newUniversityName
-          ? "researcher-institution"
-          : "topic-institution";
+            ? "researcher-institution"
+            : "topic-institution";
       sendSearchRequest(search, {
         universityName: newUniversityName,
         institutionType: newInstitutionType,
@@ -301,30 +293,13 @@ const Search = () => {
         researcherType: newResearcherType,
         page: page,
         per_page: itemsPerPage,
-        extra_institutions: extraInstitutions,
       });
-    } else if (orgList) {
-      const search = "institution";
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        const text = event.target?.result as string;
-        sendSearchRequest(search, {
-          universityName: newUniversityName,
-          institutionType: newInstitutionType,
-          topicType: newTopicType,
-          researcherType: newResearcherType,
-          page: page,
-          per_page: itemsPerPage,
-          extra_institutions: text,
-        });
-      };
-      reader.readAsText(orgList);
     } else if (newTopicType || newUniversityName || newResearcherType) {
       const search = newTopicType
         ? "topic"
         : newUniversityName
-        ? "institution"
-        : "researcher";
+          ? "institution"
+          : "researcher";
       sendSearchRequest(search, {
         universityName: newUniversityName,
         institutionType: newInstitutionType,
@@ -332,7 +307,6 @@ const Search = () => {
         researcherType: newResearcherType,
         page: page,
         per_page: itemsPerPage,
-        extra_institutions: extraInstitutions,
       });
     } else {
       // Default graph request
@@ -451,7 +425,7 @@ const Search = () => {
             }}
             placeholder={"University Name"}
             className="textbox"
-            // disabled={isLoading}
+          // disabled={isLoading}
           />
           <Suggested suggested={suggestedInstitutions} institutions={true} />
           {isAddOrgChecked && (
@@ -471,7 +445,7 @@ const Search = () => {
                 }}
                 placeholder={"Another University"}
                 className="textbox"
-                // disabled={isLoading}
+              // disabled={isLoading}
               />
               <Suggested
                 suggested={suggestedInstitutions}
@@ -658,7 +632,7 @@ const Search = () => {
             </Box>
           ) : isNetworkMap === "graph" ? (
             <div className="network-map">
-             {/*<button className="topButton">Network Map</button>*/}
+                  {/*<button className="topButton">Network Map</button>*/}
               {/* <img src={NetworkMap} alt='Network Map' /> */}
               <GraphComponent
                 graphData={data?.graph}
@@ -669,32 +643,22 @@ const Search = () => {
             </div>
           ) : isNetworkMap === "map" ? (
             <Box width="100%" height="500px">
-              {data?.search === "topic" ? (
+                    {data?.search === "topic" ? (
                 <MapMetadata data={data} />
               ) : (
                 <h1>Map not available!</h1>
               )}
             </Box>
           ) : isNetworkMap === "list" ? (
-            <div>
-              {data?.search === "institution" ? (
-                data?.has_multiple_institutions ? (
-                  <MultiInstitutionMetadata
-                    institutionsMetadata={data?.all_institution_metadata}
-                    setTopic={setTopicType}
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                  />
-                ) : (
-                  <InstitutionMetadata
-                    data={data}
-                    setTopic={setTopicType}
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                  />
-                )
+                    <div>
+                      {data?.search === "institution" ? (
+                        <InstitutionMetadata
+                          data={data}
+                          setTopic={setTopicType}
+                          currentPage={currentPage}
+                          totalPages={totalPages}
+                          onPageChange={handlePageChange}
+                        />
               ) : data?.search === "topic" ? (
                 <TopicMetadata
                   data={data}

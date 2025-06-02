@@ -156,10 +156,10 @@ const GraphComponent = ({graphData, setInstitution, setTopic, setResearcher}) =>
         setTopic(nodeData.label);
       }else if (nodeData.type === "AUTHOR") {
         setResearcher(nodeData.label)
-      } 
+      }
       }
       // nodeData?.type !== 'DOMAIN' && onOpen();
-  
+
 
     function handleEdgeClick(event) {
       const edgeData = event.edge.data;

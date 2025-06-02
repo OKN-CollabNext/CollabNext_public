@@ -1,8 +1,8 @@
-
 import React from "react";
-import { Route, Routes } from "react-router-dom";
-
+import { Routes, Route } from "react-router-dom";
 import { Box, ChakraProvider } from "@chakra-ui/react";
+
+import { themeSystem } from "./theme";
 
 import Footer from "./components/Footer";
 import Navbar from "./components/Navbar";
@@ -21,8 +21,9 @@ import TopicSearch from "./pages/TopicSearch";
 
 function App() {
   return (
-    <ChakraProvider>
+    <ChakraProvider value={themeSystem}>
       <Box display="flex" flexDirection="column" minH="100vh" overflow="hidden">
+        {/* ---------- Navigation ---------- */}
         <Box flexShrink={0}>
           <Box display={{ base: "none", lg: "block" }}>
             <Navbar />
@@ -31,6 +32,8 @@ function App() {
             <NavbarMobile />
           </Box>
         </Box>
+
+        {/* ---------- Page content ---------- */}
         <Box flex={1} overflowY="auto" px={{ base: 2, lg: 4 }}>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -46,6 +49,8 @@ function App() {
             <Route path="/help" element={<Help />} />
           </Routes>
         </Box>
+
+        {/* ---------- Footer ---------- */}
         <Footer />
       </Box>
     </ChakraProvider>

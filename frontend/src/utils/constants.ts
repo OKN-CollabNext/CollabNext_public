@@ -1,22 +1,20 @@
+/* ------------------------------------------------------------------ */
+/*  Global constants & shared helpers                                 */
+/* ------------------------------------------------------------------ */
+
 export const baseUrl =
   process.env.REACT_APP_BASE_URL || "http://localhost:5000";
+
+/* ---------------- Cytoscape styling ------------------------------- */
 
 export const styleSheet = [
   {
     selector: "node",
     style: {
-      // backgroundColor: '#4a56a6',
       width: 30,
       height: 30,
       label: "data(label)",
-
-      // "width": "mapData(score, 0, 0.006769776522008331, 20, 60)",
-      // "height": "mapData(score, 0, 0.006769776522008331, 20, 60)",
-      // "text-valign": "center",
-      // "text-halign": "center",
       "overlay-padding": "6px",
-      // 'z-index': '10',
-      //text props
       "text-outline-color": "#4a56a6",
       "text-outline-width": "2px",
       color: "white",
@@ -32,40 +30,18 @@ export const styleSheet = [
       "background-color": "#77828C",
       width: 50,
       height: 50,
-      //text props
       "text-outline-color": "#77828C",
       "text-outline-width": 8,
     },
   },
-  {
-    selector: "node[type='device']",
-    style: {
-      shape: "rectangle",
-    },
-  },
-  {
-    selector: "node[type='institution']",
-    style: {
-      backgroundColor: "#4a56a6",
-    },
-  },
-  {
-    selector: "node[type='topic']",
-    style: {
-      backgroundColor: "blue",
-    },
-  },
-  {
-    selector: "node[type='researcher']",
-    style: {
-      backgroundColor: "green",
-    },
-  },
+  { selector: "node[type='device']", style: { shape: "rectangle" } },
+  { selector: "node[type='institution']", style: { backgroundColor: "#4a56a6" } },
+  { selector: "node[type='topic']", style: { backgroundColor: "blue" } },
+  { selector: "node[type='researcher']", style: { backgroundColor: "green" } },
   {
     selector: "edge",
     style: {
       width: 3,
-      // "line-color": "#6774cb",
       "line-color": "#AAD8FF",
       "target-arrow-color": "#6774cb",
       "target-arrow-shape": "triangle",
@@ -74,18 +50,20 @@ export const styleSheet = [
   },
 ];
 
+/* ---------------- Cytoscape layout -------------------------------- */
+
 export const layout = {
   name: "breadthfirst",
   fit: true,
-  // circle: true,
   directed: true,
   padding: 50,
-  // spacingFactor: 1.5,
   animate: true,
   animationDuration: 1000,
   avoidOverlap: true,
   nodeDimensionsIncludeLabels: false,
 };
+
+/* ---------------- Initial empty-state object ----------------------- */
 
 export const initialValue = {
   cited_count: "",
@@ -109,6 +87,8 @@ export const initialValue = {
   coordinates: [],
 };
 
+/* ---------------- Helper for auto-fill inputs ---------------------- */
+
 export const handleAutofill = (
   text: string,
   topic: boolean,
@@ -119,37 +99,42 @@ export const handleAutofill = (
     !topic ? `${baseUrl}/autofill-institutions` : `${baseUrl}/autofill-topics`,
     {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(
-        topic
-          ? {
-              topic: text,
-            }
-          : {
-              institution: text,
-            }
+        topic ? { topic: text } : { institution: text }
       ),
     }
   )
     .then((res) => res.json())
     .then((data) => {
-      console.log(data);
       if (topic) {
         setSuggestedTopics(data?.possible_searches);
       } else {
         setSuggestedInstitutions(data?.possible_searches);
       }
-      // setIsLoading(false);
     })
-    .catch((error) => {
-      // setIsLoading(false);
-      if (topic) {
-        setSuggestedTopics([]);
-      } else {
-        setSuggestedInstitutions([]);
-      }
-      console.log(error);
+    .catch(() => {
+      if (topic) setSuggestedTopics([]);
+      else setSuggestedInstitutions([]);
     });
 };
+
+/* ---------------- NEW: shared institution-type list ---------------- */
+
+/**
+ * Centralised list so every page can import the same source of truth:
+ *    import { institutionTypes } from "../utils/constants";
+ */
+export const institutionTypes: string[] = [
+  "HBCU",
+  "AANAPISI",
+  "ANNH",
+  "Carnegie R1",
+  "Carnegie R2",
+  "Emerging",
+  "HSI",
+  "MSI",
+  "NASNTI",
+  "PBI",
+  "TCU",
+];

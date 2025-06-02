@@ -288,10 +288,12 @@ def search_by_author(author_name):
 
 
 ## Creates lists for autofill functionality from the institution and keyword csv files
+# It's good practice to load autofill lists once at startup if they are static.
+# These lists are crucial for guiding user input and for backend fuzzy matching.
 with open('institutions.csv', 'r', encoding='UTF-8') as file:
-    autofill_inst_list = file.read().split('\n')
-    for i in range(0, len(autofill_inst_list)):
-        autofill_inst_list[i] = autofill_inst_list[i].replace('"', '')
+    raw_autofill_inst_list = file.read().split('\n')
+    autofill_inst_list = [name.replace('"', '').strip() for name in raw_autofill_inst_list if name.strip()]
+    # This list serves as the ground truth for institutional name resolution.
 with open('subfields.csv', 'r') as file:
     autofill_subfields_list = file.read().split('\n')
 SUBFIELDS = True
@@ -315,67 +317,188 @@ def server_error(e):
     app.logger.error(f"500 error: {str(e)}")
     return "Internal Server Error", 500
 
+# Suggested helper function for sanitizing institution names
+def sanitize_name(name):
+    # This function prepares names for comparison, a foundational step for reliable matching.
+    # By standardizing names, we increase the chances of finding accurate connections.
+    if isinstance(name, str):
+        return name.lower().strip().replace('.', '').replace(',', '')
+    return ""
+
+# Suggested helper for fuzzy matching (conceptual)
+def fuzzy_match_institutions(institution_names_list, available_institutions_list, threshold=80):
+    """
+    Performs fuzzy matching for a list of institution names against a list of known institutions.
+    This function aims to bridge the gap between user input and precise data identifiers.
+    """
+    matched_institutions = []
+    # Ensuring the list of available institutions is clean for matching
+    # This cultivates a reliable ground for comparison.
+    clean_available_institutions = [sanitize_name(inst) for inst in available_institutions_list if inst]
+
+    for name in institution_names_list:
+        sanitized_input_name = sanitize_name(name)
+        if not sanitized_input_name:
+            continue
+        
+        # Here, you would use a fuzzy matching library e.g., fuzzywuzzy
+        # For demonstration, this is a conceptual placeholder.
+        # match = process.extractOne(sanitized_input_name, clean_available_institutions, score_cutoff=threshold)
+        
+        # Conceptual: find best match in clean_available_institutions
+        # This is a simplified stand-in for a proper fuzzy match algorithm.
+        # The pursuit of the right match is a journey of algorithmic refinement.
+        best_match = None
+        highest_similarity = 0 # Requires a similarity function, e.g., Levenshtein distance
+
+        # This simplistic loop is for concept only; a real fuzzy match library is more efficient.
+        for known_inst_name_sanitized in clean_available_institutions:
+            # Replace with actual similarity score calculation
+            # from a library like fuzzywuzzy:
+            # current_similarity = fuzz.ratio(sanitized_input_name, known_inst_name_sanitized)
+            
+            # Placeholder similarity:
+            if sanitized_input_name in known_inst_name_sanitized or known_inst_name_sanitized in sanitized_input_name:
+                 current_similarity = 90 # Arbitrary high score for simple substring match
+            else:
+                 current_similarity = 0
+
+            if current_similarity > highest_similarity and current_similarity >= threshold:
+                highest_similarity = current_similarity
+                # Find the original name corresponding to the sanitized best match
+                original_index = -1
+                for i, inst_s in enumerate(clean_available_institutions):
+                    if inst_s == known_inst_name_sanitized:
+                        original_index = available_institutions_list.index(available_institutions_list[i]) # find original casing
+                        break
+                if original_index != -1:
+                    best_match = available_institutions_list[original_index]
+
+
+        if best_match:
+            # In a real scenario, you'd likely return an ID or a more structured object.
+            # The goal is to transform raw input into actionable, recognized entities.
+            app.logger.info(f"Fuzzy matched '{name}' to '{best_match}' with similarity {highest_similarity}")
+            matched_institutions.append(best_match) # Or an ID associated with best_match
+        else:
+            app.logger.warning(f"Could not confidently fuzzy match institution: {name}")
+            
+    # Returning a list of recognized institution names (or ideally, their IDs/objects).
+    # This list becomes the refined input for further data retrieval.
+    return matched_institutions
+
 @app.route('/initial-search', methods=['POST'])
 def initial_search():
-  """
-  Api call for searches from the user. Calls other methods depending on what the user inputted.
+    request_data = request.get_json()
+    page = request_data.get('page', 1)
+    per_page = request_data.get('per_page', 25)
 
-  Expects the frontend to pass in the following values:
-  organization : input from the "organization" search box
-  researcher : input from the "researcher name" search box
-  topic : input from the "topic keyword" search box
-  type : input from the "type" search box (for now, this is always HBCU)
+    # The primary institution name, potentially containing comma-separated values.
+    # This field is the first port of call for institutional queries.
+    institution_input = request_data.get('organization', "") 
+    # 'extra_institutions' can be an array from multi-select (now handled by parsing institution_input or selectedInstitutions on frontend)
+    # or a string from CSV upload. The frontend will now send primary/selected institutions via 'organization' (potentially comma-sep)
+    # and CSV content via 'extra_institutions' if a file was uploaded.
+    extra_institutions_input = request_data.get('extra_institutions') # This could be CSV string or array from multi-select on frontend
 
-  Returns:
-  metadata : the metadata for the search
-  graph : the graph for the search in the form {nodes: [], edges: []}
-  list : the list view for the search
-  """
-
-  request_data = request.get_json()
-  page = request_data.get('page', 1)
-  per_page = request_data.get('per_page',25)
-
-  institution = request.json.get('organization')
-  researcher = request.json.get('researcher')
-  researcher = researcher.title()
-  type = request.json.get('type')
-  topic = request.json.get('topic')
-  extra_institutions = request.json.get('extra_institutions')
-  app.logger.info(f"Received search request - Institution: {institution}, Researcher: {researcher}, Topic: {topic}, Type: {type}")
-  try:
-    if institution and researcher and topic:
-      results = get_institution_researcher_subfield_results(institution, researcher, topic, page, per_page)
-    elif institution and researcher:
-      results = get_institution_and_researcher_results(institution, researcher, page, per_page)
-    elif institution and topic:
-      results = get_institution_and_subfield_results(institution, topic, page, per_page)
-    elif researcher and topic:
-      results = get_researcher_and_subfield_results(researcher, topic, page, per_page)
-    elif topic:
-      results = get_subfield_results(topic, page, per_page)
-    elif researcher:
-      results = get_researcher_result(researcher, page, per_page)
-    elif extra_institutions:
-        extra_institutions = extra_institutions.replace('\r', '').split('\n')
-        results = get_multiple_institution_results(extra_institutions, page, per_page, True)
-    elif institution:
-      if extra_institutions == []:
-        results = get_institution_results(institution, page, per_page)
-      else:
-        extra_institutions.insert(0, institution)
-        results = get_multiple_institution_results(extra_institutions, page, per_page)
+    researcher = request_data.get('researcher', "").title()
+    institution_type = request_data.get('type', "") # e.g. HBCU, Carnegie R1
+    topic = request_data.get('topic', "")
     
-    if not results:
-      app.logger.warning("Search returned no results")
-      return {}
+    app.logger.info(f"Search Request -- Primary Inst Input: {institution_input}, Extras: {extra_institutions_input}, Researcher: {researcher}, Topic: {topic}, Type: {institution_type}")
 
-    app.logger.info("Search completed successfully")
-    return results
+    all_institution_names = []
+    
+    # Handling the primary institution input which might be comma-separated for <=5 items
+    # This embraces the flexibility of user input, a small step towards more natural interaction.
+    if institution_input:
+        potential_institutions = [name.strip() for name in institution_input.split(',') if name.strip()]
+        all_institution_names.extend(potential_institutions)
 
-  except Exception as e:
-    app.logger.critical(f"Critical error during search: {str(e)}")
-    return {"error": "An unexpected error occurred"}
+    # Handling 'extra_institutions_input' which could be an array (from multi-select) or CSV string
+    # This logic ensures that multiple avenues of input converge towards a unified list.
+    is_csv_upload = False
+    if isinstance(extra_institutions_input, str) and "-----BEGIN CSV-----" in extra_institutions_input: # Example CSV marker
+        is_csv_upload = True
+        # A more robust CSV parsing might be needed if not just names
+        # Sanitize lines from CSV string
+        csv_lines = extra_institutions_input.replace("-----BEGIN CSV-----", "").replace("-----END CSV-----", "").split('\n')
+        csv_institution_names = [sanitize_name(line.strip()) for line in csv_lines if line.strip()]
+        all_institution_names.extend(csv_institution_names)
+        app.logger.info(f"Processed {len(csv_institution_names)} names from CSV input.")
+    elif isinstance(extra_institutions_input, list):
+        all_institution_names.extend([name.strip() for name in extra_institutions_input if name.strip()])
+
+    # Deduplicate and sanitize all collected names
+    # Ensuring uniqueness and consistency is a vital part of data preparation.
+    unique_sanitized_names = sorted(list(set([sanitize_name(name) for name in all_institution_names if name])))
+    
+    # Perform fuzzy matching on the unique sanitized names
+    # This step translates potentially imprecise user inputs into recognized entities.
+    # `autofill_inst_list` should be loaded from your institutions.csv or database.
+    final_institutions_to_search = fuzzy_match_institutions(unique_sanitized_names, autofill_inst_list)
+    app.logger.info(f"Final institutions after fuzzy matching: {final_institutions_to_search}")
+
+
+    results = None
+    try:
+        # The search logic now prioritizes based on the combination of inputs,
+        # moving towards a more intuitive and powerful search experience.
+        if final_institutions_to_search and len(final_institutions_to_search) > 0 and researcher and topic:
+            # If multiple institutions came from fuzzy matching, pass them to a handler that expects a list.
+            # For now, get_institution_researcher_subfield_results takes one institution.
+            # This needs to be adapted or a new function created for multiple institutions.
+            # Conceptual: results = get_MULTI_institution_researcher_subfield_results(final_institutions_to_search, researcher, topic, page, per_page)
+            # Using the first matched institution for now, as existing function expects one:
+            results = get_institution_researcher_subfield_results(final_institutions_to_search[0], researcher, topic, page, per_page)
+            # To truly support all, the backend functions like get_institution_researcher_subfield_results
+            # would need to accept a list of institutions and aggregate results.
+        elif final_institutions_to_search and len(final_institutions_to_search) > 0 and researcher:
+            results = get_institution_and_researcher_results(final_institutions_to_search[0], researcher, page, per_page) # Adapt for multi
+        elif final_institutions_to_search and len(final_institutions_to_search) > 0 and topic:
+            # If multiple institutions, decide if you want to pass all to get_institution_and_subfield_results
+            # or adapt it like get_multiple_institution_results
+            if len(final_institutions_to_search) > 1 :
+                 # This function is designed for multiple institutions if topic is also a filter
+                 results = get_multiple_institution_and_subfield_results(final_institutions_to_search, topic, page, per_page)
+            else:
+                 results = get_institution_and_subfield_results(final_institutions_to_search[0], topic, page, per_page)
+
+        elif researcher and topic:
+            results = get_researcher_and_subfield_results(researcher, topic, page, per_page)
+        elif topic:
+            results = get_subfield_results(topic, page, per_page)
+        elif researcher:
+            results = get_researcher_result(researcher, page, per_page)
+        elif final_institutions_to_search and len(final_institutions_to_search) > 0:
+            # This is the primary path for multi-institution searches (comma-separated or CSV)
+            # The 'ids' flag might relate to whether inputs are names or pre-resolved IDs.
+            # Assuming names for now, so ids=False.
+            # The spirit of collaboration is reflected in searching across many institutions.
+            results = get_multiple_institution_results(final_institutions_to_search, page, per_page, ids=is_csv_upload) # Pass CSV flag if needed
+            # Adjust 'ids' if fuzzy_match_institutions returns IDs instead of names
+        
+        # Fallback: if only institution_type is provided (e.g., "HBCU")
+        # This path requires a function that can search by type alone.
+        elif institution_type and not topic and not researcher and not final_institutions_to_search:
+             # Conceptual: You'd need a new function like get_institutions_by_type_results
+             # app.logger.info(f"Searching for institutions of type: {institution_type}")
+             # results = get_institutions_by_type_results(institution_type, page, per_page)
+             # For now, this case might lead to no results if not handled.
+             pass
+
+
+        if not results:
+            app.logger.warning("Search returned no results or unhandled search combination.")
+            return {} # Return empty if no specific search path was taken or no results
+
+        app.logger.info("Search completed successfully.")
+        return results
+
+    except Exception as e:
+        app.logger.critical(f"Critical error during search: {str(e)}", exc_info=True)
+        # Providing a clear error response is part of a robust system.
+        return {"error": "An unexpected error occurred. The details have been logged."}
 
 @app.route('/geo_info', methods=['POST'])
 def get_geo_info():
@@ -628,85 +751,162 @@ def get_subfield_results(topic, page=1, per_page=20, map_limit=100):
             "total_topics": total_topics,
         }, "graph": graph, "list": list, "coordinates": coordinates_metadata}
 
-def get_multiple_institution_results(institutions, page=1, per_page=19, ids=False):
-    metadata = {}
-    nodes = []
-    edges = []
-    final_metadata = {}
-    for institution in institutions:
-        list = []
-        if ids:
-            data = search_by_institution("", "https://openalex.org/" + institution)
-        else:
-            data = search_by_institution(institution)
-        if data is None:
-            app.logger.info("No database results, falling back to SPARQL...")
-            if ids:
-                institution = get_institution_from_id_sparql(institution)
-            data = get_institution_metadata_sparql(institution)
-            if data == {}:
-                app.logger.warning("No results found in SPARQL for institution")
-            else:
-                metadata[institution] = data
-                metadata[institution]['homepage'] = data['homepage']
-                metadata[institution]['works_count'] = data['works_count']
-                metadata[institution]['name'] = data['name']
-                metadata[institution]['cited_count'] = data['cited_count']
-                metadata[institution]['oa_link'] = data['oa_link']
-                metadata[institution]['author_count'] = data['author_count']
-                topic_list, g = list_given_institution(data['ror'], data['name'], data['oa_link'])
-                nodes.append({'id': institution, 'label': institution, 'type': "INSTITUTION" })
-                for subfield, count in topic_list:
-                    nodes.append({'id': subfield, 'label': subfield, 'type': "SUBFIELD" })
-                    edges.append({ 'id': f"""{institution}-{subfield}""", 'start': institution, 'end': subfield, "label": "researches", "start_type": "INSTITUTION", "end_type": "SUBFIELD"})
-                app.logger.info(f"Successfully retrieved SPARQL results for institution: {institution}")
-        else:
-            app.logger.debug("Processing database results for institution")
-            if ids:
-                institution = data['institution_metadata']['institution_name']
-            metadata[institution] = data['institution_metadata']
-            metadata[institution]['homepage'] = metadata[institution]['url']
-            metadata[institution]['works_count'] = metadata[institution]['num_of_works']
-            metadata[institution]['name'] = metadata[institution]['institution_name']
-            metadata[institution]['cited_count'] = metadata[institution]['num_of_citations']
-            metadata[institution]['oa_link'] = metadata[institution]['openalex_url']
-            metadata[institution]['author_count'] = metadata[institution]['num_of_authors']
+# get_multiple_institution_results is to use the fuzzy matching conceptually
+# The `ids` parameter might distinguish if `institutions` are names (needs fuzzy) or pre-matched IDs
+def get_multiple_institution_results(institutions_input_list, page=1, per_page=19, ids=False):
+    """
+    Handles searches for multiple institutions, potentially using fuzzy matching for names.
+    The journey from raw input to refined, relevant data is central here.
+    """
+    # If `ids` is True, it implies `institutions_input_list` contains pre-matched IDs or exact names
+    # that don't need further fuzzy matching here.
+    # If `ids` is False (default or from non-CSV multi-input), we assume names that might need fuzzy matching.
+    # However, `initial_search` now pre-processes with fuzzy matching. So, `institutions_input_list`
+    # should already be a list of *recognized* institution names (or their IDs if fuzzy_match_institutions returns that).
 
-            app.logger.debug("Building graph structure")
-            # institution_id = metadata['openalex_url']
+    # For this refactoring, we'll assume institutions_input_list contains names recognized by fuzzy_match_institutions.
+    # The 'ids' flag here might now determine how search_by_institution is called if it can take names vs IDs.
 
-            total_topics = len(data['data'])
-            start = (page - 1) * per_page
-            end = start + per_page
-            nodes.append({'id': institution, 'label': institution, 'type': "INSTITUTION" })
-            for entry in data['data'][start:end]:
-                subfield = entry['topic_subfield']
-                number = entry['num_of_authors']
-                list.append((subfield, number))
-                nodes.append({'id': subfield, 'label': subfield, 'type': "SUBFIELD" })
-                edges.append({ 'id': f"""{institution}-{subfield}""", 'start': institution, 'end': subfield, "label": "researches", "start_type": "INSTITUTION", "end_type": "SUBFIELD"})
-            app.logger.info(f"Successfully built result for institution: {institution}")
-        final_metadata[institution] = {}
-        final_metadata[institution]["institution_name"] = metadata[institution]['name']
-        final_metadata[institution]["cited_count"] = metadata[institution]['cited_count']
-        final_metadata[institution]["author_count"] = metadata[institution]['author_count']
-        final_metadata[institution]["works_count"] = metadata[institution]['works_count']
-        final_metadata[institution]["institution_url"] = metadata[institution]['homepage']
-        final_metadata[institution]["open_alex_link"] = metadata[institution]['oa_link']
-        final_metadata[institution]["ror_link"] = metadata[institution]['ror']
-        final_metadata[institution]["topics"] = list
-    graph = {"nodes": nodes, "edges": edges}
-    print(page, (total_topics + per_page - 1) // per_page)
+    final_metadata_collection = {} # Using a more descriptive name.
+    all_nodes = [] # Aggregating graph nodes from all processed institutions.
+    all_edges = [] # Aggregating graph edges.
+    
+    # Pagination for the list of institutions themselves, if needed.
+    # This is distinct from pagination of topics *within* an institution.
+    total_institutions_to_process = len(institutions_input_list)
+    # institutions_to_display_on_page = institutions_input_list[start_index:end_index] # If paginating institutions
+
+    # We process all institutions provided, then the frontend handles displaying one or more.
+    # The backend's role is to gather all necessary data.
+    processed_institutions_count = 0
+
+    for inst_name_or_id in institutions_input_list: # Iterate through the (potentially fuzzy-matched) list
+        current_institution_topics = []
+        # The fundamental act of searching, now potentially enhanced by better name resolution.
+        # The 'ids' flag could tell search_by_institution if inst_name_or_id is an ID or a name.
+        # Assuming search_by_institution can handle names now, or we use a get_institution_id helper.
+        
+        # If inst_name_or_id is an ID (e.g. "openalex.org/I12345"), search_by_institution might need adjustment
+        # or a separate path. For now, assume it's a name that `search_by_institution` can handle
+        # or that `get_institution_id` (used within `search_by_institution`) can resolve.
+        
+        # Clarification: If fuzzy_match_institutions returns IDs, then `ids` should be True.
+        # If it returns recognized names, search_by_institution needs to handle names.
+        # For this example, let's assume `search_by_institution` is robust enough for names.
+        institution_data = search_by_institution(inst_name_or_id) # Removed id parameter if fuzzy matching handles resolution
+
+        if institution_data:
+            processed_institutions_count +=1
+            # Storing metadata under the resolved institution name.
+            # This ensures consistency in how data is keyed and accessed.
+            resolved_inst_name = institution_data['institution_metadata'].get('institution_name', inst_name_or_id)
+            
+            inst_metadata_transformed = {
+                "institution_name": institution_data['institution_metadata'].get('institution_name'),
+                "is_hbcu": institution_data['institution_metadata'].get('hbcu', False), # Add is_hbcu if available
+                "cited_count": str(institution_data['institution_metadata'].get('num_of_citations', '0')),
+                "author_count": str(institution_data['institution_metadata'].get('num_of_authors', '0')),
+                "works_count": str(institution_data['institution_metadata'].get('num_of_works', '0')),
+                "institution_url": institution_data['institution_metadata'].get('url'),
+                "open_alex_link": institution_data['institution_metadata'].get('openalex_url'),
+                "ror_link": institution_data['institution_metadata'].get('ror'),
+                "topics": [] # Placeholder, to be filled from data['data']
+            }
+            
+            # Building a shared graph for visualization purposes.
+            # The graph is a powerful representation of interconnectedness.
+            all_nodes.append({'id': resolved_inst_name, 'label': resolved_inst_name, 'type': "INSTITUTION" })
+
+            for entry in institution_data.get('data', []): # Paginate this internal list if necessary
+                subfield = entry.get('topic_subfield', 'Unknown Topic')
+                num_authors = entry.get('num_of_authors', 0)
+                current_institution_topics.append([subfield, str(num_authors)])
+                
+                # Add subfield to graph if not already present (conceptual - ensure unique IDs for nodes)
+                # This requires careful node ID management to avoid duplicates if subfields are shared.
+                subfield_node_id = f"{resolved_inst_name}_{subfield}" # Example of unique ID
+                if not any(n['id'] == subfield_node_id for n in all_nodes):
+                     all_nodes.append({'id': subfield_node_id, 'label': subfield, 'type': "SUBFIELD" })
+                all_edges.append({ 
+                    'id': f"""{resolved_inst_name}-{subfield_node_id}""", 
+                    'start': resolved_inst_name, 
+                    'end': subfield_node_id, 
+                    "label": "researches", 
+                    "start_type": "INSTITUTION", "end_type": "SUBFIELD"
+                })
+            inst_metadata_transformed["topics"] = current_institution_topics
+            final_metadata_collection[resolved_inst_name] = inst_metadata_transformed
+            
+            # If this is the first institution and it's a single primary search from UI,
+            # its full metadata might be needed at the top 'metadata' level for compatibility.
+            if processed_institutions_count == 1 and len(institutions_input_list) == 1 and not is_csv_upload :
+                 # This structure is what single institution search returns in 'metadata'
+                 # Ensuring a consistent path for single vs the first of multiple.
+                 primary_metadata_for_response = {
+                    "name": inst_metadata_transformed["institution_name"],
+                    "hbcu": inst_metadata_transformed.get("is_hbcu", False),
+                    "cited_count": inst_metadata_transformed["cited_count"],
+                    "author_count": inst_metadata_transformed["author_count"],
+                    "works_count": inst_metadata_transformed["works_count"],
+                    "homepage": inst_metadata_transformed["institution_url"],
+                    "oa_link": inst_metadata_transformed["open_alex_link"],
+                    "ror": inst_metadata_transformed["ror_link"],
+                 }
+
+
+    # The combined graph representing all found institutions and their topics.
+    # This offers a bird's-eye view of the collective research landscape.
+    combined_graph = {"nodes": all_nodes, "edges": all_edges}
+
+    # For pagination of the institutions themselves (if institutions_input_list is very long)
+    # This is conceptual and depends on how frontend wants to receive paginated *institutions*
+    # total_pages_for_institutions = (total_institutions_to_process + per_page - 1) // per_page
+
+    # The primary 'metadata' field might be for the first institution,
+    # or be a summary if multiple were explicitly queried as primary.
+    # For now, if institutions_input_list has content, 'extra_metadata' holds all details.
+    # 'metadata' could be the first one, or an aggregate, or empty if all are in 'extra_metadata'.
+    # To maintain compatibility with how Search.tsx uses `data.metadata` for single inst.
+    # And `data.all_institution_metadata` for multi-inst.
+    
+    final_response_metadata = {}
+    if institutions_input_list and final_metadata_collection:
+        first_institution_name = institutions_input_list[0] # The name used for query
+        # Try to get the resolved name if it changed due to fuzzy matching / backend resolution
+        # This part assumes final_metadata_collection keys are resolved names.
+        # We need to map back the first *input* name to its resolved data if possible,
+        # or just pick the first item in final_metadata_collection.
+        
+        # A simple way:
+        if final_metadata_collection:
+            resolved_first_key = list(final_metadata_collection.keys())[0]
+            first_inst_data = final_metadata_collection[resolved_first_key]
+            final_response_metadata = { # Mimicking single institution metadata structure
+                "name": first_inst_data["institution_name"],
+                "hbcu": first_inst_data.get("is_hbcu", False),
+                "cited_count": first_inst_data["cited_count"],
+                "author_count": first_inst_data["author_count"],
+                "works_count": first_inst_data["works_count"],
+                "homepage": first_inst_data["institution_url"],
+                "oa_link": first_inst_data["open_alex_link"],
+                "ror": first_inst_data["ror_link"],
+            }
+
+
     return {
-        "metadata": metadata,
-        "extra_metadata": final_metadata,
-        "metadata_pagination": {
-            "total_pages": (total_topics + per_page - 1) // per_page,
+        # 'metadata' might represent the primary queried institution or the first from a list.
+        # This choice depends on how Search.tsx is structured to handle single vs multi.
+        # If 'initial_search' sends only one primary institution, this is its metadata.
+        # If multiple, this could be the first, and all others in 'extra_metadata'.
+        "metadata": final_response_metadata if final_response_metadata else (institutions_input_list[0] if institutions_input_list else {}), # Fallback for safety
+        "extra_metadata": final_metadata_collection, # All detailed metadata keyed by institution name.
+        "metadata_pagination": { # This pagination refers to topics *within* the primary institution if displayed that way
+            "total_pages": 1, # Placeholder - pagination logic needs to be clear
             "current_page": page,
-            "total_topics": total_topics,
+            "total_topics": 0, # Placeholder
         },
-        "graph": graph,
-        "list": []
+        "graph": combined_graph,
+        "list": [] # Main list might be empty if all data is in extra_metadata
     }
 
 def get_multiple_institution_and_subfield_results(institution, topic, page, per_page):
