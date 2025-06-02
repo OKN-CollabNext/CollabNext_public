@@ -27,6 +27,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
+# Create a non-root user and group
+# We use a fixed UID/GID for better reproducibility and to avoid issues with file permissions
+# if volumes are mounted from the host.
+RUN groupadd -r appgroup --gid=1001 && \
+    useradd -r -s /bin/false -g appgroup --uid=1001 appuser
+
+# Set the working directory
 WORKDIR /app
 
 # Install the wheels from the builder stage
@@ -38,6 +45,9 @@ COPY . .
 
 # Create logs directory
 RUN mkdir -p logs
+# Change ownership of the /app directory to the new user
+# This ensures the user can write to this directory if needed (e.g., for logs or temp files, though ideally logs go to stdout)
+RUN chown -R appuser:appgroup /app
 
 # Set environment variables
 ENV FLASK_APP=app.py
@@ -49,14 +59,19 @@ ENV DB_HOST=localhost
 ENV DB_PORT=5432
 ENV DB_NAME=collabnext
 ENV DB_USER=postgres
-ENV DB_PASSWORD=
+ENV DB_PASSWORD=""
+# Recommended: Set PYTHONUNBUFFERED so Python output (like print statements and logs)
+# goes directly to the terminal without being buffered. This is good for Docker logging.
+ENV PYTHONUNBUFFERED=1
+
 
 # Expose port 5000 for Gunicorn
 EXPOSE 5000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:5000/ || exit 1
+# Switch to the non-root user
+USER appuser
 
 # Use Gunicorn as recommended for production
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--timeout", "120", "app:app"] 
+# The appuser will execute this command.
+# Gunicorn will bind to port 5000, which is allowed for non-root users.
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
