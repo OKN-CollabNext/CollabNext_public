@@ -658,7 +658,7 @@ const Search = () => {
             </Box>
           ) : isNetworkMap === "graph" ? (
             <div className="network-map">
-              <button className="topButton">Network Map</button>
+             {/*<button className="topButton">Network Map</button>*/}
               {/* <img src={NetworkMap} alt='Network Map' /> */}
               <GraphComponent
                 graphData={data?.graph}
