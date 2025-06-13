@@ -59,9 +59,6 @@ const MapMetadata = ({ data }: { data: ResearchDataInterface }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (data.search !== "topic") {
-      return;
-    }
     if (!data?.coordinates?.length) {
       console.error("No coordinates in data");
       setLoading(false);

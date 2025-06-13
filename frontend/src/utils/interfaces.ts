@@ -31,6 +31,10 @@ export interface ResearchDataInterface {
   coordinates: string[][];
   search?: SearchType;
   has_multiple_institutions?: boolean;
+  has_multiple_researchers?: boolean;
+  all_researcher_metadata?: {
+    [key: string]: ResearchDataInterface;
+  };
   all_institution_metadata?: {
     [key: string]: ResearchDataInterface;
   };

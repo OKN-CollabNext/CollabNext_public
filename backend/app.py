@@ -268,14 +268,17 @@ def search_by_institution(institution_name, id=None):
     app.logger.warning(f"No results found for institution: {institution_name}")
     return None
 
-def search_by_author(author_name):
+def search_by_author(author_name, id=None):
     app.logger.debug(f"Searching by author: {author_name}")
-    author_ids = get_author_ids(author_name)
-    if not author_ids:
-        app.logger.warning(f"No author IDs found for {author_name}")
-        return None
+    if not id:
+        author_ids = get_author_ids(author_name)
+        if not author_ids:
+            app.logger.warning(f"No author IDs found for {author_name}")
+            return None
+        author_id = author_ids[0]['author_id']
+    else:
+        author_id = id
 
-    author_id = author_ids[0]['author_id']
     app.logger.debug(f"Using author ID: {author_id}")
 
     query = """SELECT search_by_author(%s);"""
@@ -355,21 +358,26 @@ def initial_search():
     elif topic:
       results = get_subfield_results(topic, page, per_page)
     elif researcher:
-      results = get_researcher_result(researcher, page, per_page)
+      researcher = researcher.splitlines()
+      if len(researcher) == 1:
+        results = get_researcher_result(researcher[0], page, per_page)
+      else:
+        results = get_multiple_researcher_results(researcher, page, per_page)
     elif extra_institutions:
-        extra_institutions = extra_institutions.replace('\r', '').split('\n')
-        results = get_multiple_institution_results(extra_institutions, page, per_page, True)
+        try:
+            extra_institutions = extra_institutions.splitlines()
+            results = get_multiple_institution_results(extra_institutions, page, per_page, True)
+        except Exception as E:
+            print(str(E))
     elif institution:
       if extra_institutions == []:
         results = get_institution_results(institution, page, per_page)
       else:
         extra_institutions.insert(0, institution)
         results = get_multiple_institution_results(extra_institutions, page, per_page)
-    
     if not results:
       app.logger.warning("Search returned no results")
       return {}
-
     app.logger.info("Search completed successfully")
     return results
 
@@ -401,6 +409,7 @@ def get_researcher_result(researcher, page=1, per_page=20):
     Gets the results when user only inputs a researcher
     Uses database to get result, defaults to SPARQL if researcher is not in database
     """
+    coordinates_metadata = []
     data = search_by_author(researcher)
     if data is None:
         app.logger.info("No database results, falling back to SPARQL...")
@@ -439,6 +448,8 @@ def get_researcher_result(researcher, page=1, per_page=20):
     metadata['current_institution'] = last_known_institution
     metadata['institution_url'] = institution_url
 
+    coordinates_metadata.append((metadata['institution_url'], metadata['current_institution'], 1))
+
     app.logger.debug("Building graph structure")
     nodes = []
     edges = []
@@ -467,13 +478,14 @@ def get_researcher_result(researcher, page=1, per_page=20):
             "total_pages": (total_topics + per_page - 1) // per_page,
             "current_page": page,
             "total_topics": total_topics,
-        }, "graph": graph, "list": list}
+        }, "graph": graph, "list": list, "coordinates": coordinates_metadata}
 
 def get_institution_results(institution, page=1, per_page=10):
     """
     Gets the results when user only inputs an institution
     Uses database to get result, defaults to SPARQL if institution is not in database
     """
+    coordinates_metadata = []
     data = search_by_institution(institution)
     if data is None:
         app.logger.info("No database results, falling back to SPARQL...")
@@ -493,7 +505,7 @@ def get_institution_results(institution, page=1, per_page=10):
     metadata['cited_count'] = metadata['num_of_citations']
     metadata['oa_link'] = metadata['openalex_url']
     metadata['author_count'] = metadata['num_of_authors']
-
+    coordinates_metadata.append((metadata['oa_link'], institution, metadata['author_count']))
     app.logger.debug("Building graph structure")
     nodes = []
     edges = []
@@ -525,7 +537,8 @@ def get_institution_results(institution, page=1, per_page=10):
         },
         "extra_metadata": {},
         "graph": graph,
-        "list": list
+        "list": list,
+        "coordinates": coordinates_metadata
     }
 
 @app.route('/geo_info_batch', methods=['POST'])
@@ -628,15 +641,118 @@ def get_subfield_results(topic, page=1, per_page=20, map_limit=100):
             "total_topics": total_topics,
         }, "graph": graph, "list": list, "coordinates": coordinates_metadata}
 
+def get_multiple_researcher_results(researchers, page=1, per_page=19):
+    metadata = {}
+    nodes = []
+    edges = []
+    final_metadata = {}
+    coordinates_metadata = []
+    for researcher in researchers:
+        data = search_by_author("", "https://openalex.org/" + researcher)
+        if data is None:
+            app.logger.info("No database results, falling back to SPARQL...")
+            researcher = get_author_from_id_sparql(researcher)
+            data = get_author_metadata_sparql(researcher)
+            if data == {}:
+                app.logger.warning("No results found in SPARQL for researcher")
+                return {}
+            else:
+                metadata[researcher] = data
+                found = False
+                for c in coordinates_metadata:
+                    if c[0] == metadata[researcher]['institution_url']:
+                        c[2] += 1
+                        found = True
+                        break
+                if not found:
+                    coordinates = (metadata[researcher]['institution_url'], metadata[researcher]['current_institution'], 1)
+                    coordinates_metadata.append(coordinates)
+                topic_list, g = list_given_researcher_institution(data['oa_link'], data['name'], data['current_institution'])
+                nodes.append({'id': researcher, 'label': researcher, 'type': "AUTHOR" })
+                for subfield, count in topic_list:
+                    nodes.append({'id': subfield, 'label': subfield, 'type': "SUBFIELD" })
+                    edges.append({ 'id': f"""{researcher}-{subfield}""", 'start': researcher, 'end': subfield, "label": "researches", "start_type": "RESEARCHER", "end_type": "SUBFIELD"})
+                app.logger.info(f"Successfully retrieved SPARQL results for researcher: {researcher}")
+        else:
+            app.logger.debug("Processing database results for researcher")
+            topic_list = []
+            researcher = data['author_metadata']['name']
+            metadata[researcher] = data['author_metadata']
+            if metadata[researcher]['orcid'] is None:
+                metadata[researcher]['orcid'] = ''
+            metadata[researcher]['work_count'] = metadata[researcher]['num_of_works']
+            metadata[researcher]['cited_by_count'] = metadata[researcher]['num_of_citations']
+            metadata[researcher]['oa_link'] = metadata[researcher]['openalex_url']
+            if metadata[researcher]['last_known_institution'] is None:
+                app.logger.debug("Fetching last known institutions from OpenAlex")
+                institution_object = fetch_last_known_institutions(metadata[researcher]['oa_link'])
+                if institution_object == []:
+                    app.logger.warning("No last known institution found")
+                    last_known_institution = ""
+                else:
+                    institution_object = institution_object[0]
+                    last_known_institution = institution_object['display_name']
+                    institution_url = institution_object['id']
+            else:
+                last_known_institution = metadata[researcher]['last_known_institution']
+            metadata[researcher]['current_institution'] = last_known_institution
+            metadata[researcher]['institution_url'] = institution_url
+            
+            found = False
+            for c in coordinates_metadata:
+                if c[0] == metadata[researcher]['institution_url']:
+                    c[2] += 1
+                    found = True
+                    break
+            if not found:
+                coordinates = (metadata[researcher]['institution_url'], metadata[researcher]['current_institution'], 1)
+                coordinates_metadata.append(coordinates)
+            
+            app.logger.debug("Building graph structure")
+            total_topics = len(data['data'])
+            start = (page - 1) * per_page
+            end = start + per_page
+            nodes.append({'id': researcher, 'label': researcher, 'type': "AUTHOR" })
+            for entry in data['data'][start:end]:
+                subfield = entry['topic']
+                number = entry['num_of_works']
+                topic_list.append((subfield, number))
+                nodes.append({'id': subfield, 'label': subfield, 'type': "SUBFIELD" })
+                edges.append({ 'id': f"""{researcher}-{subfield}""", 'start': researcher, 'end': subfield, "label": "researches", "start_type": "AUTHOR", "end_type": "SUBFIELD"})
+            app.logger.info(f"Successfully built result for researcher: {researcher}")
+        final_metadata[researcher] = {}
+        final_metadata[researcher]['researcher_name'] = metadata[researcher]['name']
+        final_metadata[researcher]['orcid_link'] = metadata[researcher]['orcid']
+        final_metadata[researcher]['works_count'] = metadata[researcher]['work_count']
+        final_metadata[researcher]['open_alex_link'] = metadata[researcher]['oa_link']
+        final_metadata[researcher]['cited_count'] = metadata[researcher]['cited_by_count']
+        final_metadata[researcher]['institution_name'] = metadata[researcher]['current_institution']
+        final_metadata[researcher]['institution_url'] = metadata[researcher]['institution_url']
+        final_metadata[researcher]['topics'] = topic_list
+    graph = {"nodes": nodes, "edges": edges}
+    return {
+        "metadata": final_metadata,
+        "extra_metadata": final_metadata,
+        "metadata_pagination": {
+            "total_pages": (total_topics + per_page - 1) // per_page,
+            "current_page": page,
+            "total_topics": total_topics,
+        },
+        "graph": graph,
+        "list": [],
+        "coordinates": coordinates_metadata
+    }
+
 def get_multiple_institution_results(institutions, page=1, per_page=19, ids=False):
     metadata = {}
     nodes = []
     edges = []
     final_metadata = {}
+    coordinates_metadata = []
     for institution in institutions:
         list = []
         if ids:
-            data = search_by_institution("", "https://openalex.org/" + institution)
+            data = search_by_institution("", "https://openalex.org/" + institution.upper())
         else:
             data = search_by_institution(institution)
         if data is None:
@@ -656,6 +772,7 @@ def get_multiple_institution_results(institutions, page=1, per_page=19, ids=Fals
                 metadata[institution]['author_count'] = data['author_count']
                 topic_list, g = list_given_institution(data['ror'], data['name'], data['oa_link'])
                 nodes.append({'id': institution, 'label': institution, 'type': "INSTITUTION" })
+                coordinates_metadata.append((metadata[institution]['oa_link'], institution, metadata[institution]['author_count']))
                 for subfield, count in topic_list:
                     nodes.append({'id': subfield, 'label': subfield, 'type': "SUBFIELD" })
                     edges.append({ 'id': f"""{institution}-{subfield}""", 'start': institution, 'end': subfield, "label": "researches", "start_type": "INSTITUTION", "end_type": "SUBFIELD"})
@@ -671,6 +788,7 @@ def get_multiple_institution_results(institutions, page=1, per_page=19, ids=Fals
             metadata[institution]['cited_count'] = metadata[institution]['num_of_citations']
             metadata[institution]['oa_link'] = metadata[institution]['openalex_url']
             metadata[institution]['author_count'] = metadata[institution]['num_of_authors']
+            coordinates_metadata.append((metadata[institution]['oa_link'], institution, metadata[institution]['author_count']))
 
             app.logger.debug("Building graph structure")
             # institution_id = metadata['openalex_url']
@@ -696,7 +814,6 @@ def get_multiple_institution_results(institutions, page=1, per_page=19, ids=Fals
         final_metadata[institution]["ror_link"] = metadata[institution]['ror']
         final_metadata[institution]["topics"] = list
     graph = {"nodes": nodes, "edges": edges}
-    print(page, (total_topics + per_page - 1) // per_page)
     return {
         "metadata": metadata,
         "extra_metadata": final_metadata,
@@ -706,7 +823,8 @@ def get_multiple_institution_results(institutions, page=1, per_page=19, ids=Fals
             "total_topics": total_topics,
         },
         "graph": graph,
-        "list": []
+        "list": [],
+        "coordinates": coordinates_metadata
     }
 
 def get_multiple_institution_and_subfield_results(institution, topic, page, per_page):
@@ -1058,6 +1176,20 @@ def query_SPARQL_endpoint(endpoint_url, query):
     except requests.exceptions.RequestException as e:
         app.logger.error(f"SPARQL query failed: {str(e)}")
         return []
+
+def get_author_from_id_sparql(id):
+    app.logger.debug(f"Finding author with id: {id}")
+    query = f"""
+    SELECT ?name
+    WHERE {'{'}
+    <https://semopenalex.org/author/{id}> <http://xmlns.com/foaf/0.1/name> ?name .
+    {'}'} GROUP BY ?name
+    """
+    results = query_SPARQL_endpoint(SEMOPENALEX_SPARQL_ENDPOINT, query)
+    if not results:
+        app.logger.warning(f"No SPARQL results found for author: {id}")
+        return {}
+    return results[0]['name']
 
 def get_institution_from_id_sparql(id):
     app.logger.debug(f"Finding Institution with id: {id}")

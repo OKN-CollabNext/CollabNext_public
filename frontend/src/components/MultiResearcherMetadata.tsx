@@ -1,23 +1,17 @@
 import React, { useState } from 'react';
-import InstitutionMetadata from './InstitutionMetadata';
+import ResearcherMetadata from './ResearcherMetadata';
 import { ResearchDataInterface } from '../utils/interfaces';
 import { Box, Button, Flex, Text } from '@chakra-ui/react';
 import { Organization, Thing, WithContext } from 'schema-dts';
 
-export function JsonLd<T extends Thing>(json: WithContext<T>): string {
-  return `<script type="application/ld+json">
-${JSON.stringify(json)}
-</script>`;
-}
-
-const MultiInstitutionMetadata = ({
-  institutionsMetadata,
+const MultiResearcherMetadata = ({
+  researchersMetadata,
   setTopic,
   currentPage,
   totalPages,
   onPageChange,
 }: {
-  institutionsMetadata?: { [key: string]: ResearchDataInterface };
+  researchersMetadata?: { [key: string]: ResearchDataInterface };
   setTopic: React.Dispatch<React.SetStateAction<string>>;
   currentPage: number;
   totalPages: number;
@@ -25,14 +19,13 @@ const MultiInstitutionMetadata = ({
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  if (!institutionsMetadata) return null;
-
-  const institutionNames = Object.keys(institutionsMetadata);
-  const currentInstitution = institutionNames[currentIndex];
-  const currentData = institutionsMetadata[currentInstitution];
+  if (!researchersMetadata) return null;
+  const researcherNames = Object.keys(researchersMetadata);
+  const currentResearcher = researcherNames[currentIndex];
+  const currentData = researchersMetadata[currentResearcher];
 
   const handleNext = () => {
-    setCurrentIndex((prev) => Math.min(prev + 1, institutionNames.length - 1));
+    setCurrentIndex((prev) => Math.min(prev + 1, researcherNames.length - 1));
   };
 
   const handlePrevious = () => {
@@ -40,25 +33,25 @@ const MultiInstitutionMetadata = ({
   };
   return (
     <Box>
-      {institutionNames.length > 1 && (
+      {researcherNames.length > 1 && (
         <Flex justifyContent="center" mt={4} gap={2}>
           <Button
             onClick={handlePrevious}
             isDisabled={currentIndex === 0}
             size="sm"
           >
-            Previous Institution
+            Previous Researcher
           </Button>
           <Button
             onClick={handleNext}
-            isDisabled={currentIndex === institutionNames.length - 1}
+            isDisabled={currentIndex === researcherNames.length - 1}
             size="sm"
           >
-            Next Institution
+            Next Researcher
           </Button>
         </Flex>
       )}
-      <InstitutionMetadata
+      <ResearcherMetadata
         data={currentData}
         setTopic={setTopic}
         currentPage={currentPage}
@@ -69,4 +62,4 @@ const MultiInstitutionMetadata = ({
   );
 };
 
-export default MultiInstitutionMetadata;
+export default MultiResearcherMetadata;

@@ -27,6 +27,7 @@ import TopicMetadata from "../components/TopicMetadata";
 import TopicResearcherMetadata from "../components/TopicResearcherMetadata";
 import { baseUrl, handleAutofill, initialValue } from "../utils/constants";
 import { ResearchDataInterface, SearchType } from "../utils/interfaces";
+import MultiResearcherMetadata from "../components/MultiResearcherMetadata";
 
 const Search = () => {
   const searchParams = new URLSearchParams(window.location.search);
@@ -90,7 +91,7 @@ const Search = () => {
       universityName: string;
       institutionType: string;
       topicType: string;
-      researcherType: string;
+      researcherType: string[] | string;
       page: number;
       per_page: number;
       extra_institutions: string[] | string;
@@ -128,6 +129,7 @@ const Search = () => {
                 graph: data?.graph,
                 topics: data?.list,
                 search,
+                coordinates: data?.coordinates,
                 has_multiple_institutions: extra_institutions.length > 0,
                 all_institution_metadata: data?.extra_metadata,
               }
@@ -155,6 +157,9 @@ const Search = () => {
                 open_alex_link: data?.metadata?.oa_link,
                 topics: data?.list,
                 institution_url: data?.metadata?.institution_url,
+                all_researcher_metadata: data?.extra_metadata,
+                has_multiple_researchers: !(personList == null),
+                coordinates: data?.coordinates,
                 search,
               }
             : search === "researcher-institution"
@@ -319,6 +324,22 @@ const Search = () => {
         });
       };
       reader.readAsText(orgList);
+    } else if (personList) {
+      const search = "researcher"
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const text = event.target?.result as string;
+        sendSearchRequest(search, {
+          universityName: newUniversityName,
+          institutionType: newInstitutionType,
+          topicType: newTopicType,
+          researcherType: text,
+          page: page,
+          per_page: itemsPerPage,
+          extra_institutions: extraInstitutions,
+        });
+      };
+      reader.readAsText(personList);
     } else if (newTopicType || newUniversityName || newResearcherType) {
       const search = newTopicType
         ? "topic"
@@ -669,7 +690,7 @@ const Search = () => {
             </div>
           ) : isNetworkMap === "map" ? (
             <Box width="100%" height="500px">
-              {data?.search === "topic" ? (
+              {data?.search === "topic"  || data?.search === "institution" || data?.search === "researcher" ? (
                 <MapMetadata data={data} />
               ) : (
                 <h1>Map not available!</h1>
@@ -704,13 +725,23 @@ const Search = () => {
                   onPageChange={handlePageChange}
                 />
               ) : data?.search === "researcher" ? (
-                <ResearcherMetadata
-                  data={data}
-                  setTopic={setTopicType}
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={handlePageChange}
-                />
+                data?.has_multiple_researchers ? (
+                  <MultiResearcherMetadata
+                    researchersMetadata={data?.all_researcher_metadata}
+                    setTopic={setTopicType}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                ) : (
+                  <ResearcherMetadata
+                    data={data}
+                    setTopic={setTopicType}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                )
               ) : data?.search === "researcher-institution" ? (
                 <InstitutionResearcherMetaData
                   data={data}
@@ -745,7 +776,7 @@ const Search = () => {
             </div>
           ) : isNetworkMap === "map" ? (
             <Box width="100%" height="500px">
-              {data?.search === "topic" ? (
+              {data?.search === "topic" || data?.search === "institution" || data?.search === "researcher"? (
                 <MapMetadata data={data} />
               ) : (
                 <h1>Map not available!</h1>
