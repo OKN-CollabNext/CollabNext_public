@@ -364,11 +364,8 @@ def initial_search():
       else:
         results = get_multiple_researcher_results(researcher, page, per_page)
     elif extra_institutions:
-        try:
-            extra_institutions = extra_institutions.splitlines()
-            results = get_multiple_institution_results(extra_institutions, page, per_page, True)
-        except Exception as E:
-            print(str(E))
+        extra_institutions = extra_institutions.splitlines()
+        results = get_multiple_institution_results(extra_institutions, page, per_page, True)
     elif institution:
       if extra_institutions == []:
         results = get_institution_results(institution, page, per_page)
