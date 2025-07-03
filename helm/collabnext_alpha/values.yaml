@@ -33,14 +33,105 @@ postgresql:
     password: "collabnext2024reader!"
     database: "openalex"
   architecture: standalone
+  image:
+    tag: 17.5.0-debian-12-r8
   primary:
+    livenessProbe: {}
+    readinessProbe: {}
+    startupProbe: {}
+#    initdb:
+#      scriptsConfigMap: "collabnext-postgres-restore-config"
+    initContainers:
+      - name: download-data
+        image: curlimages/curl:8.14.1
+        command:
+          - /scripts/download.sh
+        volumeMounts:
+          - name: restore-data
+            mountPath: "/tmp/pg_dumps"
+          - name: reload-script
+            mountPath: /scripts/
+      - name: pg-restore-init
+        image: docker.io/bitnami/postgresql:17.5.0-debian-12-r8
+        env:
+          - name: BITNAMI_DEBUG
+            value: 'false'
+          - name: POSTGRESQL_PORT_NUMBER
+            value: '5432'
+          - name: POSTGRESQL_VOLUME_DIR
+            value: /bitnami/postgresql
+          - name: PGDATA
+            value: /bitnami/postgresql/data
+          - name: POSTGRES_USER
+            value: openalexreader
+          - name: POSTGRES_PASSWORD_FILE
+            value: /opt/bitnami/postgresql/secrets/password
+          - name: POSTGRES_POSTGRES_PASSWORD_FILE
+            value: /opt/bitnami/postgresql/secrets/postgres-password
+          - name: POSTGRES_DATABASE
+            value: openalex
+          - name: POSTGRESQL_ENABLE_LDAP
+            value: 'no'
+          - name: POSTGRESQL_ENABLE_TLS
+            value: 'no'
+          - name: POSTGRESQL_LOG_HOSTNAME
+            value: 'false'
+          - name: POSTGRESQL_LOG_CONNECTIONS
+            value: 'false'
+          - name: POSTGRESQL_LOG_DISCONNECTIONS
+            value: 'false'
+          - name: POSTGRESQL_PGAUDIT_LOG_CATALOG
+            value: 'off'
+          - name: POSTGRESQL_CLIENT_MIN_MESSAGES
+            value: error
+          - name: POSTGRESQL_SHARED_PRELOAD_LIBRARIES
+            value: pgaudit
+#        command: [ "/bin/bash"] #, "/scripts/restore.sh" ]
+        args:
+          - /scripts/restore.sh
+        stdin: true
+        tty: True
+        resources:
+          limits:
+            memory: 10Gi
+            cpu: 4
+        volumeMounts:
+          - name: empty-dir
+            mountPath: /tmp
+            subPath: tmp-dir
+          - name: empty-dir
+            mountPath: /opt/bitnami/postgresql/conf
+            subPath: app-conf-dir
+          - name: empty-dir
+            mountPath: /opt/bitnami/postgresql/tmp
+            subPath: app-tmp-dir
+          - name: postgresql-password
+            mountPath: /opt/bitnami/postgresql/secrets/
+          - name: dshm
+            mountPath: /dev/shm
+          - name: data
+            mountPath: /bitnami/postgresql
+          - name: reload-script
+            mountPath: /scripts/
+          - name: restore-data
+            mountPath: "/tmp/pg_dumps"
+
     resources:
       limits:
         memory: 2Gi
         cpu: 2
     persistence:
-      size: 30Gi
+      size: 250Gi
       storageClass: "basic"
+    extraVolumes:
+      - name: reload-script
+        configMap:
+          name: collabnext-postgres-restore-config
+          defaultMode: 0755
+      - name: restore-data
+        persistentVolumeClaim:
+          claimName: restore-pvc
+
 
 imagePullSecrets: []
 nameOverride: ""
@@ -79,15 +170,16 @@ ingress:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
     nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/whitelist-source-range: "0.0.0.0/0,::/0"
   hosts:
-     host: collabnext-alpha.apps.renci.org
+     host: www.collabnext.io
      paths:
       path: /
       pathType: ImplementationSpecific
   tls:
-    - secretName: collabnext-alpha.apps.renci.org-tls
+    - secretName: www.collabnext.io-tls
       hosts:
-        - collabnext-alpha.apps.renci.org
+        - www.collabnext.io
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -113,3 +205,16 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+backup:
+  url: "http://stars.stars/var/frink/collabnext/postgres-bkup"
+  files: ['4287.dat.gz', '4289.dat.gz', '4291.dat.gz', '4293.dat.gz', '4295.dat.gz', '4297.dat.gz', '4299.dat.gz', '4301.dat.gz', '4303.dat.gz', '4305.dat.gz', '4312.dat.gz', '4314.dat.gz', '4316.dat.gz', '4318.dat.gz', '4320.dat.gz', '4322.dat.gz', 'toc.dat', '4288.dat.gz', '4290.dat.gz', '4292.dat.gz', '4294.dat.gz', '4296.dat.gz', '4298.dat.gz', '4300.dat.gz', '4302.dat.gz', '4304.dat.gz', '4306.dat.gz', '4313.dat.gz', '4315.dat.gz', '4317.dat.gz', '4319.dat.gz', '4321.dat.gz', '4324.dat.gz']
+
+
+
+#DB_HOST=os.environ['DB_HOST']
+#DB_PORT= int(os.environ['DB_PORT'])
+#DB_NAME=os.environ['DB_NAME']
+#DB_USER=os.environ['DB_USER']
+#DB_PASSWORD=os.environ['DB_PASSWORD']
+
