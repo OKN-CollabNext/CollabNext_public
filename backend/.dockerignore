@@ -1,0 +1,52 @@
+# Python cache and virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Testing artifacts
+.pytest_cache/
+htmlcov/
+.coverage
+pytest_junit.xml
+coverage.xml
+*_test_run.txt
+
+# Development files
+.env
+.env.local
+.env.*.local
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs (we'll create the directory in Dockerfile)
+logs/*
+!logs/.gitkeep
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation and README files
+README.md
+*.md
+
+# Other development artifacts
+startup.txt 

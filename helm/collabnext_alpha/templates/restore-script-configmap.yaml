@@ -1,0 +1,130 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: collabnext-postgres-restore-config
+data:
+  download.sh: |
+    #!/bin/sh
+    set -e # Exit immediately if a command exits with a non-zero status.
+    # --- Configuration ---
+    # The base URL of your NGINX server hosting the dump files
+    DUMP_URL_BASE="{{ .Values.backup.url }}"
+    # A space-separated list of your dump files.
+    DUMP_FILES_RAW="{{ .Values.backup.files | join " " }}"
+    DOWNLOAD_DIR="/tmp/pg_dumps"
+    # --- File Download ---
+    echo "Creating download directory..."
+    mkdir -p "${DOWNLOAD_DIR}"
+
+    DUMP_FILES=$(echo "${DUMP_FILES_RAW}" | tr '\n' ' ')
+
+    for file in ${DUMP_FILES}; do
+      if [ -z "$file" ]; then
+        continue
+      fi
+      echo "Downloading ${file}..."
+      curl -sSf -L -o "${DOWNLOAD_DIR}/${file}" "${DUMP_URL_BASE}/${file}"
+    done
+
+    echo "All specified dump files downloaded."
+    ls -lh "${DOWNLOAD_DIR}"
+  restore.sh: |
+    #!/bin/bash
+    set -e # Exit immediately if a command exits with a non-zero status.
+
+    # --- Environment Setup ---
+    # Source Bitnami libraries to get functions and environment variables.
+    # This is crucial for nss_wrapper to work correctly, which maps UID 1001 to a username.
+    # The 'if' statements prevent errors if the files don't exist in some image version.
+    /opt/bitnami/scripts/postgresql/entrypoint.sh
+
+    # --- Configuration ---
+    # The base URL of your NGINX server hosting the dump files
+    DUMP_URL_BASE="{{ .Values.backup.url }}"
+    # A space-separated list of your dump files.
+    DUMP_FILES_RAW="{{ .Values.backup.files | join " " }}"
+    PG_DATA_DIR="/bitnami/postgresql/data"
+    DOWNLOAD_DIR="/tmp/pg_dumps"
+
+    # --- Main Script ---
+    #echo "Restore script started. Running as user: $(id -un) ($(id -u))"
+
+    # --- Data Directory Cleanup ---
+    # The current user (1001) owns this directory and has permission to clean it.
+    if [ -d "${PG_DATA_DIR}" ]; then
+      echo "Existing PostgreSQL data directory found. Cleaning it for a fresh restore..."
+      find "${PG_DATA_DIR}" -mindepth 1 -delete
+    else
+      echo "PostgreSQL data directory not found. It will be created."
+    fi
+
+    echo "All specified dump files downloaded."
+    ls -lh "${DOWNLOAD_DIR}"
+
+    # --- Database Initialization and Restore ---
+    # Since the container runs as the postgres user (1001) and we have sourced the
+    # environment scripts, we can now call these commands directly.
+    echo "Initializing new database cluster..."
+    initdb -D "${PG_DATA_DIR}" --username="${POSTGRES_USER}"
+
+    echo "Starting temporary PostgreSQL server..."
+    pg_ctl -D "${PG_DATA_DIR}" -o "-c listen_addresses='localhost' -c port=5432" start
+
+    echo "Waiting for PostgreSQL server to become ready..."
+    # pg_isready is run by the current user, which is correct.
+    until pg_isready -h localhost -p 5432 -U "${POSTGRES_USER}"; do
+      echo "Waiting..."
+      sleep 1
+    done
+    echo "Server is ready."
+
+    echo "Creating database: ${POSTGRES_DATABASE}..."
+    createdb --username="${POSTGRES_USER}" "${POSTGRES_DATABASE}"
+
+    # --- Restore Logic ---
+    # Check for the presence of 'toc.dat' to identify a directory-format dump
+    if [ -f "${DOWNLOAD_DIR}/toc.dat" ]; then
+      echo "Detected directory-format dump (toc.dat found)."
+      echo "Restoring from directory: ${DOWNLOAD_DIR}"
+      # For directory format, pg_restore is pointed at the directory itself.
+      # It handles any compressed .dat.gz files internally.
+      pg_restore --username="${POSTGRES_USER}" --dbname="${POSTGRES_DATABASE}" --verbose "${DOWNLOAD_DIR}"
+    else
+      echo "No toc.dat found. Processing files individually."
+      for file in ${DUMP_FILES}; do
+        if [ -z "$file" ]; then
+          continue
+        fi
+    
+        full_path="${DOWNLOAD_DIR}/${file}"
+        echo "--- Processing ${file} ---"
+    
+        # Detect file type to use the correct restore tool.
+        # pg_dump archives start with "PGDMP". Plain SQL files do not.
+        # This command streams the file (decompressing if needed) and checks the first 5 bytes.
+        if (gunzip -c "${full_path}" 2>/dev/null || cat "${full_path}") | head -c 5 | grep -q "PGDMP"; then
+          echo "Detected PostgreSQL archive format. Using pg_restore."
+          restore_cmd="pg_restore --username=\"${POSTGRES_USER}\" --dbname=\"${POSTGRES_DATABASE}\" --verbose"
+        else
+          echo "Detected plain SQL format. Using psql."
+          # For psql, we connect to the specific database and execute the script.
+          restore_cmd="psql --username=\"${POSTGRES_USER}\" --dbname=\"${POSTGRES_DATABASE}\""
+        fi
+    
+        echo "Restoring with command: ${restore_cmd}"
+        # Execute the restore, decompressing if necessary.
+        if [ "${full_path##*.}" = "gz" ]; then
+          gunzip < "${full_path}" | ${restore_cmd}
+        else
+          cat "${full_path}" | ${restore_cmd}
+        fi
+      done
+    fi
+
+    echo "All dumps restored successfully."
+
+    # --- Shutdown and Cleanup ---
+    echo "Stopping temporary PostgreSQL server..."
+
+
+    echo "Restore process complete. PostgreSQL data directory is ready."

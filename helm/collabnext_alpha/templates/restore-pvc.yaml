@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  # The name of your PVC. This is how you will reference it in your pods.
+  name: restore-pvc
+spec:
+  # accessModes define how the volume can be mounted.
+  # - ReadWriteOnce (RWO): Can be mounted as read-write by a single node. The most common mode.
+  # - ReadOnlyMany (ROX): Can be mounted as read-only by many nodes.
+  # - ReadWriteMany (RWX): Can be mounted as read-write by many nodes. (Requires a volume plugin that supports this, like NFS or CephFS).
+  accessModes:
+    - ReadWriteOnce
+
+  # The name of the StorageClass to use for provisioning.
+  # This is crucial as it determines the type of storage (e.g., SSD, HDD, cloud-specific storage).
+  # You must replace this with a StorageClass name that exists in your cluster.
+  # To see available StorageClasses, run: `kubectl get storageclass`
+  # If you omit this, the cluster's default StorageClass will be used (if one is defined).
+  storageClassName: "basic"
+
+  # The requested resources for the volume.
+  resources:
+    requests:
+      # The amount of storage you are requesting.
+      # Units can be Gi (Gibibyte), Ti (Tebibyte), Mi (Mebibyte), etc.
+      storage: 50Gi
