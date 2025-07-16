@@ -51,7 +51,7 @@ const GraphComponent = ({graphData, setInstitution, setTopic, setResearcher}) =>
         if (node.data.type === 'AUTHOR') {
           return {
             ...basicStyle,
-            size: 10,
+            size: node.data.size ?? 10,
             color: '#332288',
             zIndex: 1,
           };
@@ -60,7 +60,7 @@ const GraphComponent = ({graphData, setInstitution, setTopic, setResearcher}) =>
         if (node.data.type === 'WORK') {
           return {
             ...basicStyle,
-            size: 10,
+            size: node.data.size ?? 10,
             color: '#117733',
             zIndex: 1,
           };
@@ -105,7 +105,7 @@ const GraphComponent = ({graphData, setInstitution, setTopic, setResearcher}) =>
         if (node.data.type === 'SUBFIELD') {
           return {
             ...basicStyle,
-            size: node.data.people ?? 10,
+            size: node.data.size ?? 10,
             color: '#AA4499',
             zIndex: 1,
           };

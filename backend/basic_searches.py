@@ -23,19 +23,82 @@ def get_researcher_result(app, researcher, page=1, per_page=20):
         return results
 
     app.logger.debug("Processing database results for researcher")
-    list = []
     metadata = data['author_metadata']
 
-    if metadata['orcid'] is None:
-        metadata['orcid'] = ''
-    metadata['work_count'] = metadata['num_of_works']
-    metadata['current_institution'] = metadata['last_known_institution']
-    metadata['cited_by_count'] = metadata['num_of_citations']
-    metadata['oa_link'] = metadata['openalex_url']
+    metadata['orcid'] = '' if metadata['orcid'] is None else metadata['orcid']
+    metadata['work_count'] = metadata.pop('num_of_works')
+    metadata['current_institution'] = metadata.pop('last_known_institution')
+    metadata['cited_by_count'] = metadata.pop('num_of_citations')
+    metadata['oa_link'] = metadata.pop('openalex_url')
+    metadata['current_institution'], metadata['institution_url'] = determine_last_known_institution(app, metadata['last_known_institution'], metadata['oa_link'])
+
+    coordinates_metadata.append((metadata['institution_url'], metadata['current_institution'], 1))
+
+    app.logger.debug("Building graph structure")
     
-    if metadata['last_known_institution'] is None:
+    total_topics = len(data['data'])
+    start = (page - 1) * per_page
+    end = start + per_page
+
+    list = construct_list(app, data['data'], "topic", "num_of_works", start, end)
+    graph = construct_graph(app, list, data['subfield_metadata'], 'topic_display_name', metadata['work_count'], 'SUBFIELD', 'TOPIC', 'has_topic', 50)
+
+    app.logger.info(f"Successfully built result for researcher: {researcher}")
+    return {
+        "metadata": metadata,
+        "metadata_pagination": {
+            "total_pages": (total_topics + per_page - 1) // per_page,
+            "current_page": page,
+            "total_topics": total_topics,
+        },
+        "graph": graph, 
+        "list": list, 
+        "coordinates": coordinates_metadata
+    }
+
+def construct_list(app, data, item_name, count_name, start, end):
+    list = []
+    for entry in data[start:end]:
+        item = entry[item_name]
+        count = entry[count_name]
+        list.append((item, count))
+    app.logger.info(f"Successfully built list.")
+    return list
+
+def construct_graph(app, list, destination_data, destination_name, total_count, source_type, destination_type, edge_label, scale_factor):
+    nodes = []
+    edges = []
+    for entry in list:
+        source = entry[0]
+        count = entry[1]
+        nodes.append({'id': source, 'label': source, 'type': source_type, 'size': (count / total_count) * scale_factor })
+        for destination in destination_data[source]:
+            nodes.append({'id': destination[destination_name], 'label': destination['destination_name'], 'type': destination_type})
+            edges.append({ 'id': f"""{source}-{destination[destination_name]}""", 'start': source, 'end': destination[destination_name], "label": edge_label, "start_type": source_type, "end_type": destination_type})
+    graph = {"nodes": nodes, "edges": edges}
+    app.logger.info(f"Successfully built graph.")
+    return graph
+
+def construct_simple_graph(app, list, source_node_id, source_node_type, source_type, total_count, scale_factor, edge_label):
+    nodes = []
+    edges = []
+    nodes.append({ 'id': source_node_id, 'label': source_node_id, 'type': source_node_type })
+    for entry in list:
+        source = entry[0]
+        count = entry[1]
+        nodes.append({'id': source, 'label': source, 'type': source_type, 'size': (count / total_count) * scale_factor })
+        edges.append({ 'id': f"""{source}-{source_node_id}""", 'start': source, 'end': source_node_id, "label": edge_label, "start_type": source_type, "end_type": source_node_type})
+    graph = {"nodes": nodes, "edges": edges}
+    app.logger.info(f"Successfully built graph.")
+    return graph
+
+def determine_last_known_institution(app, last_known_institution, oa_link):
+    """
+    Determines the last known institution if the metadata does not contain one
+    """
+    if last_known_institution is None:
         app.logger.debug("Fetching last known institutions from OpenAlex")
-        institution_object = fetch_last_known_institutions(app, metadata['oa_link'])
+        institution_object = fetch_last_known_institutions(app, oa_link)
         if institution_object == []:
             app.logger.warning("No last known institution found")
             last_known_institution = ""
@@ -44,39 +107,8 @@ def get_researcher_result(app, researcher, page=1, per_page=20):
             last_known_institution = institution_object['display_name']
             institution_url = institution_object['id']
     else:
-        last_known_institution = metadata['last_known_institution']
-    metadata['current_institution'] = last_known_institution
-    metadata['institution_url'] = institution_url
-
-    coordinates_metadata.append((metadata['institution_url'], metadata['current_institution'], 1))
-
-    app.logger.debug("Building graph structure")
-    nodes = []
-    edges = []
-    edges.append({ 'id': f"""{metadata['openalex_url']}-{last_known_institution}""", 'start': metadata['openalex_url'], 'end': last_known_institution, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
-    
-    total_topics = len(data['data'])
-    start = (page - 1) * per_page
-    end = start + per_page
-
-    for entry in data['data'][start:end]:
-        subfield = entry['topic']
-        num_works = entry['num_of_works']
-        list.append((subfield, num_works))
-        nodes.append({'id': subfield, 'label': subfield, 'type': "SUBFIELD", 'people': (num_works / metadata['work_count']) * 50 })
-        subfield_metadata = data['subfield_metadata']
-        for topic in subfield_metadata[subfield]:
-            nodes.append({'id': topic['topic_display_name'], 'label': topic['topic_display_name'], 'type': "TOPIC"})
-            edges.append({ 'id': f"""{subfield}-{topic['topic_display_name']}""", 'start': subfield, 'end': topic['topic_display_name'], "label": "has_topic", "start_type": "SUBFIELD", "end_type": "TOPIC"})
-
-    graph = {"nodes": nodes, "edges": edges}
-    app.logger.info(f"Successfully built result for researcher: {researcher}")
-    return {"metadata": metadata,
-            "metadata_pagination": {
-            "total_pages": (total_topics + per_page - 1) // per_page,
-            "current_page": page,
-            "total_topics": total_topics,
-        }, "graph": graph, "list": list, "coordinates": coordinates_metadata}
+        institution_url = ""
+    return last_known_institution, institution_url
 
 def get_institution_results(app, institution, page=1, per_page=10):
     """
@@ -95,36 +127,28 @@ def get_institution_results(app, institution, page=1, per_page=10):
         results = {"metadata": data, "graph": graph, "list": topic_list}
         app.logger.info(f"Successfully retrieved SPARQL results for institution: {institution}")
         return results
+    
     app.logger.debug("Processing database results for institution")
     metadata = data['institution_metadata']
-    metadata['homepage'] = metadata['url']
-    metadata['works_count'] = metadata['num_of_works']
-    metadata['name'] = metadata['institution_name']
-    metadata['cited_count'] = metadata['num_of_citations']
-    metadata['oa_link'] = metadata['openalex_url']
-    metadata['author_count'] = metadata['num_of_authors']
+
+    metadata['homepage'] = metadata.pop('url')
+    metadata['works_count'] = metadata.pop('num_of_works')
+    metadata['name'] = metadata.pop('institution_name')
+    metadata['cited_count'] = metadata.pop('num_of_citations')
+    metadata['oa_link'] = metadata.pop('openalex_url')
+    metadata['author_count'] = metadata.pop('num_of_authors')
+
     coordinates_metadata.append((metadata['oa_link'], institution, metadata['author_count']))
+    
     app.logger.debug("Building graph structure")
-    nodes = []
-    edges = []
-    # institution_id = metadata['openalex_url']
 
     total_topics = len(data['data'])
     start = (page - 1) * per_page
     end = start + per_page
 
-    list = []
-    for entry in data['data'][start:end]:
-        subfield = entry['topic_subfield']
-        number = entry['num_of_authors']
-        list.append((subfield, number))
-        nodes.append({'id': subfield, 'label': subfield, 'type': "SUBFIELD", 'people': (number / metadata['author_count']) * 100 })
-        subfield_metadata = data['subfield_metadata']
-        for topic in subfield_metadata[subfield]:
-            nodes.append({'id': topic['topic_display_name'], 'label': topic['topic_display_name'], 'type': "TOPIC"})
-            edges.append({ 'id': f"""{subfield}-{topic['topic_display_name']}""", 'start': subfield, 'end': topic['topic_display_name'], "label": "has_topic", "start_type": "SUBFIELD", "end_type": "TOPIC"})
-    
-    graph = {"nodes": nodes, "edges": edges}
+    list = construct_list(app, data['data'], 'topic_subfield', 'num_of_authors', start, end)
+    graph = construct_graph(app, list, data['subfield_metadata'], 'topic_display_name', metadata['author_count'], "SUBFIELD", "TOPIC", "has_topic", 100)
+
     app.logger.info(f"Successfully built result for institution: {institution}")
     return {
         "metadata": metadata,
@@ -144,13 +168,13 @@ def get_subfield_results(app, topic, page=1, per_page=20, map_limit=100):
     Gets the results when user only inputs a subfield
     Uses database to get result (database contains all topics)
     """
+    coordinates_metadata = []
     data = search_by_topic(app, topic)
     if data is None:
         app.logger.warning(f"No results found for topic: {topic}")
         return {"metadata": None, "graph": None, "list": None}
 
     app.logger.debug("Processing database results for topic")
-    list = []
     metadata = {}
 
     topic_clusters = []
@@ -166,27 +190,13 @@ def get_subfield_results(app, topic, page=1, per_page=20, map_limit=100):
     metadata['name'] = topic.title()
 
     app.logger.debug("Building graph structure")
-    nodes = []
-    edges = []
-    coordinates_metadata = []
-
-    topic_id = topic
-    nodes.append({ 'id': topic_id, 'label': topic, 'type': 'TOPIC' })
 
     total_topics = len(data['data'])
     start = (page - 1) * per_page
     end = start + per_page
-    
-    for entry in data['data'][start:end]:
-        institution = entry['institution_name']
-        number = entry['num_of_authors']
-        oa_link = entry['institution_id']
-        list.append((institution, number))
-        coordinates_metadata.append((oa_link, institution, number))
-        nodes.append({ 'id': institution, 'label': institution, 'type': 'INSTITUTION' })
-        nodes.append({'id': number, 'label': number, 'type': "NUMBER"})
-        edges.append({ 'id': f"""{institution}-{topic_id}""", 'start': institution, 'end': topic_id, "label": "researches", "start_type": "INSTITUTION", "end_type": "TOPIC"})
-        edges.append({ 'id': f"""{institution}-{number}""", 'start': institution, 'end': number, "label": "number", "start_type": "INSTITUTION", "end_type": "NUMBER"})
+
+    list = construct_list(app, data['data'], 'institution_name', 'num_of_authors', start, end)
+    graph = construct_simple_graph(app, list, topic, 'SUBFIELD', 'INSTITUTION', metadata['researchers'], 100, 'Researches')
     
     for entry in data['data'][:map_limit]:
         institution = entry['institution_name']
@@ -194,7 +204,6 @@ def get_subfield_results(app, topic, page=1, per_page=20, map_limit=100):
         oa_link = entry['institution_id']
         coordinates_metadata.append((oa_link, institution, number))
 
-    graph = {"nodes": nodes, "edges": edges}
     app.logger.info(f"Successfully built result for topic: {topic}")
     return {"metadata": metadata, 
             "metadata_pagination": {
@@ -413,7 +422,6 @@ def get_institution_and_subfield_results(app, institution, topic, page=1, per_pa
         return results
 
     app.logger.debug("Processing database results for institution and topic")
-    list = []
     metadata = {}
 
     topic_clusters = []
@@ -434,30 +442,17 @@ def get_institution_and_subfield_results(app, institution, topic, page=1, per_pa
     metadata['institution_name'] = institution
 
     app.logger.debug("Building graph structure")
-    nodes = []
-    edges = []
-    subfield_id = metadata['topic_oa_link']
-    institution_id = metadata['institution_oa_link']
-    nodes.append({ 'id': subfield_id, 'label': topic, 'type': 'TOPIC' })
-    nodes.append({ 'id': institution_id, 'label': institution, 'type': 'INSTITUTION' })
-    edges.append({ 'id': f"""{institution_id}-{subfield_id}""", 'start': institution_id, 'end': subfield_id, "label": "researches", "start_type": "INSTITUTION", "end_type": "TOPIC"})
-    
+
     total_topics = len(data['data'])
     metadata['people_count'] = total_topics
     start = (page - 1) * per_page
     end = start + per_page
-
-    for entry in data['data'][start:end]:
-        author_id = entry['author_id']
-        author_name = entry['author_name']
-        number = entry['num_of_works']
-        list.append((author_name, number))
-        nodes.append({ 'id': author_id, 'label': author_name, 'type': 'AUTHOR' })
-        nodes.append({ 'id': number, 'label': number, 'type': 'NUMBER' })
-        edges.append({ 'id': f"""{author_id}-{number}""", 'start': author_id, 'end': number, "label": "numWorks", "start_type": "AUTHOR", "end_type": "NUMBER"})
-        edges.append({ 'id': f"""{author_id}-{institution_id}""", 'start': author_id, 'end': institution_id, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
     
-    graph = {"nodes": nodes, "edges": edges}
+    list = construct_list(app, data['data'], 'author_name', 'num_of_works', start, end)
+    graph = construct_simple_graph(app, list, institution, 'INSTITUTION', 'AUTHOR', metadata['work_count'], 10, 'Authored')
+    graph['nodes'].append({ 'id': topic, 'label': topic, 'type': 'TOPIC' })
+    graph['edges'].append({ 'id': f"""{institution}-{topic}""", 'start': institution, 'end': topic, "label": "Researches", "start_type": "INSTITUTION", "end_type": "SUBFIELD"})
+
     app.logger.info(f"Successfully built result for institution: {institution} and topic: {topic}")
     return {
         "metadata": metadata,
@@ -509,7 +504,6 @@ def get_researcher_and_subfield_results(app, researcher, topic, page=1, per_page
         return results
 
     app.logger.debug("Processing database results for researcher and topic")
-    list = []
     metadata = {}
     
     topic_clusters = []
@@ -523,45 +517,24 @@ def get_researcher_and_subfield_results(app, researcher, topic, page=1, per_page
     metadata['cited_by_count'] = data['totals']['total_num_of_citations']
     metadata['topic_oa_link'] = subfield_oa_link
 
-    if data['author_metadata']['orcid'] is None:
-        metadata['orcid'] = ''
-    else:
-        metadata['orcid'] = data['author_metadata']['orcid']
+    metadata['orcid'] = '' if data['author_metadata']['orcid'] is None else data['author_metadata']['orcid']
     metadata['researcher_name'] = researcher
     metadata['researcher_oa_link'] = data['author_metadata']['openalex_url']
-    if data['author_metadata']['last_known_institution'] is None:
-        app.logger.debug("Fetching last known institutions from OpenAlex")
-        institution_object = fetch_last_known_institutions(app, metadata['researcher_oa_link'])[0]
-        metadata['current_institution'] = institution_object['display_name']
-    else:
-        metadata['current_institution'] = data['author_metadata']['last_known_institution']
-    last_known_institution = metadata['current_institution']
+    metadata['current_institution'], metadata['institution_url'] = determine_last_known_institution(app, data['author_metadata']['last_known_institution'], metadata['researcher_oa_link'])
 
     app.logger.debug("Building graph structure")
-    nodes = []
-    edges = []
-    researcher_id = metadata['researcher_oa_link']
-    subfield_id = metadata['topic_oa_link']
-    nodes.append({ 'id': last_known_institution, 'label': last_known_institution, 'type': 'INSTITUTION' })
-    edges.append({ 'id': f"""{researcher_id}-{last_known_institution}""", 'start': researcher_id, 'end': last_known_institution, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
-    nodes.append({ 'id': researcher_id, 'label': researcher, 'type': 'AUTHOR' })
-    nodes.append({ 'id': subfield_id, 'label': topic, 'type': 'TOPIC' })
-    edges.append({ 'id': f"""{researcher_id}-{subfield_id}""", 'start': researcher_id, 'end': subfield_id, "label": "researches", "start_type": "AUTHOR", "end_type": "TOPIC"})
-    
+
     total_topics = len(data['data'])
     start = (page - 1) * per_page
     end = start + per_page
 
-    for entry in data['data'][start:end]:
-        work = entry['work_name']
-        number = entry['num_of_citations']
-        list.append((work, number))
-        nodes.append({ 'id': work, 'label': work, 'type': 'WORK' })
-        nodes.append({'id': number, 'label': number, 'type': "NUMBER"})
-        edges.append({ 'id': f"""{researcher_id}-{work}""", 'start': researcher_id, 'end': work, "label": "authored", "start_type": "AUTHOR", "end_type": "WORK"})
-        edges.append({ 'id': f"""{work}-{number}""", 'start': work, 'end': number, "label": "citedBy", "start_type": "WORK", "end_type": "NUMBER"})
-    
-    graph = {"nodes": nodes, "edges": edges}
+    list = construct_list(app, data['data'], 'work_name', 'num_of_citations', start, end)
+    graph = construct_simple_graph(app, list, researcher, 'AUTHOR', 'WORK', metadata['work_count'], 10, 'Authored')
+    graph['nodes'].append({ 'id': metadata['current_institution'], 'label': metadata['current_institution'], 'type': 'INSTITUTION' })
+    graph['nodes'].append({ 'id': topic, 'label': topic, 'type': 'TOPIC' })
+    graph['edges'].append({ 'id': f"""{researcher}-{metadata['current_institution']}""", 'start': researcher, 'end': metadata['current_institution'], "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
+    graph['edges'].append({ 'id': f"""{researcher}-{topic}""", 'start': researcher, 'end': topic, "label": "Researches", "start_type": "AUTHOR", "end_type": "SUBFIELD"})
+
     app.logger.info(f"Successfully built result for researcher: {researcher} and topic: {topic}")
     return {"metadata": metadata, 
             "metadata_pagination": {
@@ -588,7 +561,6 @@ def get_institution_and_researcher_results(app, institution, researcher, page=1,
         return results
     
     app.logger.debug("Processing database results for institution and researcher")
-    list = []
     metadata = {}
 
     metadata['homepage'] = data['institution_metadata']['url']
@@ -596,40 +568,22 @@ def get_institution_and_researcher_results(app, institution, researcher, page=1,
     metadata['ror'] = data['institution_metadata']['ror']
     metadata['institution_name'] = institution
 
-    if data['author_metadata']['orcid'] is None:
-        metadata['orcid'] = ''
-    else:
-        metadata['orcid'] = data['author_metadata']['orcid']
+    metadata['orcid'] = '' if data['author_metadata']['orcid'] is None else data['author_metadata']['orcid']
     metadata['researcher_name'] = researcher
     metadata['researcher_oa_link'] = data['author_metadata']['openalex_url']
-    metadata['current_institution'] = ""
-    #last_known_institution = metadata['current_institution']
+    metadata['current_institution'], metadata['institution_url'] = determine_last_known_institution(app, data['author_metadata']['last_known_institution'], metadata['researcher_oa_link'])
     metadata['work_count'] = data['author_metadata']['num_of_works']
     metadata['cited_by_count'] = data['author_metadata']['num_of_citations']
 
     app.logger.debug("Building graph structure")
-    nodes = []
-    edges = []
-    author_id = metadata['researcher_oa_link']
-    # nodes.append({ 'id': institution, 'label': institution, 'type': 'INSTITUTION' })
-    # edges.append({ 'id': f"""{author_id}-{institution}""", 'start': author_id, 'end': institution, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
-    # nodes.append({ 'id': author_id, 'label': researcher, "type": "AUTHOR"})
     
     total_topics = len(data['data'])
     start = (page - 1) * per_page
     end = start + per_page
 
-    for entry in data['data'][start:end]:
-        subfield = entry['topic_name']
-        num_works = entry["num_of_works"]
-        list.append((subfield, num_works))
-        nodes.append({'id': subfield, 'label': subfield, 'type': "SUBFIELD", 'people': (num_works / metadata['work_count']) * 100 })
-        subfield_metadata = data['subfield_metadata']
-        for topic in subfield_metadata[subfield]:
-            nodes.append({'id': topic['topic_display_name'], 'label': topic['topic_display_name'], 'type': "TOPIC"})
-            edges.append({ 'id': f"""{subfield}-{topic['topic_display_name']}""", 'start': subfield, 'end': topic['topic_display_name'], "label": "has_topic", "start_type": "SUBFIELD", "end_type": "TOPIC"})
+    list = construct_list(app, data['data'], 'topic_name', 'num_of_works', start, end)
+    graph = construct_graph(app, list, data['subfield_metadata'], 'topic_display_name', metadata['work_count'], 'SUBFIELD', 'TOPIC', 'has_topic', 100)
 
-    graph = {"nodes": nodes, "edges": edges}
     app.logger.info(f"Successfully built result for researcher: {researcher} and institution: {institution}")
     return {"metadata": metadata,
             "metadata_pagination": {
@@ -659,7 +613,6 @@ def get_institution_researcher_subfield_results(app, institution, researcher,
         return results
 
     app.logger.debug("Processing database results for institution, researcher, and topic")
-    list = []
     metadata = {}
 
     metadata['homepage'] = data['institution_metadata']['url']
@@ -667,14 +620,10 @@ def get_institution_researcher_subfield_results(app, institution, researcher,
     metadata['ror'] = data['institution_metadata']['ror']
     metadata['institution_name'] = institution
 
-    if data['author_metadata']['orcid'] is None:
-        metadata['orcid'] = ''
-    else:
-        metadata['orcid'] = data['author_metadata']['orcid']
+    metadata['orcid'] = '' if data['author_metadata']['orcid'] is None else data['author_metadata']['orcid']
     metadata['researcher_name'] = researcher
     metadata['researcher_oa_link'] = data['author_metadata']['openalex_url']
-    metadata['current_institution'] = ""
-    #last_known_institution = metadata['current_institution']
+    metadata['current_institution'], metadata['institution_url'] = determine_last_known_institution(app, data['author_metadata']['last_known_institution'], metadata['researcher_oa_link'])
 
     topic_clusters = []
     for entry in data['subfield_metadata']:
@@ -688,31 +637,18 @@ def get_institution_researcher_subfield_results(app, institution, researcher,
     metadata['topic_oa_link'] = subfield_oa_link
 
     app.logger.debug("Building graph structure")
-    nodes = []
-    edges = []
-    institution_id = metadata['institution_oa_link']
-    researcher_id = metadata['researcher_oa_link']
-    subfield_id = metadata['topic_oa_link']
-    nodes.append({ 'id': institution_id, 'label': institution, 'type': 'INSTITUTION' })
-    edges.append({ 'id': f"""{researcher_id}-{institution_id}""", 'start': researcher_id, 'end': institution_id, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
-    nodes.append({ 'id': researcher_id, 'label': researcher, 'type': 'AUTHOR' })
-    nodes.append({ 'id': subfield_id, 'label': topic, 'type': 'TOPIC' })
-    edges.append({ 'id': f"""{researcher_id}-{subfield_id}""", 'start': researcher_id, 'end': subfield_id, "label": "researches", "start_type": "AUTHOR", "end_type": "TOPIC"})
-    
+
     total_topics = len(data['data'])
     start = (page - 1) * per_page
     end = start + per_page
 
-    for entry in data['data'][start:end]:
-        work_name = entry['work_name']
-        number = entry['cited_by_count']
-        list.append((work_name, number))
-        nodes.append({ 'id': work_name, 'label': work_name, 'type': 'WORK' })
-        nodes.append({'id': number, 'label': number, 'type': "NUMBER"})
-        edges.append({ 'id': f"""{researcher_id}-{work_name}""", 'start': researcher_id, 'end': work_name, "label": "authored", "start_type": "AUTHOR", "end_type": "WORK"})
-        edges.append({ 'id': f"""{work_name}-{number}""", 'start': work_name, 'end': number, "label": "citedBy", "start_type": "WORK", "end_type": "NUMBER"})
+    list = construct_list(app, data['data'], 'work_name', 'cited_by_count', start, end)
+    graph = construct_simple_graph(app, list, researcher, 'AUTHOR', 'WORK', metadata['cited_by_count'], 10, 'Authored')
+    graph['nodes'].append({ 'id': institution, 'label': institution, 'type': 'INSTITUTION' })
+    graph['nodes'].append({ 'id': topic, 'label': topic, 'type': 'TOPIC' })
+    graph['edges'].append({ 'id': f"""{researcher}-{institution}""", 'start': researcher, 'end': institution, "label": "memberOf", "start_type": "AUTHOR", "end_type": "INSTITUTION"})
+    graph['edges'].append({ 'id': f"""{researcher}-{topic}""", 'start': researcher, 'end': topic, "label": "researches", "start_type": "AUTHOR", "end_type": "SUBFIELD"})
     
-    graph = {"nodes": nodes, "edges": edges}
     app.logger.info(f"Successfully built result for researcher: {researcher}, institution: {institution}, and topic: {topic}")
 
     return {"metadata": metadata, 
