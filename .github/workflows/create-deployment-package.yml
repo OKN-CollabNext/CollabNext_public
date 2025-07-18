@@ -3,7 +3,7 @@ name: Create Deployment Package
 on:
   workflow_dispatch: # Manual trigger only
   push:
-    branches: [ main ]
+    branches: [ main, ci-cd ]
 
 jobs:
   create-package:
