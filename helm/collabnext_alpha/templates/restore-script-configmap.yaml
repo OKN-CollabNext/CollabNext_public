@@ -1,3 +1,4 @@
+{{- if .Values.backup.url }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -128,3 +129,4 @@ data:
 
 
     echo "Restore process complete. PostgreSQL data directory is ready."
+{{- end }}

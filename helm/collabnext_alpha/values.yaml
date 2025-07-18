@@ -6,19 +6,19 @@ replicaCount: 1
 
 frontend:
   image:
-    repository:  containers.renci.org/frink/collab_next_frontend
+    repository: ghcr.io/okn-collabnext/collabnext_public/frontend
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "v0.0.2"
+    tag: "latest"
   service:
     port: 8080
 
 backend:
   image:
-    repository: containers.renci.org/frink/collab_next_backend
+    repository: ghcr.io/okn-collabnext/collabnext_public/backend
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "v0.0.2"
+    tag: "latest"
   service:
     port: 5000
   env:

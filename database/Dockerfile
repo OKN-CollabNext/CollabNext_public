@@ -10,26 +10,24 @@ RUN apk add --no-cache \
     && rm -rf /var/cache/apk/*
 
 # Set environment variables for PostgreSQL
-ENV POSTGRES_DB=collabnext
-ENV POSTGRES_USER=postgres
-ENV POSTGRES_PASSWORD=changeme123
+ENV POSTGRES_DB=openalex
+ENV POSTGRES_USER=openalexreader
+ENV POSTGRES_PASSWORD=collabnext2024reader!
 ENV PGDATA=/var/lib/postgresql/data
 
 # Create directory for initialization scripts
 RUN mkdir -p /docker-entrypoint-initdb.d
 
-# Copy SQL dump file and initialization scripts
-# Replace 'path/to/your/dump.sql' with actual path to your SQL dump
-COPY ./sql-dump/collabnext_dump.sql /docker-entrypoint-initdb.d/01-init-database.sql
-COPY ./scripts/init-db.sh /docker-entrypoint-initdb.d/02-init-scripts.sh
+# Copy initialization scripts if they exist
+COPY ./scripts/ /docker-entrypoint-initdb.d/
 
-# Copy custom SQL functions if needed
-COPY ./sql-functions/mup_sql_functions.sql /docker-entrypoint-initdb.d/03-functions.sql
+# Copy custom SQL functions if they exist
+COPY ./sql-functions/ /docker-entrypoint-initdb.d/
 
 # Make scripts executable
-RUN chmod +x /docker-entrypoint-initdb.d/*.sh
+RUN find /docker-entrypoint-initdb.d -name "*.sh" -exec chmod +x {} \;
 
-# Create custom postgresql.conf for optimizations (optional)
+# Copy custom postgresql.conf for optimizations
 COPY ./config/postgresql.conf /etc/postgresql/postgresql.conf
 
 # Health check

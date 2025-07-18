@@ -1,0 +1,142 @@
+name: Build and Push Docker Images
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+  workflow_dispatch: # Allow manual triggering
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    # Only run if PR was merged (not just closed)
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      packages: write
+      
+    strategy:
+      matrix:
+        include:
+          - name: backend
+            context: ./backend
+            dockerfile: ./backend/Dockerfile
+            image: backend
+          - name: frontend  
+            context: ./frontend
+            dockerfile: ./frontend/Dockerfile
+            image: frontend
+          - name: database
+            context: ./database
+            dockerfile: ./database/Dockerfile
+            image: database
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.image }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  update-helm-values:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    
+    permissions:
+      contents: write
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Helm values with new image tags
+        run: |
+          # Get the short SHA for tagging
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          IMAGE_TAG="${BRANCH_NAME}-${SHORT_SHA}"
+          
+          # Update values.yaml with new image tags
+          sed -i "s|repository:.*frink/collab_next_frontend|repository: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend|g" helm/collabnext_alpha/values.yaml
+          sed -i "s|repository:.*frink/collab_next_backend|repository: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend|g" helm/collabnext_alpha/values.yaml
+          sed -i "s|tag:.*|tag: \"${IMAGE_TAG}\"|g" helm/collabnext_alpha/values.yaml
+          
+          # Also update the local values file
+          sed -i "s|repository:.*frink/collab_next_frontend|repository: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend|g" helm/collabnext_alpha/values-local.yaml
+          sed -i "s|repository:.*frink/collab_next_backend|repository: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend|g" helm/collabnext_alpha/values-local.yaml
+          sed -i "s|tag:.*|tag: \"${IMAGE_TAG}\"|g" helm/collabnext_alpha/values-local.yaml
+
+      - name: Commit updated Helm values
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add helm/collabnext_alpha/values.yaml helm/collabnext_alpha/values-local.yaml
+          git diff --staged --quiet || git commit -m "chore: update image tags to ${{ github.sha }}"
+          git push
+
+  security-scan:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    
+    permissions:
+      contents: read
+      security-events: write
+      
+    strategy:
+      matrix:
+        image: [backend, frontend, database]
+        
+    steps:
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.image }}:latest
+          format: 'sarif'
+          output: 'trivy-results-${{ matrix.image }}.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results-${{ matrix.image }}.sarif' 
