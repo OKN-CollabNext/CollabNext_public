@@ -31,34 +31,36 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
+      - name: Generate version
+        id: version
+        run: |
+          # Generate a version based on git info
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            VERSION="0.1.0"
+          else
+            # For other branches, use branch name and commit hash
+            BRANCH_NAME=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9]/-/g')
+            SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+            VERSION="0.1.0-${BRANCH_NAME}-${SHORT_SHA}"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Generated version: ${VERSION}"
 
       - name: Package Helm chart
         run: |
           cd helm/collabnext_alpha
           helm dependency update
-          helm package . --version ${{ steps.meta.outputs.version }} --app-version ${{ steps.meta.outputs.version }}
+          helm package . --version ${{ steps.version.outputs.version }} --app-version ${{ steps.version.outputs.version }}
 
       - name: Push Helm chart to OCI registry
         run: |
           cd helm/collabnext_alpha
           # Push the chart as an OCI artifact
-          helm push collabnext-alpha-${{ steps.meta.outputs.version }}.tgz oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart
+          helm push collabnext-alpha-${{ steps.version.outputs.version }}.tgz oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart
           
           # Also tag as latest if this is the main branch
           if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            helm push collabnext-alpha-${{ steps.meta.outputs.version }}.tgz oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart:latest
+            helm push collabnext-alpha-${{ steps.version.outputs.version }}.tgz oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart:latest
           fi
 
       - name: Create Helm chart metadata
@@ -67,7 +69,7 @@ jobs:
           cat > helm-chart-metadata.json << EOF
           {
             "name": "collabnext-alpha",
-            "version": "${{ steps.meta.outputs.version }}",
+            "version": "${{ steps.version.outputs.version }}",
             "repository": "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart",
             "images": {
               "backend": "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:latest",
@@ -75,8 +77,8 @@ jobs:
               "database": "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/database:latest"
             },
             "deployment": {
-              "local": "helm install collabnext-local oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart --version ${{ steps.meta.outputs.version }} -f values-local.yaml",
-              "production": "helm install collabnext-prod oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart --version ${{ steps.meta.outputs.version }} -f values.yaml"
+              "local": "helm install collabnext-local oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart --version ${{ steps.version.outputs.version }} -f values-local.yaml",
+              "production": "helm install collabnext-prod oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart --version ${{ steps.version.outputs.version }} -f values.yaml"
             }
           }
           EOF
