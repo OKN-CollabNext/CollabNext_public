@@ -1,0 +1,156 @@
+name: Create Deployment Package
+
+on:
+  workflow_dispatch: # Manual trigger only
+  push:
+    branches: [ main ]
+
+jobs:
+  create-package:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      packages: read
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        run: |
+          curl https://get.helm.sh/helm-v3.18.3-linux-amd64.tar.gz | tar xz
+          sudo mv linux-amd64/helm /usr/local/bin/helm
+          helm version
+
+      - name: Package Helm chart
+        run: |
+          cd helm/collabnext_alpha
+          helm dependency update
+          helm package .
+
+      - name: Create deployment package
+        run: |
+          # Create package directory
+          mkdir -p collabnext-deployment
+          
+          # Copy Helm chart
+          cp helm/collabnext_alpha/*.tgz collabnext-deployment/
+          
+          # Create deployment script
+          echo '#!/bin/bash' > collabnext-deployment/deploy.sh
+          echo 'set -e' >> collabnext-deployment/deploy.sh
+          echo '' >> collabnext-deployment/deploy.sh
+          echo 'echo "🚀 Deploying CollabNext..."' >> collabnext-deployment/deploy.sh
+          echo '' >> collabnext-deployment/deploy.sh
+          echo '# Check if Helm is installed' >> collabnext-deployment/deploy.sh
+          echo 'if ! command -v helm &> /dev/null; then' >> collabnext-deployment/deploy.sh
+          echo '    echo "❌ Helm is not installed. Please install Helm first: https://helm.sh/docs/intro/install/"' >> collabnext-deployment/deploy.sh
+          echo '    exit 1' >> collabnext-deployment/deploy.sh
+          echo 'fi' >> collabnext-deployment/deploy.sh
+          echo '' >> collabnext-deployment/deploy.sh
+          echo '# Check if kubectl is installed' >> collabnext-deployment/deploy.sh
+          echo 'if ! command -v kubectl &> /dev/null; then' >> collabnext-deployment/deploy.sh
+          echo '    echo "❌ kubectl is not installed. Please install kubectl first: https://kubernetes.io/docs/tasks/tools/"' >> collabnext-deployment/deploy.sh
+          echo '    exit 1' >> collabnext-deployment/deploy.sh
+          echo 'fi' >> collabnext-deployment/deploy.sh
+          echo '' >> collabnext-deployment/deploy.sh
+          echo '# Get the chart file' >> collabnext-deployment/deploy.sh
+          echo 'CHART_FILE=$(ls *.tgz | head -1)' >> collabnext-deployment/deploy.sh
+          echo 'if [ -z "$CHART_FILE" ]; then' >> collabnext-deployment/deploy.sh
+          echo '    echo "❌ No Helm chart found in current directory"' >> collabnext-deployment/deploy.sh
+          echo '    exit 1' >> collabnext-deployment/deploy.sh
+          echo 'fi' >> collabnext-deployment/deploy.sh
+          echo '' >> collabnext-deployment/deploy.sh
+          echo 'echo "📦 Installing chart: $CHART_FILE"' >> collabnext-deployment/deploy.sh
+          echo '' >> collabnext-deployment/deploy.sh
+          echo '# Install the chart' >> collabnext-deployment/deploy.sh
+          echo 'helm install collabnext ./$CHART_FILE' >> collabnext-deployment/deploy.sh
+          echo '' >> collabnext-deployment/deploy.sh
+          echo 'echo "✅ CollabNext deployed successfully!"' >> collabnext-deployment/deploy.sh
+          echo 'echo ""' >> collabnext-deployment/deploy.sh
+          echo 'echo "🔍 To check the status:"' >> collabnext-deployment/deploy.sh
+          echo 'echo "   kubectl get pods"' >> collabnext-deployment/deploy.sh
+          echo 'echo ""' >> collabnext-deployment/deploy.sh
+          echo 'echo "🌐 To access the application:"' >> collabnext-deployment/deploy.sh
+          echo 'echo "   kubectl port-forward svc/collabnext-frontend 3000:80"' >> collabnext-deployment/deploy.sh
+          echo 'echo "   Then open http://localhost:3000 in your browser"' >> collabnext-deployment/deploy.sh
+          echo 'echo ""' >> collabnext-deployment/deploy.sh
+          echo 'echo "🗑️  To uninstall:"' >> collabnext-deployment/deploy.sh
+          echo 'echo "   helm uninstall collabnext"' >> collabnext-deployment/deploy.sh
+          
+          chmod +x collabnext-deployment/deploy.sh
+          
+          # Create README
+          echo '# CollabNext Deployment Package' > collabnext-deployment/README.md
+          echo '' >> collabnext-deployment/README.md
+          echo 'This package contains everything needed to deploy CollabNext to your Kubernetes cluster.' >> collabnext-deployment/README.md
+          echo '' >> collabnext-deployment/README.md
+          echo '## Quick Start' >> collabnext-deployment/README.md
+          echo '' >> collabnext-deployment/README.md
+          echo '1. **Prerequisites:**' >> collabnext-deployment/README.md
+          echo '   - Kubernetes cluster (local or cloud)' >> collabnext-deployment/README.md
+          echo '   - Helm 3.0+' >> collabnext-deployment/README.md
+          echo '   - kubectl' >> collabnext-deployment/README.md
+          echo '' >> collabnext-deployment/README.md
+          echo '2. **Deploy:**' >> collabnext-deployment/README.md
+          echo '   ```bash' >> collabnext-deployment/README.md
+          echo '   cd collabnext-deployment' >> collabnext-deployment/README.md
+          echo '   ./deploy.sh' >> collabnext-deployment/README.md
+          echo '   ```' >> collabnext-deployment/README.md
+          echo '' >> collabnext-deployment/README.md
+          echo '3. **Access:**' >> collabnext-deployment/README.md
+          echo '   ```bash' >> collabnext-deployment/README.md
+          echo '   kubectl port-forward svc/collabnext-frontend 3000:80' >> collabnext-deployment/README.md
+          echo '   ```' >> collabnext-deployment/README.md
+          echo '   Then open http://localhost:3000 in your browser' >> collabnext-deployment/README.md
+          
+          # Create version info
+          echo "CollabNext Deployment Package" > collabnext-deployment/version.txt
+          echo "Version: $(date +%Y-%m-%d)" >> collabnext-deployment/version.txt
+          echo "Chart: $(ls helm/collabnext_alpha/*.tgz | head -1)" >> collabnext-deployment/version.txt
+          echo "Images:" >> collabnext-deployment/version.txt
+          echo "  - ghcr.io/okn-collabnext/collabnext_public/backend:latest" >> collabnext-deployment/version.txt
+          echo "  - ghcr.io/okn-collabnext/collabnext_public/frontend:latest" >> collabnext-deployment/version.txt
+          echo "  - ghcr.io/okn-collabnext/collabnext_public/database:latest" >> collabnext-deployment/version.txt
+          
+          # Create archive
+          tar -czf collabnext-deployment-$(date +%Y%m%d).tar.gz collabnext-deployment/
+          
+          echo "📦 Created deployment package: collabnext-deployment-$(date +%Y%m%d).tar.gz"
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push deployment package to GHCR
+        run: |
+          # Create a simple Dockerfile to package the deployment files
+          cat > Dockerfile.deploy << 'EOF'
+          FROM scratch
+          COPY collabnext-deployment/ /deployment/
+          LABEL org.opencontainers.image.title="CollabNext Deployment Package"
+          LABEL org.opencontainers.image.description="Complete deployment package for CollabNext"
+          LABEL org.opencontainers.image.version="$(date +%Y%m%d)"
+          EOF
+          
+          # Build and push the package as an OCI artifact
+          docker build -f Dockerfile.deploy -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/deployment-package:$(date +%Y%m%d) .
+          docker build -f Dockerfile.deploy -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/deployment-package:latest .
+          
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/deployment-package:$(date +%Y%m%d)
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/deployment-package:latest
+          
+          echo "📦 Pushed deployment package to GHCR:"
+          echo "   ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/deployment-package:$(date +%Y%m%d)"
+          echo "   ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/deployment-package:latest"
+
+      - name: Upload deployment package (backup)
+        uses: actions/upload-artifact@v4
+        with:
+          name: collabnext-deployment
+          path: collabnext-deployment-*.tar.gz
+          retention-days: 30 
