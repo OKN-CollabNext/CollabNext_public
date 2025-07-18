@@ -209,7 +209,7 @@ jobs:
         run: |
           # Create a simple Dockerfile to package the deployment files
           cat > Dockerfile.deploy << 'EOF'
-          FROM scratch
+          FROM alpine:3.19
           COPY collabnext-deployment/ /deployment/
           LABEL org.opencontainers.image.title="CollabNext Deployment Package"
           LABEL org.opencontainers.image.description="Complete deployment package for CollabNext"
