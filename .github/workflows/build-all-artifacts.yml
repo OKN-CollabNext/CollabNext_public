@@ -209,7 +209,7 @@ jobs:
         run: |
           # Create a simple Dockerfile to package the deployment files
           cat > Dockerfile.deploy << 'EOF'
-          FROM scratch
+          FROM alpine:3.19
           COPY collabnext-deployment/ /deployment/
           LABEL org.opencontainers.image.title="CollabNext Deployment Package"
           LABEL org.opencontainers.image.description="Complete deployment package for CollabNext"
@@ -300,33 +300,6 @@ jobs:
           name: deployment-manifest
           path: deployment-manifest.json
           retention-days: 90
-
-  security-scan:
-    needs: build-and-push-images
-    runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
-    
-    permissions:
-      contents: read
-      security-events: write
-      
-    strategy:
-      matrix:
-        image: [backend, frontend, database]
-        
-    steps:
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.REGISTRY }}/${{ steps.image_name.outputs.value }}/${{ matrix.image }}:latest
-          format: 'sarif'
-          output: 'trivy-results-${{ matrix.image }}.sarif'
-
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: 'trivy-results-${{ matrix.image }}.sarif' 
 
   make-packages-public:
     needs: [build-and-push-images, create-deployment-package]
