@@ -1,0 +1,246 @@
+name: Build All Artifacts (Images + Helm Chart)
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+  workflow_dispatch: # Allow manual triggering
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push-images:
+    # Only run if PR was merged (not just closed)
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      packages: write
+      
+    strategy:
+      matrix:
+        include:
+          - name: backend
+            context: ./backend
+            dockerfile: ./backend/Dockerfile
+            image: backend
+          - name: frontend  
+            context: ./frontend
+            dockerfile: ./frontend/Dockerfile
+            image: frontend
+          - name: database
+            context: ./database
+            dockerfile: ./database/Dockerfile
+            image: database
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.image }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-and-push-helm-chart:
+    needs: build-and-push-images
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    
+    permissions:
+      contents: read
+      packages: write
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.12.0
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Package Helm chart
+        run: |
+          cd helm/collabnext_alpha
+          helm dependency update
+          helm package . --version ${{ steps.meta.outputs.version }} --app-version ${{ steps.meta.outputs.version }}
+
+      - name: Push Helm chart to OCI registry
+        run: |
+          cd helm/collabnext_alpha
+          # Push the chart as an OCI artifact
+          helm push collabnext-alpha-${{ steps.meta.outputs.version }}.tgz oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart
+          
+          # Also tag as latest if this is the main branch
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            helm push collabnext-alpha-${{ steps.meta.outputs.version }}.tgz oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart:latest
+          fi
+
+  create-deployment-manifest:
+    needs: [build-and-push-images, build-and-push-helm-chart]
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    
+    permissions:
+      contents: read
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.12.0
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Create unified deployment manifest
+        run: |
+          # Create a comprehensive deployment manifest
+          cat > deployment-manifest.json << EOF
+          {
+            "application": "collabnext",
+            "version": "${{ steps.meta.outputs.version }}",
+            "build": {
+              "commit": "${{ github.sha }}",
+              "branch": "${{ github.ref_name }}",
+              "triggered_by": "${{ github.actor }}",
+              "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            },
+            "artifacts": {
+              "helm_chart": {
+                "repository": "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart",
+                "version": "${{ steps.meta.outputs.version }}",
+                "latest": "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart:latest"
+              },
+              "images": {
+                "backend": "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:latest",
+                "frontend": "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:latest",
+                "database": "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/database:latest"
+              }
+            },
+            "deployment": {
+              "local": {
+                "command": "helm install collabnext-local oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart --version ${{ steps.meta.outputs.version }} -f values-local.yaml",
+                "description": "Deploy to local Kubernetes cluster"
+              },
+              "production": {
+                "command": "helm install collabnext-prod oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart --version ${{ steps.meta.outputs.version }} -f values.yaml",
+                "description": "Deploy to production environment"
+              },
+              "upgrade": {
+                "command": "helm upgrade collabnext oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart --version ${{ steps.meta.outputs.version }}",
+                "description": "Upgrade existing deployment"
+              }
+            },
+            "registry": {
+              "type": "github_container_registry",
+              "url": "${{ env.REGISTRY }}",
+              "organization": "${{ github.repository_owner }}",
+              "repository": "${{ github.event.repository.name }}"
+            }
+          }
+          EOF
+          
+          echo "🎯 Unified Deployment Manifest:"
+          cat deployment-manifest.json
+
+      - name: Upload deployment manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-manifest
+          path: deployment-manifest.json
+          retention-days: 90
+
+  security-scan:
+    needs: build-and-push-images
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    
+    permissions:
+      contents: read
+      security-events: write
+      
+    strategy:
+      matrix:
+        image: [backend, frontend, database]
+        
+    steps:
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.image }}:latest
+          format: 'sarif'
+          output: 'trivy-results-${{ matrix.image }}.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results-${{ matrix.image }}.sarif' 

@@ -29,8 +29,9 @@ The CI/CD system automatically builds and publishes Docker images for all 3 comp
 
 ### 2. Update Helm Values (`update-helm-values`)
 - **Auto-Update**: Updates Helm chart values with new image tags
-- **Commit Back**: Commits updated tags back to repository
+- **Pull Request**: Creates a PR with updated tags (respects branch protection)
 - **Versioning**: Uses `branch-shortsha` format (e.g., `main-abc1234`)
+- **Auto-Merge**: PR is created with automated labels for easy identification
 
 ### 3. Security Scanning (`security-scan`)
 - **Vulnerability Scanning**: Runs Trivy security scanner on all images
@@ -61,9 +62,10 @@ ghcr.io/your-org/collabnext_public/backend:1.2
 ## Setup Requirements
 
 ### Repository Settings
-1. **Branch Protection**: Ensure main branch has protection rules
+1. **Branch Protection**: Ensure main branch has protection rules (already configured)
 2. **Actions Permissions**: Enable GitHub Actions in repository settings
 3. **Package Permissions**: Enable "Write" permissions for `GITHUB_TOKEN`
+4. **Pull Request Permissions**: Enable "Allow GitHub Actions to create and approve pull requests"
 
 ### No Secrets Required! 🎉
 - Uses built-in `GITHUB_TOKEN` (no manual setup needed)
@@ -81,13 +83,15 @@ docker pull ghcr.io/your-org/collabnext_public/database:latest
 ```
 
 ### Kubernetes Deployment
-The Helm values are automatically updated, so just deploy:
+The Helm values are automatically updated via pull requests, so you can:
 ```bash
+# Use the latest values from the auto-generated PR
 helm upgrade collabnext-local ./helm/collabnext_alpha -f values-local.yaml
 ```
 
 ### Production Deployment
 ```bash
+# Production deployment with latest images
 helm upgrade collabnext-prod ./helm/collabnext_alpha -f values.yaml
 ```
 
@@ -108,6 +112,11 @@ helm upgrade collabnext-prod ./helm/collabnext_alpha -f values.yaml
 - **Dependabot**: Automated dependency updates
 - **Code Scanning**: Security analysis results
 
+### Pull Requests
+- **Auto-Generated PRs**: Look for PRs with labels `automated`, `helm`, `ci-cd`
+- **Review Process**: Helm updates are created as PRs for review
+- **Auto-Cleanup**: PR branches are automatically deleted after merge
+
 ## Troubleshooting
 
 ### Build Failures
@@ -123,8 +132,13 @@ gh workflow run make-packages-public.yml
 
 ### Image Not Updating
 1. **Check Tags**: Verify new tags are created
-2. **Helm Values**: Ensure values files are updated
+2. **Helm PRs**: Look for auto-generated PRs with Helm updates
 3. **Cache Issues**: Try clearing GitHub Actions cache
+
+### Branch Protection Issues
+- **PR Creation**: Helm updates are now created as PRs instead of direct commits
+- **Review Required**: You may need to review and merge the auto-generated PRs
+- **Auto-Merge**: Consider enabling auto-merge for PRs with specific labels
 
 ## Local Testing
 
@@ -148,7 +162,8 @@ act -j build-and-push
 3. **Create PR**: Open pull request to main branch
 4. **Review & Merge**: After approval, merge PR
 5. **Automatic Build**: CI/CD automatically builds and deploys
-6. **Verify**: Check GitHub Packages for new images
+6. **Review Helm PR**: Review and merge the auto-generated Helm update PR
+7. **Verify**: Check GitHub Packages for new images
 
 ---
 
