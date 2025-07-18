@@ -1,3 +1,4 @@
+{{- if .Values.backup.url }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -24,3 +25,4 @@ spec:
       # The amount of storage you are requesting.
       # Units can be Gi (Gibibyte), Ti (Tebibyte), Mi (Mebibyte), etc.
       storage: 50Gi
+{{- end }}

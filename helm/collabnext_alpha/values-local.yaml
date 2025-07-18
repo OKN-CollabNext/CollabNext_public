@@ -1,0 +1,82 @@
+# Local development values for CollabNext
+replicaCount: 1
+
+frontend:
+  image:
+    repository: ghcr.io/okn-collabnext/collabnext_public/frontend
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  service:
+    type: NodePort
+    port: 8080
+    nodePort: 30080
+
+backend:
+  image:
+    repository: ghcr.io/okn-collabnext/collabnext_public/backend
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  service:
+    type: NodePort
+    port: 5000
+    nodePort: 30050
+  env:
+    FLASK_DEBUG: "1"
+    DB_HOST: "collabnext-local-postgresql"
+    DB_PORT: "5432"
+    DB_NAME: "openalex"
+    DB_USER: "openalexreader"
+    DB_PASSWORD: "collabnext2024reader!"
+
+# PostgreSQL configuration for local development
+postgresql:
+  enabled: true
+  auth:
+    enablePostgresUser: true
+    username: openalexreader
+    password: "collabnext2024reader!"
+    database: "openalex"
+  architecture: standalone
+  image:
+    tag: 17.5.0-debian-12-r8
+  primary:
+    # Reduced resources for local development
+    resources:
+      limits:
+        memory: 1Gi
+        cpu: 1
+      requests:
+        memory: 512Mi
+        cpu: 500m
+    persistence:
+      size: 10Gi
+      storageClass: "standard"
+    # Disable complex init containers for faster startup
+    initContainers: []
+    # Disable extra volumes that cause issues in local development
+    extraVolumes: []
+    livenessProbe: {}
+    readinessProbe: {}
+    startupProbe: {}
+
+# Disable ingress for local development
+ingress:
+  enabled: false
+
+# Disable HPA for local
+autoscaling:
+  enabled: false
+
+# Minimal resources for local development
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+# Disable backup/restore functionality for local development
+backup:
+  url: ""
+  files: [] 
