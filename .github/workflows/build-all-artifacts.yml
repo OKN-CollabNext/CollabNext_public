@@ -1,4 +1,4 @@
-name: Build All Artifacts (Images + Helm Chart)
+name: Build All Artifacts (Images + Deployment Package)
 
 on:
   pull_request:
@@ -43,10 +43,10 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Container Registry
+      - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
@@ -75,7 +75,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  build-and-push-helm-chart:
+  create-deployment-package:
     needs: build-and-push-images
     runs-on: ubuntu-latest
     if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
@@ -89,49 +89,138 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Helm
-        uses: azure/setup-helm@v3
-        with:
-          version: v3.12.0
+        run: |
+          curl https://get.helm.sh/helm-v3.18.3-linux-amd64.tar.gz | tar xz
+          sudo mv linux-amd64/helm /usr/local/bin/helm
+          helm version
 
-      - name: Log in to Container Registry
+      - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
 
       - name: Package Helm chart
         run: |
           cd helm/collabnext_alpha
           helm dependency update
-          helm package . --version ${{ steps.meta.outputs.version }} --app-version ${{ steps.meta.outputs.version }}
+          helm package .
 
-      - name: Push Helm chart to OCI registry
+      - name: Create deployment package
         run: |
-          cd helm/collabnext_alpha
-          # Push the chart as an OCI artifact
-          helm push collabnext-alpha-${{ steps.meta.outputs.version }}.tgz oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart
+          # Create package directory
+          mkdir -p collabnext-deployment
           
-          # Also tag as latest if this is the main branch
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            helm push collabnext-alpha-${{ steps.meta.outputs.version }}.tgz oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart:latest
-          fi
+          # Copy Helm chart
+          cp helm/collabnext_alpha/*.tgz collabnext-deployment/
+          
+          # Create deployment script
+          echo '#!/bin/bash' > collabnext-deployment/deploy.sh
+          echo 'set -e' >> collabnext-deployment/deploy.sh
+          echo '' >> collabnext-deployment/deploy.sh
+          echo 'echo "🚀 Deploying CollabNext..."' >> collabnext-deployment/deploy.sh
+          echo '' >> collabnext-deployment/deploy.sh
+          echo '# Check if Helm is installed' >> collabnext-deployment/deploy.sh
+          echo 'if ! command -v helm &> /dev/null; then' >> collabnext-deployment/deploy.sh
+          echo '    echo "❌ Helm is not installed. Please install Helm first: https://helm.sh/docs/intro/install/"' >> collabnext-deployment/deploy.sh
+          echo '    exit 1' >> collabnext-deployment/deploy.sh
+          echo 'fi' >> collabnext-deployment/deploy.sh
+          echo '' >> collabnext-deployment/deploy.sh
+          echo '# Check if kubectl is installed' >> collabnext-deployment/deploy.sh
+          echo 'if ! command -v kubectl &> /dev/null; then' >> collabnext-deployment/deploy.sh
+          echo '    echo "❌ kubectl is not installed. Please install kubectl first: https://kubernetes.io/docs/tasks/tools/"' >> collabnext-deployment/deploy.sh
+          echo '    exit 1' >> collabnext-deployment/deploy.sh
+          echo 'fi' >> collabnext-deployment/deploy.sh
+          echo '' >> collabnext-deployment/deploy.sh
+          echo '# Get the chart file' >> collabnext-deployment/deploy.sh
+          echo 'CHART_FILE=$(ls *.tgz | head -1)' >> collabnext-deployment/deploy.sh
+          echo 'if [ -z "$CHART_FILE" ]; then' >> collabnext-deployment/deploy.sh
+          echo '    echo "❌ No Helm chart found in current directory"' >> collabnext-deployment/deploy.sh
+          echo '    exit 1' >> collabnext-deployment/deploy.sh
+          echo 'fi' >> collabnext-deployment/deploy.sh
+          echo '' >> collabnext-deployment/deploy.sh
+          echo 'echo "📦 Installing chart: $CHART_FILE"' >> collabnext-deployment/deploy.sh
+          echo '' >> collabnext-deployment/deploy.sh
+          echo '# Install the chart' >> collabnext-deployment/deploy.sh
+          echo 'helm install collabnext ./$CHART_FILE' >> collabnext-deployment/deploy.sh
+          echo '' >> collabnext-deployment/deploy.sh
+          echo 'echo "✅ CollabNext deployed successfully!"' >> collabnext-deployment/deploy.sh
+          echo 'echo ""' >> collabnext-deployment/deploy.sh
+          echo 'echo "🔍 To check the status:"' >> collabnext-deployment/deploy.sh
+          echo 'echo "   kubectl get pods"' >> collabnext-deployment/deploy.sh
+          echo 'echo ""' >> collabnext-deployment/deploy.sh
+          echo 'echo "🌐 To access the application:"' >> collabnext-deployment/deploy.sh
+          echo 'echo "   kubectl port-forward svc/collabnext-frontend 3000:80"' >> collabnext-deployment/deploy.sh
+          echo 'echo "   Then open http://localhost:3000 in your browser"' >> collabnext-deployment/deploy.sh
+          echo 'echo ""' >> collabnext-deployment/deploy.sh
+          echo 'echo "🗑️  To uninstall:"' >> collabnext-deployment/deploy.sh
+          echo 'echo "   helm uninstall collabnext"' >> collabnext-deployment/deploy.sh
+          
+          chmod +x collabnext-deployment/deploy.sh
+          
+          # Create README
+          echo '# CollabNext Deployment Package' > collabnext-deployment/README.md
+          echo '' >> collabnext-deployment/README.md
+          echo 'This package contains everything needed to deploy CollabNext to your Kubernetes cluster.' >> collabnext-deployment/README.md
+          echo '' >> collabnext-deployment/README.md
+          echo '## Quick Start' >> collabnext-deployment/README.md
+          echo '' >> collabnext-deployment/README.md
+          echo '1. **Prerequisites:**' >> collabnext-deployment/README.md
+          echo '   - Kubernetes cluster (local or cloud)' >> collabnext-deployment/README.md
+          echo '   - Helm 3.0+' >> collabnext-deployment/README.md
+          echo '   - kubectl' >> collabnext-deployment/README.md
+          echo '' >> collabnext-deployment/README.md
+          echo '2. **Deploy:**' >> collabnext-deployment/README.md
+          echo '   ```bash' >> collabnext-deployment/README.md
+          echo '   cd collabnext-deployment' >> collabnext-deployment/README.md
+          echo '   ./deploy.sh' >> collabnext-deployment/README.md
+          echo '   ```' >> collabnext-deployment/README.md
+          echo '' >> collabnext-deployment/README.md
+          echo '3. **Access:**' >> collabnext-deployment/README.md
+          echo '   ```bash' >> collabnext-deployment/README.md
+          echo '   kubectl port-forward svc/collabnext-frontend 3000:80' >> collabnext-deployment/README.md
+          echo '   ```' >> collabnext-deployment/README.md
+          echo '   Then open http://localhost:3000 in your browser' >> collabnext-deployment/README.md
+          
+          # Create version info
+          echo "CollabNext Deployment Package" > collabnext-deployment/version.txt
+          echo "Version: $(date +%Y-%m-%d)" >> collabnext-deployment/version.txt
+          echo "Chart: $(ls helm/collabnext_alpha/*.tgz | head -1)" >> collabnext-deployment/version.txt
+          echo "Images:" >> collabnext-deployment/version.txt
+          echo "  - ghcr.io/okn-collabnext/collabnext_public/backend:latest" >> collabnext-deployment/version.txt
+          echo "  - ghcr.io/okn-collabnext/collabnext_public/frontend:latest" >> collabnext-deployment/version.txt
+          echo "  - ghcr.io/okn-collabnext/collabnext_public/database:latest" >> collabnext-deployment/version.txt
+          
+          # Create archive
+          tar -czf collabnext-deployment-$(date +%Y%m%d).tar.gz collabnext-deployment/
+          
+          echo "📦 Created deployment package: collabnext-deployment-$(date +%Y%m%d).tar.gz"
+
+      - name: Push deployment package to GHCR
+        run: |
+          # Create a simple Dockerfile to package the deployment files
+          cat > Dockerfile.deploy << 'EOF'
+          FROM scratch
+          COPY collabnext-deployment/ /deployment/
+          LABEL org.opencontainers.image.title="CollabNext Deployment Package"
+          LABEL org.opencontainers.image.description="Complete deployment package for CollabNext"
+          LABEL org.opencontainers.image.version="$(date +%Y%m%d)"
+          EOF
+          
+          # Build and push the package as an OCI artifact
+          docker build -f Dockerfile.deploy -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/deployment-package:$(date +%Y%m%d) .
+          docker build -f Dockerfile.deploy -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/deployment-package:latest .
+          
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/deployment-package:$(date +%Y%m%d)
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/deployment-package:latest
+          
+          echo "📦 Pushed deployment package to GHCR:"
+          echo "   ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/deployment-package:$(date +%Y%m%d)"
+          echo "   ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/deployment-package:latest"
 
   create-deployment-manifest:
-    needs: [build-and-push-images, build-and-push-helm-chart]
+    needs: [build-and-push-images, create-deployment-package]
     runs-on: ubuntu-latest
     if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
     
@@ -142,31 +231,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Helm
-        uses: azure/setup-helm@v3
-        with:
-          version: v3.12.0
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-
       - name: Create unified deployment manifest
         run: |
           # Create a comprehensive deployment manifest
           cat > deployment-manifest.json << EOF
           {
             "application": "collabnext",
-            "version": "${{ steps.meta.outputs.version }}",
+            "version": "$(date +%Y%m%d)",
             "build": {
               "commit": "${{ github.sha }}",
               "branch": "${{ github.ref_name }}",
@@ -174,10 +245,10 @@ jobs:
               "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
             },
             "artifacts": {
-              "helm_chart": {
-                "repository": "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart",
-                "version": "${{ steps.meta.outputs.version }}",
-                "latest": "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart:latest"
+              "deployment_package": {
+                "repository": "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/deployment-package",
+                "version": "$(date +%Y%m%d)",
+                "latest": "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/deployment-package:latest"
               },
               "images": {
                 "backend": "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:latest",
@@ -186,16 +257,16 @@ jobs:
               }
             },
             "deployment": {
-              "local": {
-                "command": "helm install collabnext-local oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart --version ${{ steps.meta.outputs.version }} -f values-local.yaml",
-                "description": "Deploy to local Kubernetes cluster"
+              "one_liner": {
+                "command": "curl -s https://raw.githubusercontent.com/OKN-CollabNext/CollabNext_public/main/scripts/deploy-from-ghcr.sh | bash",
+                "description": "One-command deployment from GHCR"
               },
-              "production": {
-                "command": "helm install collabnext-prod oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart --version ${{ steps.meta.outputs.version }} -f values.yaml",
-                "description": "Deploy to production environment"
+              "manual": {
+                "command": "docker run --rm -v \$(pwd):/output ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/deployment-package:latest cp -r /deployment /output/ && cd deployment && ./deploy.sh",
+                "description": "Manual deployment from GHCR"
               },
               "upgrade": {
-                "command": "helm upgrade collabnext oci://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/helm-chart --version ${{ steps.meta.outputs.version }}",
+                "command": "helm upgrade collabnext ./collabnext-alpha-*.tgz",
                 "description": "Upgrade existing deployment"
               }
             },
