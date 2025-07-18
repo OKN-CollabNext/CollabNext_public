@@ -327,3 +327,20 @@ jobs:
         if: always()
         with:
           sarif_file: 'trivy-results-${{ matrix.image }}.sarif' 
+
+  make-packages-public:
+    needs: [build-and-push-images, create-deployment-package]
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Make all GHCR packages public
+        run: |
+          for pkg in backend frontend database deployment-package; do
+            gh api \
+              -X PATCH \
+              -H "Accept: application/vnd.github+json" \
+              /user/packages/container/${{ steps.image_name.outputs.value }}/$pkg/visibility \
+              -f visibility=public || true
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
