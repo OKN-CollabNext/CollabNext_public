@@ -22,7 +22,7 @@ jobs:
       - name: Set up Helm
         uses: azure/setup-helm@v3
         with:
-          version: v3.12.0
+          version: v3.18.3
 
       - name: Log in to Container Registry
         uses: docker/login-action@v3
@@ -39,17 +39,36 @@ jobs:
             VERSION="0.1.0"
           else
             # For other branches, use branch name and commit hash
-            BRANCH_NAME=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9]/-/g')
+            # Ensure branch name is valid for semantic versioning
+            BRANCH_NAME=$(echo "${{ github.ref_name }}" | sed 's/[^a-zA-Z0-9]/-/g' | tr '[:upper:]' '[:lower:]')
             SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
-            VERSION="0.1.0-${BRANCH_NAME}-${SHORT_SHA}"
+            VERSION="0.1.0-${BRANCH_NAME}.${SHORT_SHA}"
           fi
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "Generated version: ${VERSION}"
+          
+          # Validate the version format
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$ ]]; then
+            echo "Error: Invalid semantic version format: $VERSION"
+            exit 1
+          fi
 
       - name: Package Helm chart
         run: |
           cd helm/collabnext_alpha
+          echo "Current directory: $(pwd)"
+          echo "Chart.yaml contents:"
+          cat Chart.yaml
+          echo "Generated version: ${{ steps.version.outputs.version }}"
+          
+          # Clean up any existing charts directory and lock file
+          rm -rf charts/
+          rm -f Chart.lock
+          
+          echo "Running helm dependency update..."
           helm dependency update
+          
+          echo "Running helm package..."
           helm package . --version ${{ steps.version.outputs.version }} --app-version ${{ steps.version.outputs.version }}
 
       - name: Push Helm chart to OCI registry
