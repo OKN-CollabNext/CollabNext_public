@@ -40,6 +40,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set lowercase image name
+        id: image_name
+        run: echo "value=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -54,7 +58,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.image }}
+          images: ${{ env.REGISTRY }}/${{ steps.image_name.outputs.value }}/${{ matrix.image }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -87,6 +91,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set lowercase image name
+        id: image_name
+        run: echo "value=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
 
       - name: Set up Helm
         run: |
@@ -209,15 +217,15 @@ jobs:
           EOF
           
           # Build and push the package as an OCI artifact
-          docker build -f Dockerfile.deploy -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/deployment-package:$(date +%Y%m%d) .
-          docker build -f Dockerfile.deploy -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/deployment-package:latest .
+          docker build -f Dockerfile.deploy -t ${{ env.REGISTRY }}/${{ steps.image_name.outputs.value }}/deployment-package:$(date +%Y%m%d) .
+          docker build -f Dockerfile.deploy -t ${{ env.REGISTRY }}/${{ steps.image_name.outputs.value }}/deployment-package:latest .
           
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/deployment-package:$(date +%Y%m%d)
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/deployment-package:latest
+          docker push ${{ env.REGISTRY }}/${{ steps.image_name.outputs.value }}/deployment-package:$(date +%Y%m%d)
+          docker push ${{ env.REGISTRY }}/${{ steps.image_name.outputs.value }}/deployment-package:latest
           
           echo "📦 Pushed deployment package to GHCR:"
-          echo "   ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/deployment-package:$(date +%Y%m%d)"
-          echo "   ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/deployment-package:latest"
+          echo "   ${{ env.REGISTRY }}/${{ steps.image_name.outputs.value }}/deployment-package:$(date +%Y%m%d)"
+          echo "   ${{ env.REGISTRY }}/${{ steps.image_name.outputs.value }}/deployment-package:latest"
 
   create-deployment-manifest:
     needs: [build-and-push-images, create-deployment-package]
@@ -230,6 +238,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set lowercase image name
+        id: image_name
+        run: echo "value=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
 
       - name: Create unified deployment manifest
         run: |
@@ -246,14 +258,14 @@ jobs:
             },
             "artifacts": {
               "deployment_package": {
-                "repository": "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/deployment-package",
+                "repository": "${{ env.REGISTRY }}/${{ steps.image_name.outputs.value }}/deployment-package",
                 "version": "$(date +%Y%m%d)",
-                "latest": "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/deployment-package:latest"
+                "latest": "${{ env.REGISTRY }}/${{ steps.image_name.outputs.value }}/deployment-package:latest"
               },
               "images": {
-                "backend": "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:latest",
-                "frontend": "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:latest",
-                "database": "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/database:latest"
+                "backend": "${{ env.REGISTRY }}/${{ steps.image_name.outputs.value }}/backend:latest",
+                "frontend": "${{ env.REGISTRY }}/${{ steps.image_name.outputs.value }}/frontend:latest",
+                "database": "${{ env.REGISTRY }}/${{ steps.image_name.outputs.value }}/database:latest"
               }
             },
             "deployment": {
@@ -262,7 +274,7 @@ jobs:
                 "description": "One-command deployment from GHCR"
               },
               "manual": {
-                "command": "docker run --rm -v \$(pwd):/output ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/deployment-package:latest cp -r /deployment /output/ && cd deployment && ./deploy.sh",
+                "command": "docker run --rm -v \$(pwd):/output ${{ env.REGISTRY }}/${{ steps.image_name.outputs.value }}/deployment-package:latest cp -r /deployment /output/ && cd deployment && ./deploy.sh",
                 "description": "Manual deployment from GHCR"
               },
               "upgrade": {
@@ -306,7 +318,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.image }}:latest
+          image-ref: ${{ env.REGISTRY }}/${{ steps.image_name.outputs.value }}/${{ matrix.image }}:latest
           format: 'sarif'
           output: 'trivy-results-${{ matrix.image }}.sarif'
 
