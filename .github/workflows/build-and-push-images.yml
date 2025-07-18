@@ -1,10 +1,7 @@
 name: Build and Push Docker Images
 
 on:
-  pull_request:
-    types: [closed]
-    branches: [main]
-  workflow_dispatch: # Allow manual triggering
+  workflow_dispatch: # Manual trigger only
 
 env:
   REGISTRY: ghcr.io
@@ -12,8 +9,6 @@ env:
 
 jobs:
   build-and-push:
-    # Only run if PR was merged (not just closed)
-    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     
     permissions:
@@ -75,49 +70,9 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  update-helm-values:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
-    
-    permissions:
-      contents: write
-      
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Update Helm values with new image tags
-        run: |
-          # Get the short SHA for tagging
-          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
-          BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          IMAGE_TAG="${BRANCH_NAME}-${SHORT_SHA}"
-          
-          # Update values.yaml with new image tags
-          sed -i "s|repository:.*frink/collab_next_frontend|repository: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend|g" helm/collabnext_alpha/values.yaml
-          sed -i "s|repository:.*frink/collab_next_backend|repository: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend|g" helm/collabnext_alpha/values.yaml
-          sed -i "s|tag:.*|tag: \"${IMAGE_TAG}\"|g" helm/collabnext_alpha/values.yaml
-          
-          # Also update the local values file
-          sed -i "s|repository:.*frink/collab_next_frontend|repository: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend|g" helm/collabnext_alpha/values-local.yaml
-          sed -i "s|repository:.*frink/collab_next_backend|repository: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend|g" helm/collabnext_alpha/values-local.yaml
-          sed -i "s|tag:.*|tag: \"${IMAGE_TAG}\"|g" helm/collabnext_alpha/values-local.yaml
-
-      - name: Commit updated Helm values
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add helm/collabnext_alpha/values.yaml helm/collabnext_alpha/values-local.yaml
-          git diff --staged --quiet || git commit -m "chore: update image tags to ${{ github.sha }}"
-          git push
-
   security-scan:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
     
     permissions:
       contents: read

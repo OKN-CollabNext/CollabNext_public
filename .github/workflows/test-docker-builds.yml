@@ -1,11 +1,7 @@
-name: Test Docker Builds
+name: Test Docker Builds (Manual Only)
 
 on:
   workflow_dispatch: # Manual trigger only
-  pull_request:
-    paths:
-      - '**/Dockerfile'
-      - '.github/workflows/test-docker-builds.yml'
 
 jobs:
   test-builds:
