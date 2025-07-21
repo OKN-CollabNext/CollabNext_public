@@ -50,10 +50,13 @@ RUN sed -i "s|^pid\s\+.*/nginx.pid;.*|pid ${NGINX_PID_FILE};|g" "${NGINX_CONF_DI
 # 2. Remove default nginx static assets from the image
 RUN rm -rf ${NGINX_HTML_DIR}/*
 
-# 3. Copy the compiled React application from the builder stage to Nginx's web root
+# 3. Copy custom Nginx configuration for SPA routing
+COPY nginx.conf ${NGINX_CONF_DIR}/conf.d/default.conf
+
+# 4. Copy the compiled React application from the builder stage to Nginx's web root
 COPY --from=build /app/build ${NGINX_HTML_DIR}
 
-# 4. Set correct ownership for directories Nginx needs to write to or read from:
+# 5. Set correct ownership for directories Nginx needs to write to or read from:
 #    - NGINX_HTML_DIR: For serving application files.
 #    - NGINX_CACHE_DIR: For Nginx caching mechanisms.
 #    - NGINX_LOG_DIR: For Nginx logs (base image often sets this, but explicit is safer).
@@ -66,7 +69,7 @@ RUN mkdir -p "$(dirname ${NGINX_PID_FILE})" && \
     chown -R "${NGINX_USER}:${NGINX_GROUP}" "${NGINX_CACHE_DIR}" && \
     chown -R "${NGINX_USER}:${NGINX_GROUP}" "${NGINX_LOG_DIR}"
 
-# 5. Switch to the non-root 'nginx' user.
+# 6. Switch to the non-root 'nginx' user.
 # This instruction ensures that Nginx and any subsequent commands run as this user.
 USER ${NGINX_USER}
 
