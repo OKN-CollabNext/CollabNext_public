@@ -15,3 +15,4 @@ spec:
       name: http
   selector:
     {{- include "collabnext_alpha.selectorLabels" . | nindent 4 }}
+    app: backend

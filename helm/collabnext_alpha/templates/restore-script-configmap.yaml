@@ -88,7 +88,7 @@ data:
       echo "Restoring from directory: ${DOWNLOAD_DIR}"
       # For directory format, pg_restore is pointed at the directory itself.
       # It handles any compressed .dat.gz files internally.
-      pg_restore --username="${POSTGRES_USER}" --dbname="${POSTGRES_DATABASE}" --verbose "${DOWNLOAD_DIR}"
+      pg_restore --clean --if-exists --no-owner --no-acl --username="${POSTGRES_USER}" --dbname="${POSTGRES_DATABASE}" --verbose "${DOWNLOAD_DIR}"
     else
       echo "No toc.dat found. Processing files individually."
       for file in ${DUMP_FILES}; do
