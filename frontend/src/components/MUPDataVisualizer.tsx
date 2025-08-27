@@ -15,6 +15,7 @@ import {
 } from 'chart.js/auto';
 import { Bar } from 'react-chartjs-2';
 import { FiInfo } from 'react-icons/fi';
+import { baseUrl } from "../utils/constants";
 
 Chart.register(
   CategoryScale,
@@ -148,7 +149,6 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
   const [error, setError] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [fetchErrors, setFetchErrors] = useState<{[key: string]: string}>({});
-  const BASE_URL = process.env.REACT_APP_BASE_URL || "";
 
   useEffect(() => {
     const fetchData = async () => {
@@ -156,11 +156,11 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
       setError(null);
 
       try {
-        if (!BASE_URL) {
-          throw new Error("BASE_URL is not defined");
+        if (!baseUrl) {
+          throw new Error("baseUrl is not defined");
         }
 
-        const mupIdResponse = await fetch(`${BASE_URL}/get-mup-id`, {
+        const mupIdResponse = await fetch(`${baseUrl}/get-mup-id`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ institution_name: institutionName }),
@@ -170,7 +170,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
         const mupId = mupIdData.institution_mup_id;
 
         const fetchPromises = [
-          fetch(`${BASE_URL}/mup-sat-scores`, {
+          fetch(`${baseUrl}/mup-sat-scores`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ institution_name: institutionName }),
@@ -179,7 +179,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
             return null;
           }),
 
-          fetch(`${BASE_URL}/endowments-and-givings`, {
+          fetch(`${baseUrl}/endowments-and-givings`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ institution_name: institutionName }),
@@ -188,7 +188,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
             return null;
           }),
 
-          mupId ? fetch(`${BASE_URL}/institution_medical_expenses`, {
+          mupId ? fetch(`${baseUrl}/institution_medical_expenses`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ institution_name: institutionName }),
@@ -197,7 +197,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
             return null;
           }) : Promise.resolve(null),
 
-          fetch(`${BASE_URL}/institution_doctorates_and_postdocs`, {
+          fetch(`${baseUrl}/institution_doctorates_and_postdocs`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ institution_name: institutionName }),
@@ -206,7 +206,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
             return null;
           }),
 
-          fetch(`${BASE_URL}/institution_num_of_researches`, {
+          fetch(`${baseUrl}/institution_num_of_researches`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ institution_name: institutionName }),
@@ -215,7 +215,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
             return null;
           }),
 
-          fetch(`${BASE_URL}/mup-faculty-awards`, {
+          fetch(`${baseUrl}/mup-faculty-awards`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ institution_name: institutionName }),
@@ -224,7 +224,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
             return null;
           }),
 
-          fetch(`${BASE_URL}/mup-r-and-d`, {
+          fetch(`${baseUrl}/mup-r-and-d`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ institution_name: institutionName }),
@@ -253,7 +253,7 @@ const MUPDataVisualizer = ({ institutionName }: Props) => {
     if (institutionName) {
       fetchData();
     }
-  }, [institutionName, BASE_URL]);
+  }, [institutionName, baseUrl]);
 
   const createChartData = (label: string, data: Array<{[key: string]: any}>, valueKeys: string[], valueLabels: string[], xAxis: string = 'year') => {
     const sortedData = [...data]
