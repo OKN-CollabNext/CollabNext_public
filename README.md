@@ -3,7 +3,7 @@
 A collaborative research discovery platform that enables multi-modal search across academic publications, institutions, and researchers using data from OpenAlex and SemOpenAlex.
 
 ## Table of Contents
-- [Local Development (Recommended)](#local-dev-recommended)
+- [Local Development (Recommended)](#local-development-recommended)
 - [Legacy Manual Deployment](#legacy-manual-deployment)
   - [Option 1: One-Command Deployment](#option-1-one-command-deployment)
   - [Option 2: Manual Container Deployment](#option-2-manual-container-deployment)
