@@ -3,17 +3,52 @@
 A collaborative research discovery platform that enables multi-modal search across academic publications, institutions, and researchers using data from OpenAlex and SemOpenAlex.
 
 ## Table of Contents
-- [Quick Start (Recommended)](#quick-start-recommended)
+- [Local Development (Recommended)](#local-dev-recommended)
+- [Legacy Manual Deployment](#legacy-manual-deployment)
   - [Option 1: One-Command Deployment](#option-1-one-command-deployment)
   - [Option 2: Manual Container Deployment](#option-2-manual-container-deployment)
-- [Local Development](#local-development)
+- [Legacy Container Local Development](#legacy-container-local-development)
   - [Container-based Development](#container-based-development)
   - [Legacy Local Development](#legacy-local-development)
 - [Contact Information](#contact-information)
 
-## Quick Start (Recommended)
+## Local Development (Recommended)
 
-The fastest way to run CollabNext is using our pre-built container images and Helm chart.
+### Prerequisites
+- [Docker](https://docs.docker.com/get-docker/)
+- [Local Postgres Install](https://www.postgresql.org/download/windows/)
+
+### Set Up Local Development
+1. Clone the repository to your local machine
+2. Navigate to the frontend folder, and edit `REACT_APP_BASE_URL` to be `http://localhost:5000`
+3. Ensure Postgres is installed by testing the following commands:
+```
+pg_restore --version
+psql --version
+```
+4. Download the smaller local Postgres database, `small_openalex.sql` and navigate to the same directory
+5. Create the database locally
+```
+createdb -U postgres small_openalex
+psql -U postgres -d small_openalex -f small_openalex.sql
+```
+6. Ensure Docker Desktop is installed and running
+7. Navigate to the main directory with docker-compose.yml file
+8. Spin up the containers connected to the running local database:
+```
+docker compose build
+docker compose up
+```
+9. Navigate to http://localhost:3000/ to interact with the frontend. 
+10. Stop the containers and remove the database:
+```
+docker compose down
+dropdb small_openalex 
+```
+
+
+
+## Legacy Manual Deployment
 
 ### Prerequisites
 - [Docker](https://docs.docker.com/get-docker/)
@@ -63,7 +98,7 @@ This script will:
 
 **Container Images:** All images are available at [GitHub Container Registry](https://github.com/orgs/OKN-CollabNext/packages?repo_name=CollabNext_public)
 
-## Local Development
+## Legacy Container Local Development
 
 ### Container-based Development
 
