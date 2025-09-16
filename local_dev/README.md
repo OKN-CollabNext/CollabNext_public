@@ -7,7 +7,7 @@
 
 2. **Unzip the files** — you should see a bunch of `.dat` files.
 
-3. **Get `filter_copy.py` from GitHub.**
+3. **Get `filter_copy.py` from this folder.**
 
 4. **Prepare your institution IDs file.**  
    Collect all OpenAlex IDs for institutions you want to include in a text file named `institution_ids.txt`.
