@@ -1,6 +1,6 @@
 # Create Local Database (Markdown)
 
-> Replace `{full_dataset_location}` with the full path to the extracted dataset directory on your machine (e.g., `C:\data\small_openalex_dump`). All commands below assume a Windows shell unless noted.
+> Replace `{full_dataset_location}` with the full path to the extracted dataset directory on your machine (e.g., `C:\data\openalex_dump`). All commands below assume a Windows shell unless noted.
 
 1. **Download the full dataset as `.dat` files (~50 GB)**  
    https://stars.renci.org/var/frink/collabnext/postgres-bkup/
