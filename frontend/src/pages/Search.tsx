@@ -18,6 +18,7 @@ import AllThreeMetadata from "../components/AllThreeMetadata";
 // import CytoscapeComponent from 'react-cytoscapejs';
 import GraphComponent from "../components/GraphComponent";
 import InstitutionMetadata from "../components/InstitutionMetadata";
+import MultiInstitutionMetadata from "../components/MultiInstitutionMetadata";
 import InstitutionResearcherMetaData from "../components/InstitutionResearcherMetaData";
 import ResearcherMetadata from "../components/ResearcherMetadata";
 import Suggested from "../components/Suggested";
@@ -26,6 +27,7 @@ import TopicMetadata from "../components/TopicMetadata";
 import TopicResearcherMetadata from "../components/TopicResearcherMetadata";
 import { baseUrl, handleAutofill, initialValue } from "../utils/constants";
 import { ResearchDataInterface, SearchType } from "../utils/interfaces";
+import MultiResearcherMetadata from "../components/MultiResearcherMetadata";
 
 const Search = () => {
   const searchParams = new URLSearchParams(window.location.search);
@@ -84,13 +86,15 @@ const Search = () => {
       researcherType,
       page,
       per_page,
+      extra_institutions,
     }: {
       universityName: string;
       institutionType: string;
       topicType: string;
-      researcherType: string;
+      researcherType: string[] | string;
       page: number;
       per_page: number;
+      extra_institutions: string[] | string;
     }
   ) => {
     fetch(`${baseUrl}/initial-search`, {
@@ -103,6 +107,7 @@ const Search = () => {
         researcher: researcherType,
         page: page,
         per_page: per_page,
+        extra_institutions: extra_institutions,
       }),
     })
       .then((res) => res.json())
@@ -124,6 +129,9 @@ const Search = () => {
                 graph: data?.graph,
                 topics: data?.list,
                 search,
+                coordinates: data?.coordinates,
+                has_multiple_institutions: extra_institutions.length > 0,
+                all_institution_metadata: data?.extra_metadata,
               }
             : search === "topic"
             ? {
@@ -149,6 +157,9 @@ const Search = () => {
                 open_alex_link: data?.metadata?.oa_link,
                 topics: data?.list,
                 institution_url: data?.metadata?.institution_url,
+                all_researcher_metadata: data?.extra_metadata,
+                has_multiple_researchers: !(personList == null),
+                coordinates: data?.coordinates,
                 search,
               }
             : search === "researcher-institution"
@@ -248,6 +259,7 @@ const Search = () => {
     page: number = 1
   ) => {
     setIsLoading(true);
+    const extraInstitutions = isAddOrgChecked && universityName2.trim() ? [universityName2.trim()] : [];
     const params = new URLSearchParams(window.location.search);
     const universityName = params.get("institution") || "";
     const institutionType = params.get("type") || "";
@@ -274,6 +286,7 @@ const Search = () => {
         researcherType: newResearcherType,
         page: page,
         per_page: itemsPerPage,
+        extra_institutions: extraInstitutions,
       });
     } else if (
       (newTopicType && newResearcherType) ||
@@ -293,7 +306,40 @@ const Search = () => {
         researcherType: newResearcherType,
         page: page,
         per_page: itemsPerPage,
+        extra_institutions: extraInstitutions,
       });
+    } else if (orgList) {
+      const search = "institution";
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const text = event.target?.result as string;
+        sendSearchRequest(search, {
+          universityName: newUniversityName,
+          institutionType: newInstitutionType,
+          topicType: newTopicType,
+          researcherType: newResearcherType,
+          page: page,
+          per_page: itemsPerPage,
+          extra_institutions: text,
+        });
+      };
+      reader.readAsText(orgList);
+    } else if (personList) {
+      const search = "researcher"
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const text = event.target?.result as string;
+        sendSearchRequest(search, {
+          universityName: newUniversityName,
+          institutionType: newInstitutionType,
+          topicType: newTopicType,
+          researcherType: text,
+          page: page,
+          per_page: itemsPerPage,
+          extra_institutions: extraInstitutions,
+        });
+      };
+      reader.readAsText(personList);
     } else if (newTopicType || newUniversityName || newResearcherType) {
       const search = newTopicType
         ? "topic"
@@ -307,6 +353,7 @@ const Search = () => {
         researcherType: newResearcherType,
         page: page,
         per_page: itemsPerPage,
+        extra_institutions: extraInstitutions,
       });
     } else {
       // Default graph request
@@ -643,7 +690,7 @@ const Search = () => {
             </div>
           ) : isNetworkMap === "map" ? (
             <Box width="100%" height="500px">
-              {data?.search === "topic" ? (
+              {data?.search === "topic"  || data?.search === "institution" || data?.search === "researcher" ? (
                 <MapMetadata data={data} />
               ) : (
                 <h1>Map not available!</h1>
@@ -652,13 +699,23 @@ const Search = () => {
           ) : isNetworkMap === "list" ? (
             <div>
               {data?.search === "institution" ? (
-                <InstitutionMetadata
-                  data={data}
-                  setTopic={setTopicType}
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={handlePageChange}
-                />
+                data?.has_multiple_institutions ? (
+                  <MultiInstitutionMetadata
+                    institutionsMetadata={data?.all_institution_metadata}
+                    setTopic={setTopicType}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                ) : (
+                  <InstitutionMetadata
+                    data={data}
+                    setTopic={setTopicType}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                )
               ) : data?.search === "topic" ? (
                 <TopicMetadata
                   data={data}
@@ -668,13 +725,23 @@ const Search = () => {
                   onPageChange={handlePageChange}
                 />
               ) : data?.search === "researcher" ? (
-                <ResearcherMetadata
-                  data={data}
-                  setTopic={setTopicType}
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={handlePageChange}
-                />
+                data?.has_multiple_researchers ? (
+                  <MultiResearcherMetadata
+                    researchersMetadata={data?.all_researcher_metadata}
+                    setTopic={setTopicType}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                ) : (
+                  <ResearcherMetadata
+                    data={data}
+                    setTopic={setTopicType}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                )
               ) : data?.search === "researcher-institution" ? (
                 <InstitutionResearcherMetaData
                   data={data}
@@ -709,7 +776,7 @@ const Search = () => {
             </div>
           ) : isNetworkMap === "map" ? (
             <Box width="100%" height="500px">
-              {data?.search === "topic" ? (
+              {data?.search === "topic" || data?.search === "institution" || data?.search === "researcher"? (
                 <MapMetadata data={data} />
               ) : (
                 <h1>Map not available!</h1>
